@@ -51,5 +51,5 @@ format:
 
 checkformat:
 	. $(venv_activate_path) ;\
-	black $(package_name)/ --skip-string-normalization --check
+	black $(package_name)/ --skip-string-normalization --check ;\
 	black tests/ --skip-string-normalization --check
