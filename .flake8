@@ -1,0 +1,9 @@
+[flake8]
+ignore = D100,D104
+exclude =
+  .git
+  __pycache__
+  docs
+  build
+  dist
+  venv
