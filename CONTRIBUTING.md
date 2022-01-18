@@ -20,7 +20,7 @@ We use GitHub to host code, to track public issues and feature requests from the
 ## We Use [GitHub Flow](https://guides.github.com/introduction/flow/index.html), So All Code Changes Happen Through Pull Requests
 Pull requests are the best way to propose changes to the codebase (we use [GitHub Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests:
 
-1. Fork the repo and create your branch from `master`.
+1. Fork the repo and create your branch from `main`.
 2. If you've added code that should be tested, add tests: unit and End-2-End if possible.
 3. If you've added a new feature or changed the behavior of existing one, update the tests and the relevant documentation in [README.md](./README.md) and [online documentation code](./docs).
 4. Ensure the test suite passes.
