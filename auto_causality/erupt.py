@@ -1,6 +1,5 @@
 from typing import Callable, List
 
-
 import pandas as pd
 import numpy as np
 

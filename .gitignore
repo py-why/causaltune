@@ -97,3 +97,4 @@ __pycache__/
 .coverage
 .envrc
 .pytest_cache
+*/flaml.log
