@@ -35,5 +35,5 @@ def make_scores(
         include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
     )
     intrp.interpret(DummyEstimator(cate_estimate), df)
-
+    intrp.feature_names = list(df.columns)
     return {"erupt": erupt_score, "ate": cate_estimate.mean(), "intrp": intrp}
