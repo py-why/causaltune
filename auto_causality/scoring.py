@@ -6,6 +6,7 @@ from sklearn.dummy import DummyClassifier
 from auto_causality.erupt import ERUPT
 from dowhy import CausalModel
 
+
 # need this class because doing inference from scratch is super slow for OrthoForests
 class DummyEstimator:
     def __init__(self, cate_estimate: np.ndarray):

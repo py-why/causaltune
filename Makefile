@@ -1,6 +1,6 @@
 package_name = auto_causality
 coverage_target = 70
-max_line_length = 88
+max_line_length = 120
 
 venv_name = venv
 venv_activate_path := ./$(venv_name)/bin/activate
