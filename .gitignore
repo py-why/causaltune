@@ -98,3 +98,5 @@ __pycache__/
 .envrc
 .pytest_cache
 */flaml.log
+
+data/*
