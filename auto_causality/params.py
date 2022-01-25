@@ -1,6 +1,5 @@
 from copy import deepcopy
 from econml.inference import BootstrapInference
-from econml.sklearn_extensions.linear_model import WeightedLasso
 from sklearn import linear_model
 
 
