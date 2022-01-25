@@ -1,7 +1,7 @@
 from typing import Callable, List
 
 import pandas as pd
-import numpy as np
+
 
 # implementation of https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957
 class ERUPT:
