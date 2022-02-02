@@ -63,6 +63,9 @@ class AutoMLWrapper(AutoML):
         print("calling AutoML fit method with ", used_kwargs)
         super().fit(*args, **used_kwargs)
 
+    def inner_model(self):
+        return self.model.estimator
+
 
 def policy_from_estimator(est, df: pd.DataFrame):
     # must be done just like this so it also works for metalearners
