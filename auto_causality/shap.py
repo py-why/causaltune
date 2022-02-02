@@ -4,6 +4,13 @@ import shap
 
 from auto_causality.utils import AutoMLWrapper
 
+final_model_map = {
+    "SLearner": lambda x: x.overall_model,
+    "DomainAdaptationLearner": lambda x: x.final_models[0],
+    "DirectUpliftFitter": lambda x: x.outcome_model,
+    "ForestDRLearner": lambda x: x.model_final,
+}
+
 
 def shap_values(estimate: CausalEstimate, df: pd.DataFrame):
     nice_df = df[estimate.estimator._effect_modifier_names]
@@ -33,11 +40,3 @@ def shap_values(estimate: CausalEstimate, df: pd.DataFrame):
             shap_values = estimate.estimator.estimator.shap_values(nice_df.values)
             # strip out the nested dict that EconML returns
         return list(list(shap_values.values())[0].values())[0]
-
-
-final_model_map = {
-    "SLearner": lambda x: x.overall_model,
-    "DomainAdaptationLearner": lambda x: x.final_models[0],
-    "DirectUpliftFitter": lambda x: x.outcome_model,
-    "ForestDRLearner": lambda x: x.model_final,
-}
