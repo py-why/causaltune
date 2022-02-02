@@ -102,20 +102,20 @@ class SimpleParamService:
                 },
                 "fit_params": {},
             },
-            # This one wasn't converging
-            # "backdoor.econml.dr.SparseLinearDRLearner": {
-            #     "init_params": {
-            #         "model_propensity": propensity_model,
-            #         "model_regression": outcome_model,
-            #     },
-            #     "fit_params": {},
-            # },
-            # this one errored out with exit code 137 - is it necessary to limit its size?
+            "backdoor.econml.dr.SparseLinearDRLearner": {
+                "init_params": {
+                    "model_propensity": propensity_model,
+                    "model_regression": outcome_model,
+                },
+                "fit_params": {},
+            },
             "backdoor.econml.dml.LinearDML": {
                 "init_params": {
                     "model_t": propensity_model,
                     "model_y": outcome_model,
                     "discrete_treatment": True,
+                    # it runs out of memory fast if the below is not set
+                    "linear_first_stages": False,
                 },
                 "fit_params": {},
             },
@@ -124,6 +124,8 @@ class SimpleParamService:
                     "model_t": propensity_model,
                     "model_y": outcome_model,
                     "discrete_treatment": True,
+                    # it runs out of memory fast if the below is not set
+                    "linear_first_stages": False,
                 },
                 "fit_params": {},
             },
