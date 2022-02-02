@@ -2,8 +2,6 @@ import pandas as pd
 from dowhy.causal_model import CausalEstimate
 import shap
 
-from auto_causality.utils import AutoMLWrapper
-
 final_model_map = {
     "SLearner": lambda x: x.overall_model,
     "DomainAdaptationLearner": lambda x: x.final_models[0],
