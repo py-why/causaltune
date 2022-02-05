@@ -30,8 +30,7 @@ class SimpleParamService:
         return list(self._configs().keys())
 
     def method_params(
-        self,
-        estimator: str,
+        self, estimator: str,
     ):
         return self._configs()[estimator]
 
@@ -60,15 +59,11 @@ class SimpleParamService:
                 # "fit_params": {},
             },
             "backdoor.econml.metalearners.SLearner": {
-                "init_params": {
-                    "overall_model": outcome_model,
-                },
+                "init_params": {"overall_model": outcome_model,},
                 "fit_params": {"inference": bootstrap} if self.conf_intervals else {},
             },
             "backdoor.econml.metalearners.TLearner": {
-                "init_params": {
-                    "models": outcome_model,
-                },
+                "init_params": {"models": outcome_model,},
                 "fit_params": {"inference": bootstrap} if self.conf_intervals else {},
             },
             "backdoor.econml.metalearners.XLearner": {
