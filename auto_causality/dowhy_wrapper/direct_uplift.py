@@ -31,9 +31,13 @@ class DirectUpliftDoWhyWrapper(CausalEstimator):
         *args,
         **kwargs
     ):
+        self._treatment_name = remove_list(treatment)
+        self._outcome_name = remove_list(outcome)
+        self._effect_modifier_names = effect_modifiers
+
         self.estimator = DirectUpliftFitter(
-            treatment=remove_list(treatment),
-            outcome=remove_list(outcome),
+            treatment=self._treatment_name,
+            outcome=self._outcome_name,
             propensity_modifiers=effect_modifiers,
             outcome_modifiers=effect_modifiers,
             **params.get("init_params", {})
@@ -46,7 +50,6 @@ class DirectUpliftDoWhyWrapper(CausalEstimator):
         self._control_value = control_value
         self._treatment_value = treatment_value
         self._target_estimand = identified_estimand
-        self._effect_modifier_names = effect_modifiers
 
         self.method_params = params
         # TODO

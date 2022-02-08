@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 
 from sklearn.preprocessing import RobustScaler
 import pandas as pd
@@ -11,6 +11,8 @@ def featurize(
     exclude_cols: List[str],
     drop_first: bool = False,
     scale_floats: bool = False,
+    prune_min_categories: int = 50,
+    prune_thresh: float = 0.99,
 ) -> pd.DataFrame:
 
     # fill all the NaNs
@@ -19,8 +21,12 @@ def featurize(
             df[col] = df[col].fillna(0.0).astype("float32")
         elif pd.api.types.is_integer_dtype(t):
             df[col] = df[col].fillna(-1)
+            df[col] = otherize_tail(df[col], -2, prune_thresh, prune_min_categories)
         else:
-            df[col] = df[col].fillna("NA").astype("category")
+            df[col] = df[col].fillna("NA")
+            df[col] = otherize_tail(
+                df[col], "OTHER", prune_thresh, prune_min_categories
+            ).astype("category")
 
     float_features = [f for f in features if pd.api.types.is_float_dtype(df.dtypes[f])]
     if scale_floats:
@@ -71,3 +77,30 @@ def policy_from_estimator(est, df: pd.DataFrame):
     # must be done just like this so it also works for metalearners
     X_test = df[est.estimator._effect_modifier_names]
     return est.estimator.estimator.effect(X_test) > 0
+
+
+def frequent_values(x: pd.Series, thresh: float = 0.99) -> set:
+    # get the most frequent values, making up to the fraction thresh of total
+    data = x.to_frame("value")
+    data["dummy"] = True
+    tmp = (
+        data[["dummy", "value"]]
+        .groupby("value", as_index=False)
+        .count()
+        .sort_values("dummy", ascending=False)
+    )
+    tmp["frac"] = tmp.dummy.cumsum() / tmp.dummy.sum()
+    return set(tmp["value"][tmp.frac <= thresh].unique())
+
+
+def otherize_tail(
+    x: pd.Series, new_val: Any, thresh: float = 0.99, min_categories: int = 20
+):
+    uniques = x.unique()
+    if len(uniques) < min_categories:
+        return x
+    else:
+        x = x.copy()
+        freq = frequent_values(x, thresh)
+        x[~x.isin(freq)] = new_val
+        return x
