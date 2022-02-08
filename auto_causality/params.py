@@ -1,3 +1,4 @@
+from flaml import tune
 from copy import deepcopy
 from typing import Optional
 
@@ -105,6 +106,11 @@ class SimpleParamService:
                     "model_regression": outcome_model,
                 },
                 "fit_params": {},
+                "search_space": {
+                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "min_propensity": tune.loguniform(1e-6, 1e-1),
+                    "mc_iters": tune.randint(0, 10),
+                },
             },
             "backdoor.econml.dr.SparseLinearDRLearner": {
                 "init_params": {
@@ -122,6 +128,10 @@ class SimpleParamService:
                     "linear_first_stages": False,
                 },
                 "fit_params": {},
+                "search_space": {
+                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "mc_iters": tune.randint(0, 10),
+                },
             },
             "backdoor.econml.dml.SparseLinearDML": {
                 "init_params": {
