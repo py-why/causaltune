@@ -7,21 +7,21 @@ import pandas as pd
 class ERUPT:
     def __init__(
         self,
-        treatment: str,
+        treatment_name: str,
         propensity_model,
         clip: float = 0.05,
         remove_tiny: bool = True,
     ):
-        self.treatment = treatment
+        self.treatment_name = treatment_name
         self.propensity = propensity_model
         self.clip = clip
         self.remove_tiny = remove_tiny
 
     def fit(self, df: pd.DataFrame, regressors: List[str] = None):
         if regressors is None:
-            regressors = [c for c in df.columns if c != self.treatment]
+            regressors = [c for c in df.columns if c != self.treatment_name]
         self.treatment_X = regressors
-        self.propensity.fit(X=df[self.treatment_X], y=df[self.treatment])
+        self.propensity.fit(X=df[self.treatment_X], y=df[self.treatment_name])
 
     def score(
         self, df: pd.DataFrame, outcome: pd.Series, policy: Callable
@@ -30,7 +30,7 @@ class ERUPT:
         return (w * outcome).mean()
 
     def weights(self, df: pd.DataFrame, policy: Callable) -> pd.Series:
-        W = df[self.treatment].astype(int)
+        W = df[self.treatment_name].astype(int)
         assert all(
             [x in [0, 1] for x in W.unique()]
         ), "Only boolean treatments supported as yet"
