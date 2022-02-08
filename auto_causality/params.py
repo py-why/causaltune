@@ -1,4 +1,6 @@
 from copy import deepcopy
+from typing import Optional
+
 from econml.inference import BootstrapInference
 from sklearn import linear_model
 
@@ -9,9 +11,8 @@ class SimpleParamService:
         propensity_model,
         outcome_model,
         final_model=None,
-        conf_intervals: bool = False,
-        n_bootstrap_samples: int = 10,
-        n_jobs=None,
+        n_bootstrap_samples: Optional[int] = None,
+        n_jobs: Optional[int] = None,
         max_depth=10,
         n_estimators=500,
         min_leaf_size=10,
@@ -19,7 +20,6 @@ class SimpleParamService:
         self.propensity_model = propensity_model
         self.outcome_model = outcome_model
         self.final_model = final_model
-        self.conf_intervals = conf_intervals
         self.n_bootstrap_samples = n_bootstrap_samples
         self.n_jobs = n_jobs
         self.max_depth = max_depth
@@ -37,9 +37,10 @@ class SimpleParamService:
     def _configs(self):
         propensity_model = deepcopy(self.propensity_model)
         outcome_model = deepcopy(self.outcome_model)
-        bootstrap = BootstrapInference(
-            n_bootstrap_samples=self.n_bootstrap_samples, n_jobs=self.n_jobs
-        )
+        if self.n_bootstrap_samples is not None:
+            bootstrap = BootstrapInference(
+                n_bootstrap_samples=self.n_bootstrap_samples, n_jobs=self.n_jobs
+            )
 
         if self.final_model is None:
             final_model = deepcopy(self.outcome_model)
@@ -60,18 +61,24 @@ class SimpleParamService:
             },
             "backdoor.econml.metalearners.SLearner": {
                 "init_params": {"overall_model": outcome_model,},
-                "fit_params": {"inference": bootstrap} if self.conf_intervals else {},
+                "fit_params": {}
+                if self.n_bootstrap_samples is None
+                else {"inference": bootstrap},
             },
             "backdoor.econml.metalearners.TLearner": {
                 "init_params": {"models": outcome_model,},
-                "fit_params": {"inference": bootstrap} if self.conf_intervals else {},
+                "fit_params": {}
+                if self.n_bootstrap_samples is None
+                else {"inference": bootstrap},
             },
             "backdoor.econml.metalearners.XLearner": {
                 "init_params": {
                     "propensity_model": propensity_model,
                     "models": outcome_model,
                 },
-                "fit_params": {"inference": bootstrap} if self.conf_intervals else {},
+                "fit_params": {}
+                if self.n_bootstrap_samples is None
+                else {"inference": bootstrap},
             },
             "backdoor.econml.metalearners.DomainAdaptationLearner": {
                 "init_params": {
@@ -79,7 +86,9 @@ class SimpleParamService:
                     "models": outcome_model,
                     "final_models": final_model,
                 },
-                "fit_params": {"inference": bootstrap} if self.conf_intervals else {},
+                "fit_params": {}
+                if self.n_bootstrap_samples is None
+                else {"inference": bootstrap},
             },
             "backdoor.econml.dr.ForestDRLearner": {
                 "init_params": {
@@ -130,8 +139,8 @@ class SimpleParamService:
                     "model_y": outcome_model,
                     "max_depth": self.max_depth,
                     "n_estimators": self.n_estimators,
-                    "inference": self.conf_intervals,
                     "discrete_treatment": True,
+                    "inference": self.n_bootstrap_samples is not None,
                 },
                 "fit_params": {},
             },
