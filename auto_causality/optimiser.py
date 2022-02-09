@@ -14,8 +14,8 @@ from dowhy import CausalModel  # noqa: E402
 
 class AutoCausality:
     """Performs AutoML to find best econML estimator.
-    Optimises hyperparams of component models of each estimator 
-    and hyperparams of the estimators themselves. Uses the ERUPT 
+    Optimises hyperparams of component models of each estimator
+    and hyperparams of the estimators themselves. Uses the ERUPT
     metric for estimator selection.
 
     Example:
@@ -51,19 +51,11 @@ class AutoCausality:
     ```
     """
 
-    def __init__(
-        self, params=None,
-    ):
+    def __init__(self, params):
         """constructor.
 
         Args:
-            train_df (pd.DataFrame): training data
-            test_df (pd.DataFrame): test data
-            treatment (str): treatment variable name
-            outcome (str): outcome variable name
-            features_W (List[str]): common causes
-            features_X (List[str]): effect modifiers
-            params ([type], optional): optional parameters. Defaults to None.
+            params ([dict]): flaml parameters
         """
         self.propensity_model = DummyClassifier(strategy="prior")
         self.outcome_model = AutoML(**params["flaml"]["component_params"])
@@ -106,7 +98,7 @@ class AutoCausality:
             estimator_name: a str of the estimator's name.
 
         Returns:
-            An object storing the best model for estimator_name.           
+            An object storing the best model for estimator_name.
         """
         # TODO
         return None
@@ -196,11 +188,11 @@ class AutoCausality:
             ]
 
     def _tune_with_config(self, config: dict) -> dict:
-        """Performs Hyperparameter Optimisation for a 
+        """Performs Hyperparameter Optimisation for a
         causal inference estimator
 
         Args:
-            config (dict): dictionary with search space for 
+            config (dict): dictionary with search space for
             all tunable parameters
 
         Returns:
