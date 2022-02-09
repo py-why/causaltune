@@ -118,6 +118,16 @@ class SimpleParamService:
                     "model_regression": outcome_model,
                 },
                 "fit_params": {},
+                "search_space": {
+                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "n_alphas":  tune.lograndit(1, 1000),
+                    "n_alphas_cov":  tune.lograndit(1, 100),
+                    "min_propensity": tune.loguniform(1e-6, 1e-1),
+                    "mc_iters": tune.randint(0, 10),
+                    "tol": tune.qloguniform(1e-7, 1, 1e-6),
+                    "max_iter": tune.qlograndit(100, 100000, 100),
+                    "mc_agg": tune.choice(['mean', 'median']),
+                },
             },
             "backdoor.econml.dml.LinearDML": {
                 "init_params": {
