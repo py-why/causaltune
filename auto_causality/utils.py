@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Callable
 
 from sklearn.preprocessing import RobustScaler
 import pandas as pd
@@ -56,21 +56,43 @@ def featurize(
     return out
 
 
-class AutoMLWrapper(AutoML):
-    def __init__(self, *args, fit_params=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if fit_params is not None:
+def fit_params_wrapper(parent: type):
+    class FitParamsWrapper(parent):
+        def __init__(self, *args, fit_params=None, **kwargs):
+            self.init_args = args
+            self.init_kwargs = kwargs
             self.fit_params = fit_params
-        else:
-            self.fit_params = {}
 
-    def fit(self, *args, **kwargs):
-        used_kwargs = {**kwargs, **self.fit_params}
-        print("calling AutoML fit method with ", used_kwargs)
-        super().fit(*args, **used_kwargs)
+        def fit(self, *args, **kwargs):
+            # we defer the initialization to the fit() method so we can memoize it
+            # using all the args from both init and fit
+            super().__init__(*args, **kwargs)
+            if self.fit_params is not None:
+                self.fit_params = self.fit_params
+            else:
+                self.fit_params = {}
+            used_kwargs = {**kwargs, **self.fit_params}
+            print("calling AutoML fit method with ", used_kwargs)
+            super().fit(*args, **used_kwargs)
 
-    def inner_model(self):
-        return self.model.estimator
+    return FitParamsWrapper
+
+
+class memoizer(dict):
+    def check(self, fun: Callable, *args, **kwargs):
+        key = self.hash(*args, **kwargs)
+        if key not in self:
+            self[key] = fun(*args, **kwargs)
+        return self[key]
+
+    @classmethod
+    def hash(cls, *args, **kwargs):
+        # TODO: hash at least pandas and numpy
+        # maybe use this https://death.andgravity.com/stable-hashing ?
+        raise NotImplementedError
+
+
+AutoMLWrapper = fit_params_wrapper(AutoML)
 
 
 def policy_from_estimator(est, df: pd.DataFrame):

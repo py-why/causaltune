@@ -50,7 +50,7 @@ def make_scores(
     intrp.feature_names = est._effect_modifier_names
 
     values = df[[treatment_name, est._outcome_name]].reset_index(drop=True)
-    values["p"] = erupt.propensity.predict_proba(df)[:, 1]
+    values["p"] = erupt.propensity_model.predict_proba(df)[:, 1]
     values["policy"] = cate_estimate > 0
     values["weights"] = erupt.weights(df, lambda x: cate_estimate > 0)
 
