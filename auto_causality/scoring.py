@@ -35,12 +35,13 @@ def make_scores(
     erupt = ERUPT(
         treatment_name=treatment_name,
         propensity_model=DummyClassifier(strategy="prior"),
+        X_names=est._effect_modifier_names,
     )
-    erupt.fit(df, est._effect_modifier_names)
+    erupt.fit(df)
     erupt_score = erupt.score(
         df,
         df[est._outcome_name],
-        lambda x: cate_estimate > 0,
+        cate_estimate > 0,
     )
 
     intrp = SingleTreeCateInterpreter(
