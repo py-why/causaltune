@@ -1,4 +1,6 @@
+autoflake
 black
 flake8
+isort
 pytest
 pytest-cov
