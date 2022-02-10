@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Callable
 
 from sklearn.preprocessing import RobustScaler
 import pandas as pd
@@ -56,21 +56,59 @@ def featurize(
     return out
 
 
+def fit_params_wrapper(parent: type):
+    class FitParamsWrapper(parent):
+        def __init__(self, *args, fit_params=None, **kwargs):
+            self.init_args = args
+            self.init_kwargs = kwargs
+            if fit_params is not None:
+                self.fit_params = fit_params
+            else:
+                self.fit_params = {}
+
+        def fit(self, *args, **kwargs):
+            # we defer the initialization to the fit() method so we can memoize the fit
+            # using all the args from both init and fit
+            super().__init__(*self.init_args, **self.init_kwargs)
+
+            used_kwargs = {**kwargs, **self.fit_params}
+            print("calling AutoML fit method with ", used_kwargs)
+            super().fit(*args, **used_kwargs)
+
+    return FitParamsWrapper
+
+
+class memoizer(dict):
+    def check(self, fun: Callable, *args, **kwargs):
+        key = self.hash(*args, **kwargs)
+        if key not in self:
+            self[key] = fun(*args, **kwargs)
+        return self[key]
+
+    @classmethod
+    def hash(cls, *args, **kwargs):
+        # TODO: hash at least pandas and numpy
+        # maybe use this https://death.andgravity.com/stable-hashing ?
+        raise NotImplementedError
+
+
 class AutoMLWrapper(AutoML):
     def __init__(self, *args, fit_params=None, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.init_args = args
+        self.init_kwargs = kwargs
         if fit_params is not None:
             self.fit_params = fit_params
         else:
             self.fit_params = {}
 
     def fit(self, *args, **kwargs):
+        # we defer the initialization to the fit() method so we can memoize the fit
+        # using all the args from both init and fit
+        super().__init__(*self.init_args, **self.init_kwargs)
+
         used_kwargs = {**kwargs, **self.fit_params}
         print("calling AutoML fit method with ", used_kwargs)
         super().fit(*args, **used_kwargs)
-
-    def inner_model(self):
-        return self.model.estimator
 
 
 def policy_from_estimator(est, df: pd.DataFrame):
