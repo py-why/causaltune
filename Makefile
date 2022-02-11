@@ -7,7 +7,7 @@ venv_activate_path := ./$(venv_name)/bin/activate
 cov_args := --cov $(package_name) --cov-fail-under=$(coverage_target) --cov-report=term-missing
 not_slow = -m "not slow"
 
-.PHONY: clean venv update lint test slowtest cov slowcov format checkformat
+.PHONY: venv cov test
 
 clean:
 	rm -rf ./$(venv_name)
@@ -46,6 +46,8 @@ slowcov:
 
 format:
 	. $(venv_activate_path) ;\
+	isort -rc .
+	autoflake -r --in-place --remove-unused-variables .
 	black $(package_name)/ --skip-string-normalization
 	black tests/ --skip-string-normalization
 
