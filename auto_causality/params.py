@@ -61,13 +61,13 @@ class SimpleParamService:
                 # "fit_params": {},
             },
             "backdoor.econml.metalearners.SLearner": {
-                "init_params": {"overall_model": outcome_model,},
+                "init_params": {"overall_model": outcome_model, },
                 "fit_params": {}
                 if self.n_bootstrap_samples is None
                 else {"inference": bootstrap},
             },
             "backdoor.econml.metalearners.TLearner": {
-                "init_params": {"models": outcome_model,},
+                "init_params": {"models": outcome_model, },
                 "fit_params": {}
                 if self.n_bootstrap_samples is None
                 else {"inference": bootstrap},
