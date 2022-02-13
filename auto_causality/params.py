@@ -152,6 +152,14 @@ class SimpleParamService:
                     "linear_first_stages": False,
                 },
                 "fit_params": {},
+                "search_space": {
+                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "mc_iters": tune.randint(0, 10),
+                    "n_alphas":  tune.lograndit(1, 1000),
+                    "n_alphas_cov":  tune.lograndit(1, 100),
+                    "tol": tune.qloguniform(1e-7, 1, 1e-6),
+                    "max_iter": tune.qlograndit(100, 100000, 100),
+                },
             },
             "backdoor.econml.dml.CausalForestDML": {
                 "init_params": {
