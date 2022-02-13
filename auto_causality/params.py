@@ -95,10 +95,27 @@ class SimpleParamService:
                 "init_params": {
                     "model_propensity": propensity_model,
                     "model_regression": outcome_model,
-                    "max_depth": self.max_depth,
-                    "n_estimators": self.n_estimators,
+                    # "max_depth": self.max_depth,
+                    # "n_estimators": self.n_estimators,
                 },
                 "fit_params": {},
+                "search_space": {
+                    "min_propensity": tune.loguniform(1e-6, 1e-1),
+                    "mc_iters": tune.randint(0, 10),
+                    "n_estimators": tune.randint(2, 500),
+                    "max_depth": tune.randint(2, 1000),
+                    "min_sample_split": tune.randint(1, 50),
+                    "min_samples_leaf": tune.randint(1, 25),
+                    "min_weight_fraction_leaf": tune.uniform(0, 1),
+                    "max_features": tune.choice(['auto', 'sqrt', 'log2', None]),
+                    "min_impurity_decrease": tune.uniform(0, 10),
+                    "max_samples": tune.uniform(0, 1),
+                    "min_balancedness_tol": tune.uniform(0, 0.5),
+                    "honest": tune.choice([0, 1]),
+                    "fit_intercept": tune.choice([0, 1]),
+                    # Difficult as needs to be a factor of 'n_estimators'
+                    # "subforest_size":,
+                },
             },
             "backdoor.econml.dr.LinearDRLearner": {
                 "init_params": {
@@ -165,10 +182,10 @@ class SimpleParamService:
                 "init_params": {
                     "model_t": propensity_model,
                     "model_y": outcome_model,
-                    "max_depth": self.max_depth,
-                    "n_estimators": self.n_estimators,
+                    # "max_depth": self.max_depth,
+                    # "n_estimators": self.n_estimators,
                     "discrete_treatment": True,
-                    "inference": self.n_bootstrap_samples is not None,
+                    # "inference": self.n_bootstrap_samples is not None,
                 },
                 "fit_params": {},
                 "search_space": {
