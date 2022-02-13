@@ -249,13 +249,21 @@ class SimpleParamService:
                     ),  # WeightedLasso(alpha=0.01),  #
                     "discrete_treatment": True,
                     "n_jobs": self.n_jobs,
-                    "max_depth": self.max_depth,
-                    "n_trees": self.n_estimators,
-                    "min_leaf_size": self.min_leaf_size,
+                    # "max_depth": self.max_depth,
+                    # "n_trees": self.n_estimators,
+                    # "min_leaf_size": self.min_leaf_size,
                     # Loky was running out of disk space for some reason
                     "backend": "threading",
                 },
                 "fit_params": {},
+                "search_space": {
+                    "n_trees": tune.randint(2, 750),
+                    "min_leaf_size": tune.randit(1, 50),
+                    "max_depth": tune.randint(2, 1000),
+                    "subsample_ratio": tune.uniform(0, 1),
+                    "bootstrap": tune.choice([0, 1]),
+                    "lambda_reg": tune.uniform(0, 1),
+                },
             },
         }
 
