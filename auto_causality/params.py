@@ -120,8 +120,8 @@ class SimpleParamService:
                 "fit_params": {},
                 "search_space": {
                     "fit_cate_intercept": tune.choice([0, 1]),
-                    "n_alphas":  tune.lograndit(1, 1000),
-                    "n_alphas_cov":  tune.lograndit(1, 100),
+                    "n_alphas": tune.lograndit(1, 1000),
+                    "n_alphas_cov": tune.lograndit(1, 100),
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
                     "mc_iters": tune.randint(0, 10),
                     "tol": tune.qloguniform(1e-7, 1, 1e-6),
@@ -155,8 +155,8 @@ class SimpleParamService:
                 "search_space": {
                     "fit_cate_intercept": tune.choice([0, 1]),
                     "mc_iters": tune.randint(0, 10),
-                    "n_alphas":  tune.lograndit(1, 1000),
-                    "n_alphas_cov":  tune.lograndit(1, 100),
+                    "n_alphas": tune.lograndit(1, 1000),
+                    "n_alphas_cov": tune.lograndit(1, 100),
                     "tol": tune.qloguniform(1e-7, 1, 1e-6),
                     "max_iter": tune.qlograndit(100, 100000, 100),
                 },
@@ -171,6 +171,26 @@ class SimpleParamService:
                     "inference": self.n_bootstrap_samples is not None,
                 },
                 "fit_params": {},
+                "search_space": {
+                    "mc_iters": tune.randint(0, 10),
+                    "drate": tune.choice([0, 1]),
+                    "n_estimators": tune.randint(2, 500),
+                    "criterion": tune.choice(['mse', 'het']),
+                    "max_depth": tune.randint(2, 1000),
+                    "min_sample_split": tune.randint(1, 50),
+                    "min_samples_leaf": tune.randint(1, 25),
+                    "min_weight_fraction_leaf": tune.uniform(0, 1),
+                    "min_var_fraction_leaf": tune.uniform(0, 1),
+                    "max_features": tune.choice(['auto', 'sqrt', 'log2', None]),
+                    "min_impurity_decrease": tune.uniform(0, 10),
+                    "max_samples": tune.uniform(0, 1),
+                    "min_balancedness_tol": tune.uniform(0, 0.5),
+                    "honest": tune.choice([0, 1]),
+                    "inference": tune.choice([0, 1]),
+                    "fit_intercept": tune.choice([0, 1]),
+                    # Difficult as needs to be a factor of 'n_estimators'
+                    # "subforest_size":,
+                },
             },
             "backdoor.auto_causality.dowhy_wrapper.direct_uplift.DirectUpliftDoWhyWrapper": {
                 "init_params": {
