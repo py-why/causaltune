@@ -64,24 +64,30 @@ class SimpleParamService:
             },
             "backdoor.econml.metalearners.SLearner": {
                 "init_params": {"overall_model": outcome_model, },
-                "fit_params": {}
-                if self.n_bootstrap_samples is None
-                else {"inference": bootstrap},
+                "fit_params": {},
+                "search_space": {}
+                # These lines cause recursion errors
+                # if self.n_bootstrap_samples is None
+                # else {"inference": bootstrap},
             },
             "backdoor.econml.metalearners.TLearner": {
                 "init_params": {"models": outcome_model, },
-                "fit_params": {}
-                if self.n_bootstrap_samples is None
-                else {"inference": bootstrap},
+                "fit_params": {},
+                "search_space": {}
+                # These lines cause recursion errors
+                # if self.n_bootstrap_samples is None
+                # else {"inference": bootstrap},
             },
             "backdoor.econml.metalearners.XLearner": {
                 "init_params": {
                     "propensity_model": propensity_model,
                     "models": outcome_model,
                 },
-                "fit_params": {}
-                if self.n_bootstrap_samples is None
-                else {"inference": bootstrap},
+                "fit_params": {},
+                "search_space": {}
+                # These lines cause recursion errors
+                # if self.n_bootstrap_samples is None
+                # else {"inference": bootstrap},
             },
             "backdoor.econml.metalearners.DomainAdaptationLearner": {
                 "init_params": {
@@ -89,9 +95,12 @@ class SimpleParamService:
                     "models": outcome_model,
                     "final_models": final_model,
                 },
-                "fit_params": {}
-                if self.n_bootstrap_samples is None
-                else {"inference": bootstrap},
+                "fit_params": {},
+                "search_space": {}
+                # These lines cause recursion errors 
+                # if self.n_bootstrap_samples is None
+                # else {"inference": bootstrap},
+                
             },
             "backdoor.econml.dr.ForestDRLearner": {
                 "init_params": {
@@ -106,9 +115,9 @@ class SimpleParamService:
                     "mc_iters": tune.randint(0, 10),
                     "n_estimators": tune.randint(2, 500),
                     "max_depth": tune.randint(2, 1000),
-                    "min_sample_split": tune.randint(1, 50),
+                    "min_samples_split": tune.randint(1, 50),
                     "min_samples_leaf": tune.randint(1, 25),
-                    "min_weight_fraction_leaf": tune.uniform(0, 1),
+                    "min_weight_fraction_leaf": tune.uniform(0, 0.5),
                     "max_features": tune.choice([
                         'auto',
                         'sqrt',
@@ -116,10 +125,9 @@ class SimpleParamService:
                         None
                     ]),
                     "min_impurity_decrease": tune.uniform(0, 10),
-                    "max_samples": tune.uniform(0, 1),
+                    "max_samples": tune.uniform(0, 0.5),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
                     "honest": tune.choice([0, 1]),
-                    "fit_intercept": tune.choice([0, 1]),
                     # Difficult as needs to be a factor of 'n_estimators'
                     # "subforest_size":,
                 },
@@ -144,12 +152,12 @@ class SimpleParamService:
                 "fit_params": {},
                 "search_space": {
                     "fit_cate_intercept": tune.choice([0, 1]),
-                    "n_alphas": tune.lograndit(1, 1000),
-                    "n_alphas_cov": tune.lograndit(1, 100),
+                    "n_alphas": tune.lograndint(1, 1000),
+                    "n_alphas_cov": tune.lograndint(1, 100),
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
                     "mc_iters": tune.randint(0, 10),
-                    "tol": tune.qloguniform(1e-7, 1, 1e-6),
-                    "max_iter": tune.qlograndit(100, 100000, 100),
+                    "tol": tune.qloguniform(1e-7, 1, 1e-7),
+                    "max_iter": tune.qlograndint(100, 100000, 100),
                     "mc_agg": tune.choice(['mean', 'median']),
                 },
             },
@@ -179,10 +187,10 @@ class SimpleParamService:
                 "search_space": {
                     "fit_cate_intercept": tune.choice([0, 1]),
                     "mc_iters": tune.randint(0, 10),
-                    "n_alphas": tune.lograndit(1, 1000),
-                    "n_alphas_cov": tune.lograndit(1, 100),
-                    "tol": tune.qloguniform(1e-7, 1, 1e-6),
-                    "max_iter": tune.qlograndit(100, 100000, 100),
+                    "n_alphas": tune.lograndint(1, 1000),
+                    "n_alphas_cov": tune.lograndint(1, 100),
+                    "tol": tune.qloguniform(1e-7, 1, 1e-7),
+                    "max_iter": tune.qlograndint(100, 100000, 100),
                 },
             },
             "backdoor.econml.dml.CausalForestDML": {
@@ -199,11 +207,11 @@ class SimpleParamService:
                     "mc_iters": tune.randint(0, 10),
                     "drate": tune.choice([0, 1]),
                     "n_estimators": tune.randint(2, 500),
-                    "criterion": tune.choice(['mse', 'het']),
+                    "criterion": tune.choice(['squared_error', 'het']),
                     "max_depth": tune.randint(2, 1000),
-                    "min_sample_split": tune.randint(1, 50),
+                    "min_samples_split": tune.randint(1, 50),
                     "min_samples_leaf": tune.randint(1, 25),
-                    "min_weight_fraction_leaf": tune.uniform(0, 1),
+                    "min_weight_fraction_leaf": tune.uniform(0, 0.5),
                     "min_var_fraction_leaf": tune.uniform(0, 1),
                     "max_features": tune.choice([
                         'auto',
@@ -256,7 +264,7 @@ class SimpleParamService:
                 "fit_params": {},
                 "search_space": {
                     "n_trees": tune.randint(2, 750),
-                    "min_leaf_size": tune.randit(1, 50),
+                    "min_leaf_size": tune.randint(1, 50),
                     "max_depth": tune.randint(2, 1000),
                     "subsample_ratio": tune.uniform(0, 1),
                     "bootstrap": tune.choice([0, 1]),
@@ -280,7 +288,7 @@ class SimpleParamService:
                 "fit_params": {},
                 "search_space": {
                     "n_trees": tune.randint(2, 750),
-                    "min_leaf_size": tune.randit(1, 50),
+                    "min_leaf_size": tune.randint(1, 50),
                     "max_depth": tune.randint(2, 1000),
                     "subsample_ratio": tune.uniform(0, 1),
                     "bootstrap": tune.choice([0, 1]),
