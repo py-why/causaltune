@@ -183,7 +183,8 @@ class AutoCausality:
 
         if self._settings["tuner"]["verbose"] > 0:
             print(f"fitting estimators: {self.estimator_list}")
-
+        
+        self.tune_results = {} # We need to keep track of the tune results to access the best config 
         for estimator in self.estimator_list:
             self.estimator = estimator
             self.estimator_cfg = self.cfg.method_params(estimator)
@@ -195,11 +196,13 @@ class AutoCausality:
                     mode="max",
                     **self._settings["tuner"],
                 )
-
+                
                 # log results
                 self.results[self.estimator] = results.best_trial.last_result[
                     self._settings["metric"]
                 ]
+
+                
 
             except KeyError:
                 print(
@@ -212,10 +215,11 @@ class AutoCausality:
                 self.results[self.estimator] = scores["test"][
                     self._settings["metric"].lower()
                 ]
-
+            self.tune_results[estimator] = results
             print(
                 f"... Estimator: {self.estimator} \t {self._settings['metric']}: {self.results[self.estimator]:6f}"
             )
+
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -292,6 +296,7 @@ class AutoCausality:
         """Return the *trained* best estimator
         """
         # TODO
+
         return None
 
     def best_model_for_estimator(self, estimator_name):
@@ -309,14 +314,14 @@ class AutoCausality:
     @property
     def best_config(self):
         """A dictionary containing the best configuration"""
-        # TODO
-        pass
+        
+        return self.best_config_per_estimator[self.best_estimator]
 
     @property
     def best_config_per_estimator(self):
         """A dictionary of all estimators' best configuration."""
-        # TODO
-        return None
+        # TODO  
+        return {estimator: self.tune_results[estimator].best_config for estimator in self.estimator_list if estimator in self.tune_results}
 
     @property
     def best_loss_per_estimator(self):
