@@ -36,8 +36,23 @@ class AutoCausality:
         """constructor.
 
         Args:
-            TODO spell out what each setting arg means!
-            settings ([dict]): parameters
+            time_budget (float): a number of the time budget in seconds. -1 if no limit.
+            num_samples (int): max number of iterations.
+            verbose (int):  controls verbosity, higher means more messages. range (0,3). defaults to 0.
+            use_ray (bool): use Ray backend (nrequires ray to be installed).
+            task (str): task type, defaults to "causal_inference".
+            metric (str): metric to optimise, defaults to "ERUPT".
+            estimator_list (list): a list of strings for estimator names, or "auto".
+               e.g. ```['dml', 'CausalForest']```
+            metrics_to_log (list): additional metrics to log. TODO implement
+            use_dummyclassifier (bool): use dummy classifier for propensity model or not. defaults to True.
+            components_task (str): task for component models. defaults to "regression"
+            components_verbose (int): verbosity of component model HPO. range (0,3). defaults to 0.
+            components_pred_time_limit (float): prediction time limit for component models
+            components_njobs (int): number of concurrent jobs for component model optimisation.
+                defaults to -1 (all available cores).
+            components_time_budget (float): time budget for HPO of component models in seconds.
+                defaults to overall time budget / 2.
         """
         self._settings = settings
         settings["tuner"] = {}
@@ -54,6 +69,7 @@ class AutoCausality:
         )  # if auto, add all estimators that we have implemented
 
         # params for FLAML on component models:
+        settings["use_dummyclassifier"] = settings.get("use_dummyclassifier", True)
         settings["component_models"] = {}
         settings["component_models"]["task"] = settings.get(
             "components_task", "regression"
@@ -64,21 +80,21 @@ class AutoCausality:
         )
         settings["component_models"]["n_jobs"] = settings.get("components_nbjobs", -1)
         settings["component_models"]["time_budget"] = settings.get(
-            "components_time_budget", 30
+            "components_time_budget", int(settings["tuner"]["time_budget_s"] / 2)
         )
 
-        # TODO: choice between flaml and dummy as part of search space!
-        self.propensity_model = DummyClassifier(strategy="prior")
+        # user can choose between flaml and dummy for propensity model.
+        self.propensity_model = (
+            DummyClassifier(strategy="prior")
+            if settings["use_dummyclassifier"]
+            else AutoML(**settings["component_models"])
+        )
         self.outcome_model = AutoML(**settings["component_models"])
 
         # config with method-specific params
         self.cfg = SimpleParamService(
             self.propensity_model,
             self.outcome_model,
-            n_bootstrap_samples=20,
-            n_estimators=500,
-            max_depth=10,
-            min_leaf_size=2 * 26,
         )
 
         self.estimates = {}
