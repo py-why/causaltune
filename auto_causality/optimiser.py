@@ -22,7 +22,6 @@ class AutoCausality:
     ```python
 
     estimator_list = [".LinearDML","LinearDRLearner","metalearners"]
-    outcome = targets[0]
     auto_causality = AutoCausality(time_budget=10,components_time_budget=10,estimator_list=estimator_list)
 
     auto_causality.fit(train_df, test_df, treatment, outcome,
@@ -184,7 +183,13 @@ class AutoCausality:
         for estimator in self.estimator_list:
             self.estimator = estimator
             self.estimator_cfg = self.cfg.method_params(estimator)
-            try:
+            if self.estimator_cfg["search_space"] == {}:
+                self._estimate_effect()
+                scores = self._compute_metrics()
+                self.results[self.estimator] = scores["test"][
+                    self._settings["metric"].lower()
+                ]
+            else:
                 results = tune.run(
                     self._tune_with_config,
                     self.estimator_cfg["search_space"],
@@ -196,18 +201,6 @@ class AutoCausality:
                 # log results
                 self.results[self.estimator] = results.best_trial.last_result[
                     self._settings["metric"]
-                ]
-
-            except KeyError:
-                print(
-                    f"Warning: Search space not implemented for {estimator}, continuing with defaults instead..."
-                )
-                # if the estimator doesn't have a search space, we can't run the tuner....
-                # note: some don't have any hps to optimise, so this is expected
-                self._estimate_effect()
-                scores = self._compute_metrics()
-                self.results[self.estimator] = scores["test"][
-                    self._settings["metric"].lower()
                 ]
 
             print(
