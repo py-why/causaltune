@@ -33,17 +33,17 @@ class AutoCausality:
     ```
     """
 
-    def __init__(self, **settings):
+    def __init__(self, train_df=None, test_df=None, **settings):
         """constructor.
 
         Args:
+            TODO spell out what each setting arg means!
             settings ([dict]): parameters
         """
         self._settings = settings
         settings["tuner"] = {}
         settings["tuner"]["time_budget_s"] = settings.get("time_budget", 60)
         settings["tuner"]["num_samples"] = settings.get("num_samples", 10)
-        # settings["tuner"]["n_jobs"] = settings.get("n_jobs", -1)
         settings["tuner"]["verbose"] = settings.get("verbose", 0)
         settings["tuner"]["use_ray"] = settings.get(
             "use_ray", False
@@ -82,12 +82,14 @@ class AutoCausality:
             min_leaf_size=2 * 26,
         )
 
-        # dicts for logging
         self.estimates = {}
         self.results = {}
-
         self.estimator_list = self.create_estimator_list()
-        print(self.estimator_list)
+
+        self.train_df = train_df or pd.DataFrame()
+        self.test_df = test_df or pd.DataFrame()
+        self.causal_model = None
+        self.identified_estimand = None
 
     def get_params(self, deep=False):
         return self._settings.copy()
@@ -120,6 +122,8 @@ class AutoCausality:
 
         # match list of requested estimators against list of available estimators
         # and remove duplicates:
+        # NOTE: black formatter conflicts with flake as it moves binary operator to 2nd
+        # line and hence triggers W503 ....
         if (
             self._settings["estimator_list"] == "auto"
             or self._settings["estimator_list"] == []  # noqa: W503
@@ -161,25 +165,18 @@ class AutoCausality:
             effect_modifiers (List[str]): list of names of effect modifiers
         """
 
-        if not hasattr(self, "train_df"):
-            self.train_df = train_df
-        if not hasattr(self, "test_df"):
-            self.test_df = test_df
-
-        if not hasattr(self, "causal_model"):
-            self.causal_model = CausalModel(
-                data=self.train_df,
-                treatment=treatment,
-                outcome=outcome,
-                common_causes=common_causes,
-                effect_modifiers=effect_modifiers,
-            )
-
-        if not hasattr(self, "identified_estimand"):
-
-            self.identified_estimand = self.causal_model.identify_effect(
-                proceed_when_unidentifiable=True
-            )
+        self.train_df = train_df
+        self.test_df = test_df
+        self.causal_model = CausalModel(
+            data=self.train_df,
+            treatment=treatment,
+            outcome=outcome,
+            common_causes=common_causes,
+            effect_modifiers=effect_modifiers,
+        )
+        self.identified_estimand = self.causal_model.identify_effect(
+            proceed_when_unidentifiable=True
+        )
 
         if self._settings["tuner"]["verbose"] > 0:
             print(f"fitting estimators: {self.estimator_list}")
@@ -310,7 +307,7 @@ class AutoCausality:
     def best_config(self):
         """A dictionary containing the best configuration"""
         # TODO
-        pass
+        return None
 
     @property
     def best_config_per_estimator(self):
