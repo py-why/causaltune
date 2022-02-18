@@ -155,7 +155,7 @@ def run_full(
 
             try:
                 te_test = estimates[estimator].estimator.effect(test_df)
-            except:
+            except Exception:
                 # this will no longer be necessary once https://github.com/microsoft/dowhy/pull/374 is merged
                 X_test = test_df[estimates[estimator].estimator._effect_modifier_names]
                 te_test = (
