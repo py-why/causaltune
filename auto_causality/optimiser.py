@@ -1,5 +1,6 @@
 import sys
 import os
+import warnings
 import pandas as pd
 from flaml import tune, AutoML
 from sklearn.dummy import DummyClassifier
@@ -22,7 +23,7 @@ class AutoCausality:
     ```python
 
     estimator_list = [".LinearDML","LinearDRLearner","metalearners"]
-    auto_causality = AutoCausality(time_budget=10,components_time_budget=10,estimator_list=estimator_list)
+    auto_causality = AutoCausality(time_budget=10, estimator_list=estimator_list)
 
     auto_causality.fit(train_df, test_df, treatment, outcome,
     features_W, features_X)
@@ -92,14 +93,11 @@ class AutoCausality:
         self.outcome_model = AutoML(**settings["component_models"])
 
         # config with method-specific params
-        self.cfg = SimpleParamService(
-            self.propensity_model,
-            self.outcome_model,
-        )
+        self.cfg = SimpleParamService(self.propensity_model, self.outcome_model,)
 
         self.estimates = {}
         self.results = {}
-        self.estimator_list = self.create_estimator_list()
+        self.estimator_list = self._create_estimator_list()
 
         self.train_df = train_df or pd.DataFrame()
         self.test_df = test_df or pd.DataFrame()
@@ -109,7 +107,10 @@ class AutoCausality:
     def get_params(self, deep=False):
         return self._settings.copy()
 
-    def create_estimator_list(self):
+    def get_estimators(self, deep=False):
+        return self.estimator_list.copy()
+
+    def _create_estimator_list(self):
         """Creates list of estimators via substring matching
         - Retrieves list of available estimators,
         - Returns all available estimators is provided list empty or set to 'auto'.
@@ -143,20 +144,40 @@ class AutoCausality:
             self._settings["estimator_list"] == "auto"
             or self._settings["estimator_list"] == []  # noqa: W503
         ):
-            print("No estimators specified, adding all available estimators...")
+            warnings.warn("No estimators specified, adding all available estimators...")
             return available_estimators
-        else:
+        elif self._verify_estimator_list():
             estimators_to_use = list(
                 dict.fromkeys(
                     [
-                        ae
-                        for re in self._settings["estimator_list"]
-                        for ae in available_estimators
-                        if re in ae
+                        available_estimator
+                        for requested_estimator in self._settings["estimator_list"]
+                        for available_estimator in available_estimators
+                        if requested_estimator in available_estimator
                     ]
                 )
             )
-            return estimators_to_use
+            if estimators_to_use == []:
+                warnings.warn(
+                    "requested estimators not implemented, continuing with defaults"
+                )
+                return available_estimators
+            else:
+                return estimators_to_use
+        else:
+            warnings.warn("invalid estimator list requested, continuing with defaults")
+            return available_estimators
+
+    def _verify_estimator_list(self):
+        """verifies that provided estimator list is in correct format
+        """
+        if not isinstance(self._settings["estimator_list"], list):
+            return False
+        else:
+            for e in self._settings["estimator_list"]:
+                if not isinstance(e, str):
+                    return False
+        return True
 
     def fit(
         self,
