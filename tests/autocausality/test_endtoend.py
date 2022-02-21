@@ -67,7 +67,7 @@ class TestEndToEnd(object):
     """tests autocausality model end-to-end
     1/ import autocausality object
     2/ preprocess data
-    3/ init autocausality object 
+    3/ init autocausality object
     4/ run autocausality on data
     """
 
