@@ -5,9 +5,6 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 import warnings
-root_path = root_path = os.path.realpath("../../")
-sys.path.append(os.path.join(root_path, "auto-causality"))
-
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
 
@@ -74,9 +71,7 @@ class TestEndToEnd(object):
     def test_imports(self):
         """tests if AutoCausality can be imported
         """
-        root_path = root_path = os.path.realpath("../../..")
-        sys.path.append(os.path.join(root_path, "dowhy"))
-        sys.path.append(os.path.join(root_path, "auto-causality"))
+
         from auto_causality import AutoCausality  # noqa F401
 
     def test_data_preprocessing(self):
@@ -88,20 +83,14 @@ class TestEndToEnd(object):
     def test_init_autocausality(self):
         """tests if autocausality object can be instantiated without errors
         """
-        root_path = root_path = os.path.realpath("../../..")
-        sys.path.append(os.path.join(root_path, "dowhy"))
-        sys.path.append(os.path.join(root_path, "auto-causality"))
-        from auto_causality import AutoCausality  # noqa F401
 
+        from auto_causality import AutoCausality  # noqa F401
         auto_causality = AutoCausality()  # noqa F484
 
     def test_endtoend(self):
         """tests if model can be instantiated and fit to data
         """
 
-        root_path = root_path = os.path.realpath("../../..")
-        sys.path.append(os.path.join(root_path, "dowhy"))
-        sys.path.append(os.path.join(root_path, "auto-causality"))
         from auto_causality import AutoCausality  # noqa F401
 
         train_df, test_df, features_X, features_W, targets, treatment = import_data()

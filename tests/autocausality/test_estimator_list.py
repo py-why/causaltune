@@ -1,12 +1,7 @@
 import pytest
-import os
-import sys
 from flaml import AutoML
-root_path = root_path = os.path.realpath("../../..")
-sys.path.append(os.path.join(root_path, "auto-causality"))
-sys.path.append(os.path.join(root_path, "dowhy"))
-from auto_causality import AutoCausality # noqa E402
-from auto_causality.params import SimpleParamService # noqa E402
+from auto_causality import AutoCausality
+from auto_causality.params import SimpleParamService
 
 
 class TestEstimatorListGenerator:

@@ -1,17 +1,9 @@
 from typing import List
-
 import pytest
-import os
-import sys
-
 import pandas as pd
 import numpy as np
 from sklearn.dummy import DummyClassifier
-
-root_path = root_path = os.path.realpath("..")
-sys.path.append(os.path.join(root_path, "dowhy"))
-
-from auto_causality.erupt import ERUPT  # noqa E402
+from auto_causality.erupt import ERUPT
 
 
 def binary_erupt_df(mylen: int):

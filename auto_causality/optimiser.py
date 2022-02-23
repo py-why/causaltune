@@ -1,5 +1,3 @@
-import sys
-import os
 import warnings
 import pandas as pd
 from flaml import tune, AutoML
@@ -7,10 +5,7 @@ from sklearn.dummy import DummyClassifier
 from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores
 from typing import List
-
-root_path = root_path = os.path.realpath("../../..")
-sys.path.append(os.path.join(root_path, "dowhy"))
-from dowhy import CausalModel  # noqa: E402
+from dowhy import CausalModel
 
 
 class AutoCausality:
@@ -59,10 +54,10 @@ class AutoCausality:
         settings["tuner"] = {}
         settings["tuner"]["time_budget_s"] = settings.get("time_budget", 60)
         settings["tuner"]["num_samples"] = settings.get("num_samples", 10)
-        settings["tuner"]["verbose"] = settings.get("verbose", 0)
+        settings["tuner"]["verbose"] = settings.get("verbose", 3)
         settings["tuner"]["use_ray"] = settings.get(
             "use_ray", False
-        )  # requires ray to be installed...
+        )  # requires ray to be installed via pip install flaml[ray]
         settings["task"] = settings.get("task", "causal_inference")
         settings["metric"] = settings.get("metric", "ERUPT")
         settings["estimator_list"] = settings.get(
@@ -233,16 +228,22 @@ class AutoCausality:
                 results = tune.run(
                     self._tune_with_config,
                     self.estimator_cfg["search_space"],
+                    resources_per_trial={"cpu": 1, "gpu": 0.5},
                     metric=self._settings["metric"],
                     mode="max",
+                    low_cost_partial_config={},
                     **self._settings["tuner"],
                 )
 
                 # log results
-                self.results[self.estimator] = results.best_trial.last_result[
-                    self._settings["metric"]
-                ]
-
+                best_trial = results.get_best_trial()
+                if best_trial is None:
+                    # if hpo didn't converge for some reason, just log None
+                    self.results[self.estimator] = None
+                else:
+                    self.results[self.estimator] = best_trial.last_result[
+                        self._settings["metric"]
+                    ]
             print(
                 f"... Estimator: {self.estimator} \t {self._settings['metric']}: {self.results[self.estimator]:6f}"
             )
@@ -268,7 +269,8 @@ class AutoCausality:
 
         # compute a metric and return results
         scores = self._compute_metrics()
-        return {"ERUPT": scores["test"]["erupt"], "ATE": scores["test"]["ate"]}
+        results = {"ERUPT": scores["test"]["erupt"], "ATE": scores["test"]["ate"]}
+        return results
 
     def _estimate_effect(self):
         """estimates effect with chosen estimator
