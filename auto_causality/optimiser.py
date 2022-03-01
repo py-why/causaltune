@@ -99,6 +99,9 @@ class AutoCausality:
         self.causal_model = None
         self.identified_estimand = None
 
+        # trained component models for each estimator
+        self.trained_estimators_dict = {}
+
     def get_params(self, deep=False):
         return self._settings.copy()
 
@@ -244,6 +247,7 @@ class AutoCausality:
                     self.results[self.estimator] = best_trial.last_result[
                         self._settings["metric"]
                     ]
+            self.tune_results[estimator] = results
             print(
                 f"... Estimator: {self.estimator} \t {self._settings['metric']}: {self.results[self.estimator]:6f}"
             )
@@ -285,6 +289,8 @@ class AutoCausality:
                 confidence_intervals=False,
                 method_params=self.estimator_cfg,
             )
+            # Store the fitted Econml estimator
+            self.trained_estimators_dict[self.estimator] = self.estimates[self.estimator].estimator.estimator
         else:
             raise AttributeError("No estimator for causal model specified")
 
@@ -325,7 +331,7 @@ class AutoCausality:
         """
         # TODO
 
-        return None
+        return self.best_model_for_estimator(self.best_estimator)
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
@@ -337,7 +343,8 @@ class AutoCausality:
             An object storing the best model for estimator_name.
         """
         # TODO
-        return None
+        # Note that this returns the trained Econml estimator, whose attributes include fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc. 
+        return self.trained_estimators_dict[estimator_name]
 
     @property
     def best_config(self):
