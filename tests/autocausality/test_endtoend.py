@@ -1,0 +1,112 @@
+import pytest
+import os
+import sys
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
+
+
+def import_data(train_size=0.5, test_size=None):
+    root_path = root_path = os.path.realpath("../../..")
+    sys.path.append(os.path.join(root_path, "auto-causality"))
+    from auto_causality.utils import featurize
+
+    # load and prepare the data
+    data = pd.read_csv(
+        "https://raw.githubusercontent.com/AMLab-Amsterdam/CEVAE/master/datasets/IHDP/csv/ihdp_npci_1.csv",
+        header=None,
+    )
+
+    col = [
+        "treatment",
+        "y_factual",
+        "y_cfactual",
+        "mu0",
+        "mu1",
+    ]
+    for i in range(1, 26):
+        col.append("x" + str(i))
+    data.columns = col
+    # drop the columns we don't care about
+    ignore_patterns = ["y_cfactual", "mu"]
+    ignore_cols = [c for c in data.columns if any([s in c for s in ignore_patterns])]
+    data = data.drop(columns=ignore_cols)
+
+    # prepare the data
+    treatment = "treatment"
+    targets = ["y_factual"]  # it's good to allow multiple ones
+    features = [c for c in data.columns if c not in [treatment] + targets]
+
+    data[treatment] = data[treatment].astype(int)
+    # this is a trick to bypass some DoWhy/EconML bugs
+    data["random"] = np.random.randint(0, 2, size=len(data))
+
+    used_df = featurize(
+        data, features=features, exclude_cols=[treatment] + targets, drop_first=False,
+    )
+    used_features = [
+        c for c in used_df.columns if c not in ignore_cols + [treatment] + targets
+    ]
+
+    # Let's treat all features as effect modifiers
+    features_X = [f for f in used_features if f != "random"]
+    features_W = [f for f in used_features if f not in features_X]
+
+    train_df, test_df = train_test_split(used_df, train_size=train_size)
+    if test_size is not None:
+        test_df = test_df.sample(test_size)
+    return train_df, test_df, features_X, features_W, targets, treatment
+
+
+class TestEndToEnd(object):
+    """tests autocausality model end-to-end
+    1/ import autocausality object
+    2/ preprocess data
+    3/ init autocausality object
+    4/ run autocausality on data
+    """
+
+    def test_imports(self):
+        """tests if AutoCausality can be imported
+        """
+
+        from auto_causality import AutoCausality  # noqa F401
+
+    def test_data_preprocessing(self):
+        """tests data preprocessing routines
+        """
+
+        data = import_data()  # noqa F484
+
+    def test_init_autocausality(self):
+        """tests if autocausality object can be instantiated without errors
+        """
+
+        from auto_causality import AutoCausality  # noqa F401
+        auto_causality = AutoCausality()  # noqa F484
+
+    def test_endtoend(self):
+        """tests if model can be instantiated and fit to data
+        """
+
+        from auto_causality import AutoCausality  # noqa F401
+
+        train_df, test_df, features_X, features_W, targets, treatment = import_data()
+
+        estimator_list = ["SparseLinearDML", "ForestDR"]
+        outcome = targets[0]
+        auto_causality = AutoCausality(
+            time_budget=1, components_time_budget=2, estimator_list=estimator_list,
+        )
+
+        auto_causality.fit(
+            train_df, test_df, treatment, outcome, features_W, features_X
+        )
+
+        print(f"Best estimator: {auto_causality.best_estimator}")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

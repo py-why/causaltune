@@ -61,7 +61,7 @@ def run_full(
 
     if not (
         os.path.isfile(os.path.join(data_dir, f"test_{time_budget}.csv"))
-        and os.path.isfile(os.path.join(data_dir, f"train_{time_budget}.csv"))
+        and os.path.isfile(os.path.join(data_dir, f"train_{time_budget}.csv")) # noqa W504
     ):
         train_df, test_df = train_test_split(used_df, train_size=train_size)
         if test_size is not None:
@@ -155,7 +155,7 @@ def run_full(
 
             try:
                 te_test = estimates[estimator].estimator.effect(test_df)
-            except:
+            except Exception:
                 # this will no longer be necessary once https://github.com/microsoft/dowhy/pull/374 is merged
                 X_test = test_df[estimates[estimator].estimator._effect_modifier_names]
                 te_test = (

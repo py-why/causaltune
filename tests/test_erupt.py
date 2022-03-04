@@ -1,11 +1,8 @@
 from typing import List
-
 import pytest
-
 import pandas as pd
 import numpy as np
 from sklearn.dummy import DummyClassifier
-
 from auto_causality.erupt import ERUPT
 
 
@@ -14,11 +11,7 @@ def binary_erupt_df(mylen: int):
     treatment[: int(mylen / 2)] = 1
     X = np.apply_along_axis(lambda x: 1 - 2 * (x % 2), 0, np.array(range(mylen)))
     df = pd.DataFrame(
-        {
-            "treatment": treatment,
-            "outcome": (treatment * X).astype(float),
-            "X": X,
-        }
+        {"treatment": treatment, "outcome": (treatment * X).astype(float), "X": X, }
     )
     return df
 
@@ -33,13 +26,7 @@ def n_ary_erupt_df(mylen: int, n: int = 3):
     outcome = -np.ones(mylen * n * n).astype(int)
     outcome[X == treatment] = 1
 
-    df = pd.DataFrame(
-        {
-            "treatment": treatment,
-            "outcome": outcome,
-            "X": X,
-        }
-    )
+    df = pd.DataFrame({"treatment": treatment, "outcome": outcome, "X": X, })
 
     df = pd.concat([df, pd.get_dummies(df["X"], prefix="X_")], axis=1)
     return df
