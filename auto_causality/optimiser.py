@@ -88,7 +88,10 @@ class AutoCausality:
         self.outcome_model = AutoML(**settings["component_models"])
 
         # config with method-specific params
-        self.cfg = SimpleParamService(self.propensity_model, self.outcome_model,)
+        self.cfg = SimpleParamService(
+            self.propensity_model,
+            self.outcome_model,
+        )
 
         self.estimates = {}
         self.results = {}
@@ -110,7 +113,7 @@ class AutoCausality:
         - Retrieves list of available estimators,
         - Returns all available estimators is provided list empty or set to 'auto'.
         - Returns only requested estimators otherwise.
-        - Checks for and removes duplicates """
+        - Checks for and removes duplicates"""
 
         # get list of available estimators:
         available_estimators = []
@@ -126,6 +129,7 @@ class AutoCausality:
                         "ForestDRLearner",
                         "LinearDRLearner",
                         "Ortho",
+                        "TransformedOutcome",
                     ]
                 ]
             ):
@@ -164,8 +168,7 @@ class AutoCausality:
             return available_estimators
 
     def _verify_estimator_list(self):
-        """verifies that provided estimator list is in correct format
-        """
+        """verifies that provided estimator list is in correct format"""
         if not isinstance(self._settings["estimator_list"], list):
             return False
         else:
@@ -273,8 +276,7 @@ class AutoCausality:
         return results
 
     def _estimate_effect(self):
-        """estimates effect with chosen estimator
-        """
+        """estimates effect with chosen estimator"""
         if hasattr(self, "estimator"):
             self.estimates[self.estimator] = self.causal_model.estimate_effect(
                 self.identified_estimand,
@@ -315,14 +317,12 @@ class AutoCausality:
 
     @property
     def best_estimator(self) -> str:
-        """A string indicating the best estimator found
-        """
+        """A string indicating the best estimator found"""
         return max(self.results, key=self.results.get)
 
     @property
     def model(self):
-        """Return the *trained* best estimator
-        """
+        """Return the *trained* best estimator"""
         # TODO
 
         return None
