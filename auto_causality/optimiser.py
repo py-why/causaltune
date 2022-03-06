@@ -59,7 +59,7 @@ class AutoCausality:
             "use_ray", False
         )  # requires ray to be installed via pip install flaml[ray]
         settings["task"] = settings.get("task", "causal_inference")
-        settings["metric"] = settings.get("metric", "ERUPT")
+        settings["metric"] = settings.get("metric", "erupt")
         settings["estimator_list"] = settings.get(
             "estimator_list", "auto"
         )  # if auto, add all estimators that we have implemented
@@ -251,6 +251,8 @@ class AutoCausality:
             print(
                 f"... Estimator: {self.estimator} \t {self._settings['metric']}: {self.results[self.estimator]:6f}"
             )
+            for metric in ['erupt', 'qini', 'ATE']:
+                print(f" {metric}: {best_trial.last_result[metric]:6f}")
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -273,7 +275,7 @@ class AutoCausality:
 
         # compute a metric and return results
         scores = self._compute_metrics()
-        results = {"ERUPT": scores["test"]["erupt"], "ATE": scores["test"]["ate"]}
+        results = {"erupt": scores["test"]["erupt"], "qini": scores["test"]["qini"], "ATE": scores["test"]["ate"]}
         return results
 
     def _estimate_effect(self):
