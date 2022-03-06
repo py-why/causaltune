@@ -1,5 +1,6 @@
 from typing import Optional
 import math
+from causalml import metrics
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,9 @@ from sklearn.dummy import DummyClassifier
 from auto_causality.erupt import ERUPT
 from dowhy.causal_estimator import CausalEstimate
 
+from matplotlib import pyplot as plt
 
+ 
 # need this class because doing inference from scratch is super slow for some models
 class DummyEstimator:
     def __init__(
@@ -22,10 +25,9 @@ class DummyEstimator:
         return self.cate_estimate
 
 
-def make_scores(
+def erupt_make_scores(
     estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
-) -> dict:
-
+) -> float:
     est = estimate.estimator
     treatment_name = est._treatment_name
     if not isinstance(treatment_name, str):
@@ -43,6 +45,60 @@ def make_scores(
         df[est._outcome_name],
         cate_estimate > 0,
     )
+    return erupt_score
+
+
+def qini_make_score(
+        estimate: CausalEstimate,
+        df: pd.DataFrame,
+        cate_estimate: np.ndarray) -> float:
+    est = estimate.estimator
+    new_df = pd.DataFrame()
+    new_df['y'] = df[est._outcome_name]
+    #new_df['tau'] = cate_estimate
+    treatment_name = est._treatment_name
+    if not isinstance(treatment_name, str):
+        treatment_name = treatment_name[0]
+    new_df['w'] = df[treatment_name]
+    new_df['model'] = cate_estimate
+
+    qini_score = metrics.visualize.qini_score(
+        new_df
+    )
+    
+
+    return qini_score['model']
+
+def real_qini_make_score( 
+        estimate: CausalEstimate,
+        df: pd.DataFrame,
+        cate_estimate: np.ndarray) -> float:
+    est = estimate.estimator
+    new_df = pd.DataFrame()
+
+    #new_df['tau'] = [df['y_factual'] - df['y_cfactual']] 
+    new_df['model'] = cate_estimate
+
+    qini_score = metrics.visualize.qini_score(
+        new_df
+    )
+    
+
+    return qini_score['model']
+
+    # to be done
+
+
+
+def make_scores(
+    estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, metric: str = "erupt"
+) -> dict:
+
+    est = estimate.estimator
+    treatment_name = est._treatment_name
+    if not isinstance(treatment_name, str):
+        treatment_name = treatment_name[0]
+
 
     intrp = SingleTreeCateInterpreter(
         include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
@@ -50,6 +106,12 @@ def make_scores(
     intrp.interpret(DummyEstimator(cate_estimate), df)
     intrp.feature_names = est._effect_modifier_names
 
+    erupt = ERUPT(
+        treatment_name=treatment_name,
+        propensity_model=DummyClassifier(strategy="prior"),
+        X_names=est._effect_modifier_names,
+    )
+    erupt.fit(df)
     values = df[[treatment_name, est._outcome_name]].reset_index(drop=True)
     values["p"] = erupt.propensity_model.predict_proba(df)[:, 1]
     values["policy"] = cate_estimate > 0
@@ -60,7 +122,8 @@ def make_scores(
     assert len(values) == len(df), "Index weirdness when adding columns!"
 
     return {
-        "erupt": erupt_score,
+        "erupt": erupt_make_scores(estimate, df, cate_estimate),
+        'qini':qini_make_score(estimate, df, cate_estimate),
         "ate": cate_estimate.mean(),
         "intrp": intrp,
         "values": values,

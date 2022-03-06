@@ -1,3 +1,4 @@
+
 import warnings
 import pandas as pd
 from flaml import tune, AutoML
@@ -8,29 +9,24 @@ from typing import List
 from dowhy import CausalModel
 
 
+
 class AutoCausality:
     """Performs AutoML to find best econML estimator.
     Optimises hyperparams of component models of each estimator
     and hyperparams of the estimators themselves. Uses the ERUPT
     metric for estimator selection.
-
     Example:
     ```python
-
     estimator_list = [".LinearDML","LinearDRLearner","metalearners"]
     auto_causality = AutoCausality(time_budget=10, estimator_list=estimator_list)
-
     auto_causality.fit(train_df, test_df, treatment, outcome,
     features_W, features_X)
-
     print(f"Best estimator: {auto_causality.best_estimator}")
-
     ```
     """
 
     def __init__(self, train_df=None, test_df=None, **settings):
         """constructor.
-
         Args:
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
             num_samples (int): max number of iterations.
@@ -59,7 +55,7 @@ class AutoCausality:
             "use_ray", False
         )  # requires ray to be installed via pip install flaml[ray]
         settings["task"] = settings.get("task", "causal_inference")
-        settings["metric"] = settings.get("metric", "ERUPT")
+        settings["metric"] = settings.get("metric", "erupt")
         settings["estimator_list"] = settings.get(
             "estimator_list", "auto"
         )  # if auto, add all estimators that we have implemented
@@ -98,9 +94,6 @@ class AutoCausality:
         self.test_df = test_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
-
-        # trained component models for each estimator
-        self.trained_estimators_dict = {}
 
     def get_params(self, deep=False):
         return self._settings.copy()
@@ -185,11 +178,11 @@ class AutoCausality:
         outcome: str,
         common_causes: List[str],
         effect_modifiers: List[str],
+        metric: str = 'erupt',
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
         - Otherwise, only its component models are optimised
-
         Args:
             train_df (pd.DataFrame): Training Data
             test_df (pd.DataFrame): Test Data
@@ -211,6 +204,7 @@ class AutoCausality:
         self.identified_estimand = self.causal_model.identify_effect(
             proceed_when_unidentifiable=True
         )
+        self.metric = metric
 
         if self._settings["tuner"]["verbose"] > 0:
             print(f"fitting estimators: {self.estimator_list}")
@@ -244,22 +238,22 @@ class AutoCausality:
                     # if hpo didn't converge for some reason, just log None
                     self.results[self.estimator] = None
                 else:
-                    self.results[self.estimator] = best_trial.last_result[
-                        self._settings["metric"]
-                    ]
-            self.tune_results[estimator] = results
+                    for metric in ['erupt', 'qini', 'ATE']:
+                        self.results[self.estimator] = best_trial.last_result[
+                            self._settings["metric"]
+                        ]
             print(
                 f"... Estimator: {self.estimator} \t {self._settings['metric']}: {self.results[self.estimator]:6f}"
             )
+            for metric in ['erupt', 'qini', 'ATE']:
+                print(f" {metric}: {best_trial.last_result[metric]:6f}")
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
         causal inference estimator
-
         Args:
             config (dict): dictionary with search space for
             all tunable parameters
-
         Returns:
             dict: values of metrics after optimisation
         """
@@ -273,7 +267,7 @@ class AutoCausality:
 
         # compute a metric and return results
         scores = self._compute_metrics()
-        results = {"ERUPT": scores["test"]["erupt"], "ATE": scores["test"]["ate"]}
+        results = {"erupt": scores["test"]["erupt"], "qini": scores["test"]["qini"], "ATE": scores["test"]["ate"]}
         return results
 
     def _estimate_effect(self):
@@ -289,8 +283,6 @@ class AutoCausality:
                 confidence_intervals=False,
                 method_params=self.estimator_cfg,
             )
-            # Store the fitted Econml estimator
-            self.trained_estimators_dict[self.estimator] = self.estimates[self.estimator].estimator.estimator
         else:
             raise AttributeError("No estimator for causal model specified")
 
@@ -331,20 +323,17 @@ class AutoCausality:
         """
         # TODO
 
-        return self.best_model_for_estimator(self.best_estimator)
+        return None
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
-
         Args:
             estimator_name: a str of the estimator's name.
-
         Returns:
             An object storing the best model for estimator_name.
         """
         # TODO
-        # Note that this returns the trained Econml estimator, whose attributes include fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc. 
-        return self.trained_estimators_dict[estimator_name]
+        return None
 
     @property
     def best_config(self):
