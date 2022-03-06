@@ -55,7 +55,6 @@ def qini_make_score(
     est = estimate.estimator
     new_df = pd.DataFrame()
     new_df['y'] = df[est._outcome_name]
-    #new_df['tau'] = cate_estimate
     treatment_name = est._treatment_name
     if not isinstance(treatment_name, str):
         treatment_name = treatment_name[0]
@@ -68,6 +67,27 @@ def qini_make_score(
     
 
     return qini_score['model']
+
+def auc_make_score(
+        estimate: CausalEstimate,
+        df: pd.DataFrame,
+        cate_estimate: np.ndarray) -> float:
+    est = estimate.estimator
+    new_df = pd.DataFrame()
+    new_df['y'] = df[est._outcome_name]
+    treatment_name = est._treatment_name
+    if not isinstance(treatment_name, str):
+        treatment_name = treatment_name[0]
+    new_df['w'] = df[treatment_name]
+    new_df['model'] = cate_estimate
+
+    auc_score = metrics.visualize.auuc_score(
+        new_df
+    )
+    
+    return auc_score['model']    
+
+
 
 def real_qini_make_score( 
         estimate: CausalEstimate,
@@ -89,17 +109,21 @@ def real_qini_make_score(
     # To calculate the 'real' qini score for synthetic datasets, to be done
 
 
-def r_scorer_make_score(
+def r_make_score(
         estimate: CausalEstimate,
         df: pd.DataFrame,
-        cate_estimate: np.ndarray) -> float:
-    est = estimate.estimator
+        cate_estimate: np.ndarray, 
+        r_scorer) -> float:
+    
+    return r_scorer.score(estimate.estimate_effect)
+    
+    # To be done
     
         
 
 
 def make_scores(
-    estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, metric: str = "erupt"
+    estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, r_scorer = None
 ) -> dict:
 
     est = estimate.estimator
@@ -133,6 +157,8 @@ def make_scores(
     return {
         "erupt": erupt_make_scores(estimate, df, cate_estimate),
         'qini':qini_make_score(estimate, df, cate_estimate),
+        'auc': auc_make_score(estimate, df, cate_estimate),
+        'r_score' : 0 if r_scorer is None else r_make_score(estimate, df, cate_estimate, r_scorer),
         "ate": cate_estimate.mean(),
         "intrp": intrp,
         "values": values,
