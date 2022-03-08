@@ -2,6 +2,7 @@ import warnings
 import pandas as pd
 from flaml import tune, AutoML
 from sklearn.dummy import DummyClassifier
+from sklearn.model_selection import train_test_split
 from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores
 from typing import List
@@ -28,10 +29,11 @@ class AutoCausality:
     ```
     """
 
-    def __init__(self, train_df=None, test_df=None, **settings):
+    def __init__(self, data_df=None, **settings):
         """constructor.
 
         Args:
+            data_df (pandas.DataFrame): dataset to perform causal inference on
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
             num_samples (int): max number of iterations.
             verbose (int):  controls verbosity, higher means more messages. range (0,3). defaults to 0.
@@ -78,6 +80,8 @@ class AutoCausality:
         settings["component_models"]["time_budget"] = settings.get(
             "components_time_budget", int(settings["tuner"]["time_budget_s"] / 2)
         )
+        settings["train_size"] = settings.get("train_size", 0.5)
+        settings["test_size"] = settings.get("test_size", None)
 
         # user can choose between flaml and dummy for propensity model.
         self.propensity_model = (
@@ -94,8 +98,7 @@ class AutoCausality:
         self.results = {}
         self.estimator_list = self._create_estimator_list()
 
-        self.train_df = train_df or pd.DataFrame()
-        self.test_df = test_df or pd.DataFrame()
+        self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
 
@@ -179,8 +182,7 @@ class AutoCausality:
 
     def fit(
         self,
-        train_df: pd.DataFrame,
-        test_df: pd.DataFrame,
+        data_df: pd.DataFrame,
         treatment: str,
         outcome: str,
         common_causes: List[str],
@@ -191,16 +193,20 @@ class AutoCausality:
         - Otherwise, only its component models are optimised
 
         Args:
-            train_df (pd.DataFrame): Training Data
-            test_df (pd.DataFrame): Test Data
+            data_df (pandas.DataFrame): dataset for causal inference            
             treatment (str): name of treatment variable
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
             effect_modifiers (List[str]): list of names of effect modifiers
         """
 
-        self.train_df = train_df
-        self.test_df = test_df
+        self.data_df = data_df
+        self.train_df, self.test_df = train_test_split(
+            data_df, train_size=self._settings["train_size"]
+        )
+        if self._settings["test_size"] is not None:
+            self.test_df = self.test_df.sample(self._settings["test_size"])
+
         self.causal_model = CausalModel(
             data=self.train_df,
             treatment=treatment,
@@ -251,7 +257,7 @@ class AutoCausality:
             if self._settings["tuner"]["verbose"] > 0:
                 print(f"... Estimator: {self.estimator}")
                 for metric in ["erupt", "qini", "auc", "ATE"]:
-                    if not(best_trial.last_result[metric] is None):
+                    if not (best_trial.last_result[metric] is None):
                         print(f" {metric}: {best_trial.last_result[metric]:6f}")
 
     def _tune_with_config(self, config: dict) -> dict:
