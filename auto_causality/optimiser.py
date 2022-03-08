@@ -34,7 +34,7 @@ class AutoCausality:
         self,
         data_df=None,
         metric="erupt",
-        metrics_to_report=["qini", "auc", "ate"],
+        metrics_to_report=["qini", "auc", "ate", "r_score"],
         time_budget=60,
         num_samples=10,
         verbose=3,
@@ -54,7 +54,8 @@ class AutoCausality:
         Args:
             data_df (pandas.DataFrame): dataset to perform causal inference on
             metric (str): metric to optimise. Defaults to "erupt".
-            metrics_to_report (list). additional metrics to compute and report. Defaults to ["qini","auc","ate"]
+            metrics_to_report (list). additional metrics to compute and report.
+             Defaults to ["qini","auc","ate","r_score"]
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
             num_samples (int): max number of iterations.
             verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
