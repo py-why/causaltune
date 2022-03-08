@@ -6,7 +6,7 @@ from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores
 from typing import List
 from dowhy import CausalModel
-
+from econml.score import RScorer
 
 class AutoCausality:
     """Performs AutoML to find best econML estimator.
@@ -59,7 +59,7 @@ class AutoCausality:
             "use_ray", False
         )  # requires ray to be installed via pip install flaml[ray]
         settings["task"] = settings.get("task", "causal_inference")
-        settings["metric"] = settings.get("metric", "ERUPT")
+        settings["metric"] = settings.get("metric", "erupt")
         settings["estimator_list"] = settings.get(
             "estimator_list", "auto"
         )  # if auto, add all estimators that we have implemented
@@ -185,6 +185,7 @@ class AutoCausality:
         outcome: str,
         common_causes: List[str],
         effect_modifiers: List[str],
+        verbose = True
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -214,6 +215,15 @@ class AutoCausality:
 
         if self._settings["tuner"]["verbose"] > 0:
             print(f"fitting estimators: {self.estimator_list}")
+            
+        '''
+        self.r_scorer_train = RScorer(model_y = self.propensity_model, model_t = self.propensity_model, discrete_treatment = True)
+        self.r_scorer_test = RScorer(model_y = self.propensity_model, model_t = self.propensity_model, discrete_treatment = True)
+        self.r_scorer_train.fit(train_df[outcome].to_numpy(), train_df[treatment].to_numpy(), train_df[common_causes].to_numpy(),
+                               train_df[effect_modifiers].to_numpy())
+        self.r_scorer_test.fit(test_df[outcome].to_numpy(), test_df[treatment].to_numpy(), test_df[common_causes].to_numpy(),
+                               test_df[effect_modifiers].to_numpy())
+        '''
 
         self.tune_results = (
             {}
@@ -251,6 +261,9 @@ class AutoCausality:
             print(
                 f"... Estimator: {self.estimator} \t {self._settings['metric']}: {self.results[self.estimator]:6f}"
             )
+            if verbose:
+                for metric in ['erupt', 'qini', 'auc', 'ATE']:
+                    print(f" {metric}: {best_trial.last_result[metric]:6f}")
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -273,7 +286,8 @@ class AutoCausality:
 
         # compute a metric and return results
         scores = self._compute_metrics()
-        results = {"ERUPT": scores["test"]["erupt"], "ATE": scores["test"]["ate"]}
+        results = {"erupt": scores["test"]["erupt"], "qini": scores["test"]["qini"],
+                   "auc": scores["test"]["auc"], "ATE": scores["test"]["ate"]}
         return results
 
     def _estimate_effect(self):
@@ -313,9 +327,9 @@ class AutoCausality:
         scores = {
             "estimator": self.estimator,
             "train": make_scores(
-                self.estimates[self.estimator], self.train_df, te_train
+                self.estimates[self.estimator], self.train_df, te_train, r_scorer = None
             ),
-            "test": make_scores(self.estimates[self.estimator], self.test_df, te_test),
+            "test": make_scores(self.estimates[self.estimator], self.test_df, te_test, r_scorer = None),
         }
         return scores
 
