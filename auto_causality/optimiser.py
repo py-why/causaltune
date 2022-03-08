@@ -33,6 +33,7 @@ class AutoCausality:
         self,
         data_df=None,
         metric="erupt",
+        metrics_to_report=["qini", "auc", "ate"],
         time_budget=60,
         num_samples=10,
         verbose=3,
@@ -52,6 +53,7 @@ class AutoCausality:
         Args:
             data_df (pandas.DataFrame): dataset to perform causal inference on
             metric (str): metric to optimise. Defaults to "erupt".
+            metrics_to_report (list). additional metrics to compute and report. Defaults to ["qini","auc","ate"]
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
             num_samples (int): max number of iterations.
             verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
@@ -78,6 +80,7 @@ class AutoCausality:
             "use_ray"
         ] = use_ray  # requires ray to be installed via pip install flaml[ray]
         self._settings["metric"] = metric
+        self._settings["metrics_to_report"] = metrics_to_report
         self._settings["estimator_list"] = estimator_list
 
         # params for FLAML on component models:
@@ -130,7 +133,7 @@ class AutoCausality:
         - Retrieves list of available estimators,
         - Returns all available estimators is provided list empty or set to 'auto'.
         - Returns only requested estimators otherwise.
-        - Checks for and removes duplicates """
+        - Checks for and removes duplicates"""
 
         # get list of available estimators:
         available_estimators = []
@@ -182,8 +185,7 @@ class AutoCausality:
             return available_estimators
 
     def _verify_estimator_list(self):
-        """verifies that provided estimator list is in correct format
-        """
+        """verifies that provided estimator list is in correct format"""
         if not isinstance(self._settings["estimator_list"], list):
             return False
         else:
@@ -268,9 +270,11 @@ class AutoCausality:
             self.tune_results[estimator] = results
             if self._settings["tuner"]["verbose"] > 0:
                 print(f"... Estimator: {self.estimator}")
-                for metric in ["erupt", "qini", "auc", "ATE"]:
+                for metric in [self._settings["metric"]] + self._settings[
+                    "metrics_to_report"
+                ]:
                     if not (best_trial is None):
-                        print(f" {metric}: {best_trial.last_result[metric]:6f}")
+                        print(f" {metric} (train): {best_trial.last_result[metric]:6f}")
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -294,16 +298,14 @@ class AutoCausality:
         # compute a metric and return results
         scores = self._compute_metrics()
         results = {
-            "erupt": float(scores["test"]["erupt"]),
-            "qini": float(scores["test"]["qini"]),
-            "auc": float(scores["test"]["auc"]),
-            "ATE": float(scores["test"]["ate"]),
+            k: float(scores["train"][k])
+            for k in [self._settings["metric"]] + self._settings["metrics_to_report"]
         }
+
         return results
 
     def _estimate_effect(self):
-        """estimates effect with chosen estimator
-        """
+        """estimates effect with chosen estimator"""
         if hasattr(self, "estimator"):
             self.estimates[self.estimator] = self.causal_model.estimate_effect(
                 self.identified_estimand,
@@ -322,7 +324,7 @@ class AutoCausality:
             raise AttributeError("No estimator for causal model specified")
 
     def _compute_metrics(self) -> dict:
-        """ computes metrics to score causal estimators"""
+        """computes metrics to score causal estimators"""
         try:
             te_train = self.estimates[self.estimator].cate_estimates
             X_test = self.test_df[
@@ -350,14 +352,12 @@ class AutoCausality:
 
     @property
     def best_estimator(self) -> str:
-        """A string indicating the best estimator found
-        """
+        """A string indicating the best estimator found"""
         return max(self.scores, key=self.scores.get)
 
     @property
     def model(self):
-        """Return the *trained* best estimator
-        """
+        """Return the *trained* best estimator"""
         return self.best_model_for_estimator(self.best_estimator)
 
     def best_model_for_estimator(self, estimator_name):
