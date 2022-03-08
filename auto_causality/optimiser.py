@@ -6,6 +6,7 @@ from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores
 from typing import List
 from dowhy import CausalModel
+from auto_causality.r_score import RScoreWrapper
 
 
 class AutoCausality:
@@ -211,6 +212,10 @@ class AutoCausality:
         self.identified_estimand = self.causal_model.identify_effect(
             proceed_when_unidentifiable=True
         )
+        
+        self.r_scorer = RScoreWrapper(self.outcome_model, self.propensity_model, train_df, test_df, outcome, 
+                              treatment, common_causes, effect_modifiers)
+
 
         if self._settings["tuner"]["verbose"] > 0:
             print(f"fitting estimators: {self.estimator_list}")
@@ -250,7 +255,7 @@ class AutoCausality:
             self.tune_results[estimator] = results
             if self._settings["tuner"]["verbose"] > 0:
                 print(f"... Estimator: {self.estimator}")
-                for metric in ["erupt", "qini", "auc", "ATE"]:
+                for metric in ["erupt", "qini", "auc", "r_score", "ATE"]:
                     if not(best_trial.last_result[metric] is None):
                         print(f" {metric}: {best_trial.last_result[metric]:6f}")
 
@@ -279,6 +284,7 @@ class AutoCausality:
             "erupt": scores["test"]["erupt"],
             "qini": scores["test"]["qini"],
             "auc": scores["test"]["auc"],
+            "r_score": scores["test"]["r_score"],
             "ATE": scores["test"]["ate"],
         }
         return results
@@ -322,10 +328,10 @@ class AutoCausality:
         scores = {
             "estimator": self.estimator,
             "train": make_scores(
-                self.estimates[self.estimator], self.train_df, te_train, r_scorer=None
+                self.estimates[self.estimator], self.train_df, te_train, r_scorer=self.r_scorer.train
             ),
             "test": make_scores(
-                self.estimates[self.estimator], self.test_df, te_test, r_scorer=None
+                self.estimates[self.estimator], self.test_df, te_test, r_scorer=self.r_scorer.test
             ),
         }
         return scores
