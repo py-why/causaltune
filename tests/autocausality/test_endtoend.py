@@ -96,7 +96,7 @@ class TestEndToEnd(object):
         estimator_list = ["SparseLinearDML", "ForestDR"]
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=1, components_time_budget=2, estimator_list=estimator_list,
+            time_budget=1, estimator_list=estimator_list,
         )
 
         auto_causality.fit(data_df, treatment, outcome, features_W, features_X)

@@ -29,67 +29,81 @@ class AutoCausality:
     ```
     """
 
-    def __init__(self, data_df=None, **settings):
+    def __init__(
+        self,
+        data_df=None,
+        metric="erupt",
+        time_budget=60,
+        num_samples=10,
+        verbose=3,
+        use_ray=False,
+        estimator_list="auto",
+        train_size=0.5,
+        test_size=None,
+        use_dummyclassifier=True,
+        components_task="regression",
+        components_verbose=0,
+        components_pred_time_limit=10 / 1e6,
+        components_njobs=-1,
+        components_time_budget=20,
+    ):
         """constructor.
 
         Args:
             data_df (pandas.DataFrame): dataset to perform causal inference on
+            metric (str): metric to optimise. Defaults to "erupt".
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
             num_samples (int): max number of iterations.
-            verbose (int):  controls verbosity, higher means more messages. range (0,3). defaults to 0.
+            verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
             use_ray (bool): use Ray backend (nrequires ray to be installed).
-            task (str): task type, defaults to "causal_inference".
-            metric (str): metric to optimise, defaults to "ERUPT".
             estimator_list (list): a list of strings for estimator names, or "auto".
                e.g. ```['dml', 'CausalForest']```
-            metrics_to_log (list): additional metrics to log. TODO implement
-            use_dummyclassifier (bool): use dummy classifier for propensity model or not. defaults to True.
-            components_task (str): task for component models. defaults to "regression"
-            components_verbose (int): verbosity of component model HPO. range (0,3). defaults to 0.
+            train_size (float): Fraction of data used for training set. Defaults to 0.5.
+            test_size (float): Optional size of test dataset. Defaults to None.
+            use_dummyclassifier (bool): use dummy classifier for propensity model or not. Defaults to True.
+            components_task (str): task for component models. Defaults to "regression".
+            components_verbose (int): verbosity of component model HPO. range (0,3). Defaults to 0.
             components_pred_time_limit (float): prediction time limit for component models
             components_njobs (int): number of concurrent jobs for component model optimisation.
-                defaults to -1 (all available cores).
+                Defaults to -1 (all available cores).
             components_time_budget (float): time budget for HPO of component models in seconds.
-                defaults to overall time budget / 2.
+                Defaults to overall time budget / 2.
         """
-        self._settings = settings
-        settings["tuner"] = {}
-        settings["tuner"]["time_budget_s"] = settings.get("time_budget", 60)
-        settings["tuner"]["num_samples"] = settings.get("num_samples", 10)
-        settings["tuner"]["verbose"] = settings.get("verbose", 3)
-        settings["tuner"]["use_ray"] = settings.get(
-            "use_ray", False
-        )  # requires ray to be installed via pip install flaml[ray]
-        settings["task"] = settings.get("task", "causal_inference")
-        settings["metric"] = settings.get("metric", "erupt")
-        settings["estimator_list"] = settings.get(
-            "estimator_list", "auto"
-        )  # if auto, add all estimators that we have implemented
+        self._settings = {}
+        self._settings["tuner"] = {}
+        self._settings["tuner"]["time_budget_s"] = time_budget
+        self._settings["tuner"]["num_samples"] = num_samples
+        self._settings["tuner"]["verbose"] = verbose
+        self._settings["tuner"][
+            "use_ray"
+        ] = use_ray  # requires ray to be installed via pip install flaml[ray]
+        self._settings["metric"] = metric
+        self._settings["estimator_list"] = estimator_list
 
         # params for FLAML on component models:
-        settings["use_dummyclassifier"] = settings.get("use_dummyclassifier", True)
-        settings["component_models"] = {}
-        settings["component_models"]["task"] = settings.get(
-            "components_task", "regression"
+        self._settings["use_dummyclassifier"] = use_dummyclassifier
+        self._settings["component_models"] = {}
+        self._settings["component_models"]["task"] = components_task
+        self._settings["component_models"]["verbose"] = components_verbose
+        self._settings["component_models"][
+            "pred_time_limit"
+        ] = components_pred_time_limit
+        self._settings["component_models"]["n_jobs"] = components_njobs
+        self._settings["component_models"]["time_budget"] = (
+            components_time_budget
+            if components_time_budget < time_budget
+            else (time_budget // 2) + 1
         )
-        settings["component_models"]["verbose"] = settings.get("components_verbose", 0)
-        settings["component_models"]["pred_time_limit"] = settings.get(
-            "components_pred_time_limit", 10 / 1e6
-        )
-        settings["component_models"]["n_jobs"] = settings.get("components_nbjobs", -1)
-        settings["component_models"]["time_budget"] = settings.get(
-            "components_time_budget", int(settings["tuner"]["time_budget_s"] / 2)
-        )
-        settings["train_size"] = settings.get("train_size", 0.5)
-        settings["test_size"] = settings.get("test_size", None)
+        self._settings["train_size"] = train_size
+        self._settings["test_size"] = test_size
 
         # user can choose between flaml and dummy for propensity model.
         self.propensity_model = (
             DummyClassifier(strategy="prior")
-            if settings["use_dummyclassifier"]
-            else AutoML(**settings["component_models"])
+            if self._settings["use_dummyclassifier"]
+            else AutoML(**self._settings["component_models"])
         )
-        self.outcome_model = AutoML(**settings["component_models"])
+        self.outcome_model = AutoML(**self._settings["component_models"])
 
         # config with method-specific params
         self.cfg = SimpleParamService(self.propensity_model, self.outcome_model,)
@@ -193,7 +207,7 @@ class AutoCausality:
         - Otherwise, only its component models are optimised
 
         Args:
-            data_df (pandas.DataFrame): dataset for causal inference            
+            data_df (pandas.DataFrame): dataset for causal inference
             treatment (str): name of treatment variable
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
