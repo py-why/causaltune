@@ -109,7 +109,7 @@ class AutoCausality:
         self.cfg = SimpleParamService(self.propensity_model, self.outcome_model,)
 
         self.estimates = {}
-        self.results = {}
+        self.scores = {}
         self.estimator_list = self._create_estimator_list()
 
         self.data_df = data_df or pd.DataFrame()
@@ -153,11 +153,9 @@ class AutoCausality:
 
         # match list of requested estimators against list of available estimators
         # and remove duplicates:
-        # NOTE: black formatter conflicts with flake as it moves binary operator to 2nd
-        # line and hence triggers W503 ....
         if (
             self._settings["estimator_list"] == "auto"
-            or self._settings["estimator_list"] == []  # noqa: W503
+            or self._settings["estimator_list"] == []
         ):
             warnings.warn("No estimators specified, adding all available estimators...")
             return available_estimators
@@ -244,7 +242,7 @@ class AutoCausality:
             if self.estimator_cfg["search_space"] == {}:
                 self._estimate_effect()
                 scores = self._compute_metrics()
-                self.results[self.estimator] = scores["test"][
+                self.scores[self.estimator] = scores["test"][
                     self._settings["metric"].lower()
                 ]
             else:
@@ -262,16 +260,16 @@ class AutoCausality:
                 best_trial = results.get_best_trial()
                 if best_trial is None:
                     # if hpo didn't converge for some reason, just log None
-                    self.results[self.estimator] = None
+                    self.scores[self.estimator] = None
                 else:
-                    self.results[self.estimator] = best_trial.last_result[
+                    self.scores[self.estimator] = best_trial.last_result[
                         self._settings["metric"]
                     ]
             self.tune_results[estimator] = results
             if self._settings["tuner"]["verbose"] > 0:
                 print(f"... Estimator: {self.estimator}")
                 for metric in ["erupt", "qini", "auc", "ATE"]:
-                    if not (best_trial.last_result[metric] is None):
+                    if not (best_trial is None):
                         print(f" {metric}: {best_trial.last_result[metric]:6f}")
 
     def _tune_with_config(self, config: dict) -> dict:
@@ -296,10 +294,10 @@ class AutoCausality:
         # compute a metric and return results
         scores = self._compute_metrics()
         results = {
-            "erupt": scores["test"]["erupt"],
-            "qini": scores["test"]["qini"],
-            "auc": scores["test"]["auc"],
-            "ATE": scores["test"]["ate"],
+            "erupt": float(scores["test"]["erupt"]),
+            "qini": float(scores["test"]["qini"]),
+            "auc": float(scores["test"]["auc"]),
+            "ATE": float(scores["test"]["ate"]),
         }
         return results
 
@@ -354,14 +352,12 @@ class AutoCausality:
     def best_estimator(self) -> str:
         """A string indicating the best estimator found
         """
-        return max(self.results, key=self.results.get)
+        return max(self.scores, key=self.scores.get)
 
     @property
     def model(self):
         """Return the *trained* best estimator
         """
-        # TODO
-
         return self.best_model_for_estimator(self.best_estimator)
 
     def best_model_for_estimator(self, estimator_name):
@@ -373,7 +369,6 @@ class AutoCausality:
         Returns:
             An object storing the best model for estimator_name.
         """
-        # TODO
         # Note that this returns the trained Econml estimator, whose attributes include
         # fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc.
         return self.trained_estimators_dict[estimator_name]
@@ -393,13 +388,11 @@ class AutoCausality:
         }
 
     @property
-    def best_loss_per_estimator(self):
-        """A dictionary of all estimators' best loss."""
-        # TODO
-        return None
+    def best_score_per_estimator(self):
+        """A dictionary of all estimators' best score."""
+        return self.scores
 
     @property
-    def best_loss(self):
-        """A float of the best loss found."""
-        # TODO
-        return None
+    def best_score(self):
+        """A float of the best score found."""
+        return self.scores[self.best_estimator]
