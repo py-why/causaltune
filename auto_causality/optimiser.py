@@ -7,6 +7,7 @@ from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores
 from typing import List
 from dowhy import CausalModel
+from auto_causality.r_score import RScoreWrapper
 
 
 class AutoCausality:
@@ -232,6 +233,17 @@ class AutoCausality:
             proceed_when_unidentifiable=True
         )
 
+        self.r_scorer = RScoreWrapper(
+            self.outcome_model,
+            self.propensity_model,
+            self.train_df,
+            self.test_df,
+            outcome,
+            treatment,
+            common_causes,
+            effect_modifiers,
+        )
+
         if self._settings["tuner"]["verbose"] > 0:
             print(f"fitting estimators: {self.estimator_list}")
 
@@ -342,10 +354,16 @@ class AutoCausality:
         scores = {
             "estimator": self.estimator,
             "train": make_scores(
-                self.estimates[self.estimator], self.train_df, te_train, r_scorer=None
+                self.estimates[self.estimator],
+                self.train_df,
+                te_train,
+                r_scorer=self.r_scorer.train,
             ),
             "test": make_scores(
-                self.estimates[self.estimator], self.test_df, te_test, r_scorer=None
+                self.estimates[self.estimator],
+                self.test_df,
+                te_test,
+                r_scorer=self.r_scorer.test,
             ),
         }
         return scores
