@@ -95,7 +95,7 @@ def r_make_score(
     estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, r_scorer
 ) -> float:
     # TODO
-    return r_scorer.score(estimate.estimate_effect)
+    return r_scorer.score(cate_estimate)
 
 
 def make_scores(
