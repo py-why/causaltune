@@ -61,7 +61,9 @@ def run_full(
 
     if not (
         os.path.isfile(os.path.join(data_dir, f"test_{time_budget}.csv"))
-        and os.path.isfile(os.path.join(data_dir, f"train_{time_budget}.csv"))  # noqa W504
+        and os.path.isfile(
+            os.path.join(data_dir, f"train_{time_budget}.csv")
+        )  # noqa W504
     ):
         train_df, test_df = train_test_split(used_df, train_size=train_size)
         if test_size is not None:
@@ -82,7 +84,8 @@ def run_full(
         verbose=1,
         task="regression",
         n_jobs=num_cores,
-        pred_time_limit=10 / 1e6, )
+        pred_time_limit=10 / 1e6,
+    )
 
     cfg = SimpleParamService(
         propensity_model,
@@ -108,18 +111,18 @@ def run_full(
                 [
                     e in estimator
                     for e in [
-                    "causality",
-                    "DomainAdaptationLearner",
-                    "SLearner",
-                    "TLearner",
-                    "XLearner",
-                    ".LinearDML",
-                    "SparseLinearDML",
-                    "CausalForestDML",
-                    "ForestDRLearner",
-                    ".LinearDRLearner",
-                    "DROrthoForest",  # this one doesn't work on large datasets (too slow)
-                ]
+                        "causality",
+                        "DomainAdaptationLearner",
+                        "SLearner",
+                        "TLearner",
+                        "XLearner",
+                        ".LinearDML",
+                        "SparseLinearDML",
+                        "CausalForestDML",
+                        "ForestDRLearner",
+                        ".LinearDRLearner",
+                        "DROrthoForest",  # this one doesn't work on large datasets (too slow)
+                    ]
                 ]
             ):
                 continue
