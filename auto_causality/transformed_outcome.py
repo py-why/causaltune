@@ -18,7 +18,7 @@ class DoWhyMethods:
         return self.predict(x)
 
 
-class DirectUpliftFitter(DoWhyMethods):
+class TransformedOutcomeFitter(DoWhyMethods):
     def __init__(
         self,
         propensity_model,

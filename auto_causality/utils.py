@@ -4,6 +4,8 @@ from sklearn.preprocessing import RobustScaler
 import pandas as pd
 from flaml import AutoML
 
+from auto_causality.memoizer import MemoizingWrapper
+
 
 def featurize(
     df: pd.DataFrame,
@@ -56,58 +58,58 @@ def featurize(
     return out
 
 
-def fit_params_wrapper(parent: type):
-    class FitParamsWrapper(parent):
-        def __init__(self, *args, fit_params=None, **kwargs):
-            self.init_args = args
-            self.init_kwargs = kwargs
-            if fit_params is not None:
-                self.fit_params = fit_params
-            else:
-                self.fit_params = {}
-
-        def fit(self, *args, **kwargs):
-            # we defer the initialization to the fit() method so we can memoize the fit
-            # using all the args from both init and fit
-            super().__init__(*self.init_args, **self.init_kwargs)
-
-            used_kwargs = {**kwargs, **self.fit_params}
-            print("calling AutoML fit method with ", used_kwargs)
-            super().fit(*args, **used_kwargs)
-
-    return FitParamsWrapper
-
-
-class memoizer(dict):
-    def check(self, fun: Callable, *args, **kwargs):
-        key = self.hash(*args, **kwargs)
-        if key not in self:
-            self[key] = fun(*args, **kwargs)
-        return self[key]
-
-    @classmethod
-    def hash(cls, *args, **kwargs):
-        # TODO: hash at least pandas and numpy
-        # maybe use this https://death.andgravity.com/stable-hashing ?
-        raise NotImplementedError
+#
+# def fit_params_wrapper(parent: type):
+#     class FitParamsWrapper(parent):
+#         def __init__(self, *args, fit_params=None, **kwargs):
+#             self.init_args = args
+#             self.init_kwargs = kwargs
+#             if fit_params is not None:
+#                 self.fit_params = fit_params
+#             else:
+#                 self.fit_params = {}
+#
+#         def fit(self, *args, **kwargs):
+#             # we defer the initialization to the fit() method so we can memoize the fit
+#             # using all the args from both init and fit
+#             used_kwargs = {**kwargs, **self.fit_params}
+#             to_hash = {
+#                 "class": super().__class__.__name__,
+#                 "fit_args": args,
+#                 "fit_kwargs": used_kwargs,
+#                 "init_args": self.init_args,
+#                 "init_kwargs": self.init_kwargs,
+#             }
+#             test_fun(to_hash)
+#
+#             super().__init__(*self.init_args, **self.init_kwargs)
+#
+#             print("calling AutoML fit method with ", used_kwargs)
+#             super().fit(*args, **used_kwargs)
+#
+#     return FitParamsWrapper
 
 
-class AutoMLWrapper(AutoML):
-    def __init__(self, *args, fit_params=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.init_args = args
-        self.init_kwargs = kwargs
-        if fit_params is not None:
-            self.fit_params = fit_params
-        else:
-            self.fit_params = {}
+AutoMLWrapper = MemoizingWrapper
 
-    def fit(self, *args, **kwargs):
-        # we defer the initialization to the fit() method so we can memoize the fit
-        # using all the args from both init and fit
-        used_kwargs = {**kwargs, **self.fit_params}
-        print("calling AutoML fit method with ", used_kwargs)
-        super().fit(*args, **used_kwargs)
+# AutoMLWrapper = fit_params_wrapper(AutoML)
+
+# class AutoMLWrapper(AutoML):
+#     def __init__(self, *args, fit_params=None, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.init_args = args
+#         self.init_kwargs = kwargs
+#         if fit_params is not None:
+#             self.fit_params = fit_params
+#         else:
+#             self.fit_params = {}
+#
+#     def fit(self, *args, **kwargs):
+#         # we defer the initialization to the fit() method so we can memoize the fit
+#         # using all the args from both init and fit
+#         used_kwargs = {**kwargs, **self.fit_params}
+#         print("calling AutoML fit method with ", used_kwargs)
+#         super().fit(*args, **used_kwargs)
 
 
 def policy_from_estimator(est, df: pd.DataFrame):
