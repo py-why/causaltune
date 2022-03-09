@@ -3,12 +3,12 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
 import warnings
+
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
 
-def import_data(train_size=0.5, test_size=None):
+def import_ihdp():
     root_path = root_path = os.path.realpath("../../..")
     sys.path.append(os.path.join(root_path, "auto-causality"))
     from auto_causality.utils import featurize
@@ -54,10 +54,7 @@ def import_data(train_size=0.5, test_size=None):
     features_X = [f for f in used_features if f != "random"]
     features_W = [f for f in used_features if f not in features_X]
 
-    train_df, test_df = train_test_split(used_df, train_size=train_size)
-    if test_size is not None:
-        test_df = test_df.sample(test_size)
-    return train_df, test_df, features_X, features_W, targets, treatment
+    return used_df, features_X, features_W, targets, treatment
 
 
 class TestEndToEnd(object):
@@ -78,13 +75,14 @@ class TestEndToEnd(object):
         """tests data preprocessing routines
         """
 
-        data = import_data()  # noqa F484
+        data = import_ihdp()  # noqa F484
 
     def test_init_autocausality(self):
         """tests if autocausality object can be instantiated without errors
         """
 
         from auto_causality import AutoCausality  # noqa F401
+
         auto_causality = AutoCausality()  # noqa F484
 
     def test_endtoend(self):
@@ -93,17 +91,15 @@ class TestEndToEnd(object):
 
         from auto_causality import AutoCausality  # noqa F401
 
-        train_df, test_df, features_X, features_W, targets, treatment = import_data()
+        data_df, features_X, features_W, targets, treatment = import_ihdp()
 
         estimator_list = ["SparseLinearDML", "ForestDR"]
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=1, components_time_budget=2, estimator_list=estimator_list,
+            time_budget=1, estimator_list=estimator_list,
         )
 
-        auto_causality.fit(
-            train_df, test_df, treatment, outcome, features_W, features_X
-        )
+        auto_causality.fit(data_df, treatment, outcome, features_W, features_X)
 
         print(f"Best estimator: {auto_causality.best_estimator}")
 

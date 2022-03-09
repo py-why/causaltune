@@ -2,10 +2,14 @@ import warnings
 import pandas as pd
 from flaml import tune, AutoML
 from sklearn.dummy import DummyClassifier
+from sklearn.model_selection import train_test_split
 from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores
 from typing import List
 from dowhy import CausalModel
+from auto_causality.r_score import RScoreWrapper
+from copy import deepcopy
+from joblib import Parallel, delayed
 
 
 class AutoCausality:
@@ -28,64 +32,86 @@ class AutoCausality:
     ```
     """
 
-    def __init__(self, train_df=None, test_df=None, **settings):
+    def __init__(
+        self,
+        data_df=None,
+        metric="erupt",
+        metrics_to_report=["qini", "auc", "ate", "r_score"],
+        time_budget=60,
+        num_samples=10,
+        verbose=3,
+        use_ray=False,
+        estimator_list="auto",
+        train_size=0.5,
+        test_size=None,
+        use_dummyclassifier=True,
+        components_task="regression",
+        components_verbose=0,
+        components_pred_time_limit=10 / 1e6,
+        components_njobs=-1,
+        components_time_budget=20,
+    ):
         """constructor.
 
         Args:
+            data_df (pandas.DataFrame): dataset to perform causal inference on
+            metric (str): metric to optimise. Defaults to "erupt".
+            metrics_to_report (list). additional metrics to compute and report.
+             Defaults to ["qini","auc","ate","r_score"]
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
             num_samples (int): max number of iterations.
-            verbose (int):  controls verbosity, higher means more messages. range (0,3). defaults to 0.
+            verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
             use_ray (bool): use Ray backend (nrequires ray to be installed).
-            task (str): task type, defaults to "causal_inference".
-            metric (str): metric to optimise, defaults to "ERUPT".
             estimator_list (list): a list of strings for estimator names, or "auto".
                e.g. ```['dml', 'CausalForest']```
-            metrics_to_log (list): additional metrics to log. TODO implement
-            use_dummyclassifier (bool): use dummy classifier for propensity model or not. defaults to True.
-            components_task (str): task for component models. defaults to "regression"
-            components_verbose (int): verbosity of component model HPO. range (0,3). defaults to 0.
+            train_size (float): Fraction of data used for training set. Defaults to 0.5.
+            test_size (float): Optional size of test dataset. Defaults to None.
+            use_dummyclassifier (bool): use dummy classifier for propensity model or not. Defaults to True.
+            components_task (str): task for component models. Defaults to "regression".
+            components_verbose (int): verbosity of component model HPO. range (0,3). Defaults to 0.
             components_pred_time_limit (float): prediction time limit for component models
             components_njobs (int): number of concurrent jobs for component model optimisation.
-                defaults to -1 (all available cores).
+                Defaults to -1 (all available cores).
             components_time_budget (float): time budget for HPO of component models in seconds.
-                defaults to overall time budget / 2.
+                Defaults to overall time budget / 2.
         """
-        self._settings = settings
-        settings["tuner"] = {}
-        settings["tuner"]["time_budget_s"] = settings.get("time_budget", 60)
-        settings["tuner"]["num_samples"] = settings.get("num_samples", 10)
-        settings["tuner"]["verbose"] = settings.get("verbose", 3)
-        settings["tuner"]["use_ray"] = settings.get(
-            "use_ray", False
-        )  # requires ray to be installed via pip install flaml[ray]
-        settings["task"] = settings.get("task", "causal_inference")
-        settings["metric"] = settings.get("metric", "ERUPT")
-        settings["estimator_list"] = settings.get(
-            "estimator_list", "auto"
-        )  # if auto, add all estimators that we have implemented
+        self._settings = {}
+        self._settings["tuner"] = {}
+        self._settings["tuner"]["time_budget_s"] = time_budget
+        self._settings["tuner"]["num_samples"] = num_samples
+        self._settings["tuner"]["verbose"] = verbose
+        self._settings["tuner"][
+            "use_ray"
+        ] = use_ray  # requires ray to be installed via pip install flaml[ray]
+        self._settings["metric"] = metric
+        self._settings["metrics_to_report"] = metrics_to_report
+        self._settings["estimator_list"] = estimator_list
 
         # params for FLAML on component models:
-        settings["use_dummyclassifier"] = settings.get("use_dummyclassifier", True)
-        settings["component_models"] = {}
-        settings["component_models"]["task"] = settings.get(
-            "components_task", "regression"
+        self._settings["use_dummyclassifier"] = use_dummyclassifier
+        self._settings["component_models"] = {}
+        self._settings["component_models"]["task"] = components_task
+        self._settings["component_models"]["verbose"] = components_verbose
+        self._settings["component_models"][
+            "pred_time_limit"
+        ] = components_pred_time_limit
+        self._settings["component_models"]["n_jobs"] = components_njobs
+        self._settings["component_models"]["time_budget"] = (
+            components_time_budget
+            if components_time_budget < time_budget
+            else (time_budget // 2) + 1
         )
-        settings["component_models"]["verbose"] = settings.get("components_verbose", 0)
-        settings["component_models"]["pred_time_limit"] = settings.get(
-            "components_pred_time_limit", 10 / 1e6
-        )
-        settings["component_models"]["n_jobs"] = settings.get("components_nbjobs", -1)
-        settings["component_models"]["time_budget"] = settings.get(
-            "components_time_budget", int(settings["tuner"]["time_budget_s"] / 2)
-        )
+        self._settings["train_size"] = train_size
+        self._settings["test_size"] = test_size
 
         # user can choose between flaml and dummy for propensity model.
         self.propensity_model = (
             DummyClassifier(strategy="prior")
-            if settings["use_dummyclassifier"]
-            else AutoML(**settings["component_models"])
+            if self._settings["use_dummyclassifier"]
+            else AutoML(**self._settings["component_models"])
         )
-        self.outcome_model = AutoML(**settings["component_models"])
+
+        self.outcome_model = AutoML(**self._settings["component_models"])
 
         # config with method-specific params
         self.cfg = SimpleParamService(
@@ -94,13 +120,15 @@ class AutoCausality:
         )
 
         self.estimates = {}
-        self.results = {}
+        self.scores = {}
         self.estimator_list = self._create_estimator_list()
 
-        self.train_df = train_df or pd.DataFrame()
-        self.test_df = test_df or pd.DataFrame()
+        self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
+
+        # trained component models for each estimator
+        self.trained_estimators_dict = {}
 
     def get_params(self, deep=False):
         return self._settings.copy()
@@ -137,11 +165,9 @@ class AutoCausality:
 
         # match list of requested estimators against list of available estimators
         # and remove duplicates:
-        # NOTE: black formatter conflicts with flake as it moves binary operator to 2nd
-        # line and hence triggers W503 ....
         if (
             self._settings["estimator_list"] == "auto"
-            or self._settings["estimator_list"] == []  # noqa: W503
+            or self._settings["estimator_list"] == []
         ):
             warnings.warn("No estimators specified, adding all available estimators...")
             return available_estimators
@@ -179,8 +205,7 @@ class AutoCausality:
 
     def fit(
         self,
-        train_df: pd.DataFrame,
-        test_df: pd.DataFrame,
+        data_df: pd.DataFrame,
         treatment: str,
         outcome: str,
         common_causes: List[str],
@@ -191,16 +216,20 @@ class AutoCausality:
         - Otherwise, only its component models are optimised
 
         Args:
-            train_df (pd.DataFrame): Training Data
-            test_df (pd.DataFrame): Test Data
+            data_df (pandas.DataFrame): dataset for causal inference
             treatment (str): name of treatment variable
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
             effect_modifiers (List[str]): list of names of effect modifiers
         """
 
-        self.train_df = train_df
-        self.test_df = test_df
+        self.data_df = data_df
+        self.train_df, self.test_df = train_test_split(
+            data_df, train_size=self._settings["train_size"]
+        )
+        if self._settings["test_size"] is not None:
+            self.test_df = self.test_df.sample(self._settings["test_size"])
+
         self.causal_model = CausalModel(
             data=self.train_df,
             treatment=treatment,
@@ -212,21 +241,37 @@ class AutoCausality:
             proceed_when_unidentifiable=True
         )
 
-        if self._settings["tuner"]["verbose"] > 0:
-            print(f"fitting estimators: {self.estimator_list}")
+        self.r_scorer = RScoreWrapper(
+            self.outcome_model,
+            self.propensity_model,
+            self.train_df,
+            self.test_df,
+            outcome,
+            treatment,
+            common_causes,
+            effect_modifiers,
+        )
 
         self.tune_results = (
             {}
         )  # We need to keep track of the tune results to access the best config
+
         for estimator in self.estimator_list:
             self.estimator = estimator
             self.estimator_cfg = self.cfg.method_params(estimator)
             if self.estimator_cfg["search_space"] == {}:
                 self._estimate_effect()
                 scores = self._compute_metrics()
-                self.results[self.estimator] = scores["test"][
+                self.scores[self.estimator] = scores["train"][
                     self._settings["metric"].lower()
                 ]
+                self.tune_results[estimator] = {}
+                if self._settings["tuner"]["verbose"] > 0:
+                    print(f"... Estimator: {self.estimator}")
+                for metric in [self._settings["metric"]] + self._settings[
+                    "metrics_to_report"
+                ]:
+                    print(f" {metric} (train): {scores['train'][metric]:6f}")
             else:
                 results = tune.run(
                     self._tune_with_config,
@@ -242,14 +287,21 @@ class AutoCausality:
                 best_trial = results.get_best_trial()
                 if best_trial is None:
                     # if hpo didn't converge for some reason, just log None
-                    self.results[self.estimator] = None
+                    self.scores[self.estimator] = None
                 else:
-                    self.results[self.estimator] = best_trial.last_result[
+                    self.scores[self.estimator] = best_trial.last_result[
                         self._settings["metric"]
                     ]
-            print(
-                f"... Estimator: {self.estimator} \t {self._settings['metric']}: {self.results[self.estimator]:6f}"
-            )
+                self.tune_results[estimator] = results.best_config
+                if self._settings["tuner"]["verbose"] > 0:
+                    print(f"... Estimator: {self.estimator}")
+                    for metric in [self._settings["metric"]] + self._settings[
+                        "metrics_to_report"
+                    ]:
+                        if not (best_trial is None):
+                            print(
+                                f" {metric} (train): {best_trial.last_result[metric]:6f}"
+                            )
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -263,35 +315,54 @@ class AutoCausality:
             dict: values of metrics after optimisation
         """
         # add params that are tuned by flaml:
-        self.estimator_cfg["init_params"] = {
+        print(f"config: {config}")
+        params_to_tune = {
             **self.estimator_cfg["init_params"],
             **config,
         }
+
         # estimate effect with current config
-        self._estimate_effect()
+        # spawn a separate process to prevent cross-talk between tuner and automl on component models:
+        res = Parallel(n_jobs=2)(
+            delayed(self._estimate_effect)(params_to_tune) for i in range(1)
+        )
+        self.estimates[self.estimator] = res[0]
+        # Store the fitted Econml estimator
+        self.trained_estimators_dict[self.estimator] = self.estimates[
+            self.estimator
+        ].estimator.estimator
 
         # compute a metric and return results
         scores = self._compute_metrics()
-        results = {"ERUPT": scores["test"]["erupt"], "ATE": scores["test"]["ate"]}
+        results = {
+            k: float(scores["train"][k])
+            for k in [self._settings["metric"]] + self._settings["metrics_to_report"]
+        }
+
         return results
 
-    def _estimate_effect(self):
+    def _estimate_effect(self, params_to_tune):
         """estimates effect with chosen estimator"""
         if hasattr(self, "estimator"):
-            self.estimates[self.estimator] = self.causal_model.estimate_effect(
+            estimated_effect = self.causal_model.estimate_effect(
                 self.identified_estimand,
                 method_name=self.estimator,
                 control_value=0,
                 treatment_value=1,
                 target_units="ate",  # condition used for CATE
                 confidence_intervals=False,
-                method_params=self.estimator_cfg,
+                method_params={
+                    "init_params": deepcopy(params_to_tune),
+                    "fit_params": {},
+                },
             )
+
+            return estimated_effect
         else:
             raise AttributeError("No estimator for causal model specified")
 
     def _compute_metrics(self) -> dict:
-        """ computes metrics to score causal estimators"""
+        """computes metrics to score causal estimators"""
         try:
             te_train = self.estimates[self.estimator].cate_estimates
             X_test = self.test_df[
@@ -309,26 +380,33 @@ class AutoCausality:
         scores = {
             "estimator": self.estimator,
             "train": make_scores(
-                self.estimates[self.estimator], self.train_df, te_train
+                self.estimates[self.estimator],
+                self.train_df,
+                te_train,
+                r_scorer=self.r_scorer.train,
             ),
-            "test": make_scores(self.estimates[self.estimator], self.test_df, te_test),
+            "test": make_scores(
+                self.estimates[self.estimator],
+                self.test_df,
+                te_test,
+                r_scorer=self.r_scorer.test,
+            ),
         }
         return scores
 
     @property
     def best_estimator(self) -> str:
         """A string indicating the best estimator found"""
-        return max(self.results, key=self.results.get)
+        return max(self.scores, key=self.scores.get)
 
     @property
     def model(self):
         """Return the *trained* best estimator"""
-        # TODO
-
-        return None
+        return self.best_model_for_estimator(self.best_estimator)
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
+        estimator: self.tune_results[estimator].best_config
 
         Args:
             estimator_name: a str of the estimator's name.
@@ -336,8 +414,9 @@ class AutoCausality:
         Returns:
             An object storing the best model for estimator_name.
         """
-        # TODO
-        return None
+        # Note that this returns the trained Econml estimator, whose attributes include
+        # fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc.
+        return self.trained_estimators_dict[estimator_name]
 
     @property
     def best_config(self):
@@ -348,19 +427,17 @@ class AutoCausality:
     def best_config_per_estimator(self):
         """A dictionary of all estimators' best configuration."""
         return {
-            estimator: self.tune_results[estimator].best_config
+            estimator: self.tune_results[estimator]
             for estimator in self.estimator_list
             if estimator in self.tune_results
         }
 
     @property
-    def best_loss_per_estimator(self):
-        """A dictionary of all estimators' best loss."""
-        # TODO
-        return None
+    def best_score_per_estimator(self):
+        """A dictionary of all estimators' best score."""
+        return self.scores
 
     @property
-    def best_loss(self):
-        """A float of the best loss found."""
-        # TODO
-        return None
+    def best_score(self):
+        """A float of the best score found."""
+        return self.scores[self.best_estimator]
