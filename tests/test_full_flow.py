@@ -117,7 +117,7 @@ def run_full(
                     "SparseLinearDML",
                     "CausalForestDML",
                     "ForestDRLearner",
-                    "LinearDRLearner",
+                    ".LinearDRLearner",
                     "DROrthoForest",  # this one doesn't work on large datasets (too slow)
                 ]
                 ]
