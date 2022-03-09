@@ -94,6 +94,7 @@ class memoizer(dict):
 
 class AutoMLWrapper(AutoML):
     def __init__(self, *args, fit_params=None, **kwargs):
+        super().__init__(*args, **kwargs)
         self.init_args = args
         self.init_kwargs = kwargs
         if fit_params is not None:
@@ -104,8 +105,6 @@ class AutoMLWrapper(AutoML):
     def fit(self, *args, **kwargs):
         # we defer the initialization to the fit() method so we can memoize the fit
         # using all the args from both init and fit
-        super().__init__(*self.init_args, **self.init_kwargs)
-
         used_kwargs = {**kwargs, **self.fit_params}
         print("calling AutoML fit method with ", used_kwargs)
         super().fit(*args, **used_kwargs)
