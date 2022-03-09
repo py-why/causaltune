@@ -8,17 +8,9 @@ from auto_causality.scoring import make_scores
 from typing import List
 from dowhy import CausalModel
 from auto_causality.r_score import RScoreWrapper
-from sklearn.ensemble import RandomForestRegressor
 from copy import deepcopy
 from joblib import Parallel, delayed
-import threading
 
-def threaded(fn):
-    def wrapper(*args, **kwargs):
-        thread = threading.Thread(target=fn, args=args, kwargs=kwargs)
-        thread.start()
-        return thread
-    return wrapper
 
 class AutoCausality:
     """Performs AutoML to find best econML estimator.
@@ -118,9 +110,7 @@ class AutoCausality:
             if self._settings["use_dummyclassifier"]
             else AutoML(**self._settings["component_models"])
         )
-        # self.outcome_model = RandomForestRegressor(
-        #     min_samples_leaf=20
-        # )  
+
         self.outcome_model = AutoML(**self._settings["component_models"])
 
         # config with method-specific params
@@ -258,7 +248,6 @@ class AutoCausality:
             effect_modifiers,
         )
 
-
         self.tune_results = (
             {}
         )  # We need to keep track of the tune results to access the best config
@@ -329,7 +318,15 @@ class AutoCausality:
         }
 
         # estimate effect with current config
-        Parallel(delayed(self._estimate_effect(params_to_tune))() for i in range(1))
+        # spawn a separate process to prevent cross-talk between tuner and automl on component models:
+        res = Parallel(n_jobs=2)(
+            delayed(self._estimate_effect)(params_to_tune) for i in range(1)
+        )
+        self.estimates[self.estimator] = res[0]
+        # Store the fitted Econml estimator
+        self.trained_estimators_dict[self.estimator] = self.estimates[
+            self.estimator
+        ].estimator.estimator
 
         # compute a metric and return results
         scores = self._compute_metrics()
@@ -343,7 +340,7 @@ class AutoCausality:
     def _estimate_effect(self, params_to_tune):
         """estimates effect with chosen estimator"""
         if hasattr(self, "estimator"):
-            self.estimates[self.estimator] = self.causal_model.estimate_effect(
+            estimated_effect = self.causal_model.estimate_effect(
                 self.identified_estimand,
                 method_name=self.estimator,
                 control_value=0,
@@ -355,10 +352,8 @@ class AutoCausality:
                     "fit_params": {},
                 },
             )
-            # Store the fitted Econml estimator
-            self.trained_estimators_dict[self.estimator] = self.estimates[
-                self.estimator
-            ].estimator.estimator
+
+            return estimated_effect
         else:
             raise AttributeError("No estimator for causal model specified")
 
