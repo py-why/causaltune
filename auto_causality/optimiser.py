@@ -257,9 +257,16 @@ class AutoCausality:
             if self.estimator_cfg["search_space"] == {}:
                 self._estimate_effect()
                 scores = self._compute_metrics()
-                self.scores[self.estimator] = scores["test"][
+                self.scores[self.estimator] = scores["train"][
                     self._settings["metric"].lower()
                 ]
+                self.tune_results[estimator] = {}
+                if self._settings["tuner"]["verbose"] > 0:
+                    print(f"... Estimator: {self.estimator}")
+                for metric in [self._settings["metric"]] + self._settings[
+                    "metrics_to_report"
+                ]:
+                    print(f" {metric} (train): {scores['train'][metric]:6f}")
             else:
                 results = tune.run(
                     self._tune_with_config,
@@ -280,14 +287,16 @@ class AutoCausality:
                     self.scores[self.estimator] = best_trial.last_result[
                         self._settings["metric"]
                     ]
-            self.tune_results[estimator] = results
-            if self._settings["tuner"]["verbose"] > 0:
-                print(f"... Estimator: {self.estimator}")
-                for metric in [self._settings["metric"]] + self._settings[
-                    "metrics_to_report"
-                ]:
-                    if not (best_trial is None):
-                        print(f" {metric} (train): {best_trial.last_result[metric]:6f}")
+                self.tune_results[estimator] = results.best_config
+                if self._settings["tuner"]["verbose"] > 0:
+                    print(f"... Estimator: {self.estimator}")
+                    for metric in [self._settings["metric"]] + self._settings[
+                        "metrics_to_report"
+                    ]:
+                        if not (best_trial is None):
+                            print(
+                                f" {metric} (train): {best_trial.last_result[metric]:6f}"
+                            )
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -381,6 +390,7 @@ class AutoCausality:
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
+        estimator: self.tune_results[estimator].best_config
 
         Args:
             estimator_name: a str of the estimator's name.
@@ -401,7 +411,7 @@ class AutoCausality:
     def best_config_per_estimator(self):
         """A dictionary of all estimators' best configuration."""
         return {
-            estimator: self.tune_results[estimator].best_config
+            estimator: self.tune_results[estimator]
             for estimator in self.estimator_list
             if estimator in self.tune_results
         }
