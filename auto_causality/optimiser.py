@@ -42,7 +42,7 @@ class AutoCausality:
         verbose=3,
         use_ray=False,
         estimator_list="auto",
-        train_size=0.5,
+        train_size=0.8,
         test_size=None,
         use_dummyclassifier=True,
         components_task="regression",
@@ -260,7 +260,9 @@ class AutoCausality:
             self.estimator = estimator
             self.estimator_cfg = self.cfg.method_params(estimator)
             if self.estimator_cfg["search_space"] == {}:
-                self._estimate_effect()
+                self.estimates[self.estimator] = self._estimate_effect(
+                    self.estimator_cfg["init_params"]
+                )
                 scores = self._compute_metrics()
                 self.scores[self.estimator] = scores["train"][
                     self._settings["metric"].lower()
@@ -326,6 +328,7 @@ class AutoCausality:
         res = Parallel(n_jobs=2)(
             delayed(self._estimate_effect)(params_to_tune) for i in range(1)
         )
+
         self.estimates[self.estimator] = res[0]
         # Store the fitted Econml estimator
         self.trained_estimators_dict[self.estimator] = self.estimates[
