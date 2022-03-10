@@ -114,7 +114,10 @@ class AutoCausality:
         self.outcome_model = AutoML(**self._settings["component_models"])
 
         # config with method-specific params
-        self.cfg = SimpleParamService(self.propensity_model, self.outcome_model,)
+        self.cfg = SimpleParamService(
+            self.propensity_model,
+            self.outcome_model,
+        )
 
         self.estimates = {}
         self.scores = {}
@@ -154,6 +157,7 @@ class AutoCausality:
                         "ForestDRLearner",
                         "LinearDRLearner",
                         "Ortho",
+                        "TransformedOutcome",
                     ]
                 ]
             ):
