@@ -10,7 +10,7 @@ from flaml import AutoML
 from dowhy import CausalModel
 
 from auto_causality.params import SimpleParamService
-from auto_causality.utils import featurize, AutoMLWrapper
+from auto_causality.utils import featurize
 from auto_causality.scoring import make_scores
 from auto_causality.datasets import synth_ihdp
 
