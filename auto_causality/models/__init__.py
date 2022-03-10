@@ -1,1 +1,1 @@
-from .wrapper import DirectUpliftDoWhyWrapper as TransformedOutcome
+from .wrapper import DirectUpliftDoWhyWrapper as TransformedOutcome  # noqa: F401

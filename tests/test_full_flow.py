@@ -61,7 +61,9 @@ def run_full(
 
     if not (
         os.path.isfile(os.path.join(data_dir, f"test_{time_budget}.csv"))
-        and os.path.isfile(os.path.join(data_dir, f"train_{time_budget}.csv")) # noqa W504
+        and os.path.isfile(
+            os.path.join(data_dir, f"train_{time_budget}.csv")
+        )  # noqa W504
     ):
         train_df, test_df = train_test_split(used_df, train_size=train_size)
         if test_size is not None:
