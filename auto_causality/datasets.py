@@ -25,6 +25,18 @@ def synth_ihdp():
     data = data.drop(columns=ignore_cols)
     return data
 
+def ibm_causallib_acic(condition):
+    # load data from IBM causallib 
+    # condition: an integer in [1,20], see https://github.com/IBM/causallib/blob/master/causallib/datasets/data/acic_challenge_2016/README.md
+
+    covariates =  pd.read_csv("https://raw.githubusercontent.com/IBM/causallib/master/causallib/datasets/data/acic_challenge_2016/x.csv")
+    url = f'https://raw.githubusercontent.com/IBM/causallib/master/causallib/datasets/data/acic_challenge_2016/zymu_{condition}.csv'
+    z_y_mu = pd.read_csv(url)
+    z_y_mu['y_factual'] = z_y_mu.apply(lambda row: row['y1'] if row['z'] else row['y0'],axis = 1)
+    data = pd.concat([z_y_mu['z'], z_y_mu['y_factual'], covariates],axis = 1)
+    data.rename(columns = {'z': 'treatment'}, inplace = True)
+
+    return data
 
 def preprocess_dataset(data: pd.DataFrame) -> tuple:
     """preprocesses dataset for causal inference
