@@ -47,7 +47,10 @@ def preprocess_dataset(data: pd.DataFrame) -> tuple:
     data["random"] = np.random.randint(0, 2, size=len(data))
 
     used_df = featurize(
-        data, features=features, exclude_cols=[treatment] + targets, drop_first=False,
+        data,
+        features=features,
+        exclude_cols=[treatment] + targets,
+        drop_first=False,
     )
     used_features = [c for c in used_df.columns if c not in [treatment] + targets]
 
