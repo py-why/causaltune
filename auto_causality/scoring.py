@@ -37,7 +37,11 @@ def erupt_make_scores(
         X_names=est._effect_modifier_names,
     )
     erupt.fit(df)
-    erupt_score = erupt.score(df, df[est._outcome_name], cate_estimate > 0,)
+    erupt_score = erupt.score(
+        df,
+        df[est._outcome_name],
+        cate_estimate > 0,
+    )
     return erupt_score
 
 
@@ -142,7 +146,8 @@ def make_scores(
 
 
 def ate(
-    treatment, outcome,
+    treatment,
+    outcome,
 ):
     treated = (treatment == 1).sum()
 
@@ -156,8 +161,14 @@ def ate(
 def group_ate(treatment, outcome, policy):
     tmp = {
         "all": ate(treatment, outcome),
-        "pos": ate(treatment[policy == 1], outcome[policy == 1],),
-        "neg": ate(treatment[policy == 0], outcome[policy == 0],),
+        "pos": ate(
+            treatment[policy == 1],
+            outcome[policy == 1],
+        ),
+        "neg": ate(
+            treatment[policy == 0],
+            outcome[policy == 0],
+        ),
     }
     out = {}
     for key, (mean_, std_, count_) in tmp.items():

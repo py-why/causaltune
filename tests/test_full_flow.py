@@ -6,11 +6,11 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.dummy import DummyClassifier
 
-
+from flaml import AutoML
 from dowhy import CausalModel
 
 from auto_causality.params import SimpleParamService
-from auto_causality.utils import featurize, AutoMLWrapper
+from auto_causality.utils import featurize
 from auto_causality.scoring import make_scores
 from auto_causality.datasets import synth_ihdp
 
@@ -61,7 +61,9 @@ def run_full(
 
     if not (
         os.path.isfile(os.path.join(data_dir, f"test_{time_budget}.csv"))
-        and os.path.isfile(os.path.join(data_dir, f"train_{time_budget}.csv")) # noqa W504
+        and os.path.isfile(
+            os.path.join(data_dir, f"train_{time_budget}.csv")
+        )  # noqa W504
     ):
         train_df, test_df = train_test_split(used_df, train_size=train_size)
         if test_size is not None:
@@ -77,14 +79,12 @@ def run_full(
 
     # define model parametrization
     propensity_model = DummyClassifier(strategy="prior")
-    outcome_model = AutoMLWrapper(
-        fit_params={
-            "time_budget": time_budget,
-            "verbose": 1,
-            "task": "regression",
-            "n_jobs": num_cores,
-            "pred_time_limit": 10 / 1e6,
-        }
+    outcome_model = AutoML(
+        time_budget=time_budget,
+        verbose=1,
+        task="regression",
+        n_jobs=num_cores,
+        pred_time_limit=10 / 1e6,
     )
 
     cfg = SimpleParamService(
@@ -120,7 +120,7 @@ def run_full(
                         "SparseLinearDML",
                         "CausalForestDML",
                         "ForestDRLearner",
-                        "LinearDRLearner",
+                        ".LinearDRLearner",
                         "DROrthoForest",  # this one doesn't work on large datasets (too slow)
                     ]
                 ]

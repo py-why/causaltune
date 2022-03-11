@@ -1,15 +1,18 @@
 import warnings
+from typing import List
+from copy import deepcopy
+
 import pandas as pd
 from flaml import tune, AutoML
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
+from dowhy import CausalModel
+from joblib import Parallel, delayed
+
 from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores
-from typing import List
-from dowhy import CausalModel
 from auto_causality.r_score import RScoreWrapper
-from copy import deepcopy
-from joblib import Parallel, delayed
+from auto_causality.utils import clean_config
 
 
 class AutoCausality:
@@ -42,7 +45,7 @@ class AutoCausality:
         verbose=3,
         use_ray=False,
         estimator_list="auto",
-        train_size=0.5,
+        train_size=0.8,
         test_size=None,
         use_dummyclassifier=True,
         components_task="regression",
@@ -114,10 +117,14 @@ class AutoCausality:
         self.outcome_model = AutoML(**self._settings["component_models"])
 
         # config with method-specific params
-        self.cfg = SimpleParamService(self.propensity_model, self.outcome_model,)
+        self.cfg = SimpleParamService(
+            self.propensity_model,
+            self.outcome_model,
+        )
 
         self.estimates = {}
         self.scores = {}
+        self.full_scores = {}
         self.estimator_list = self._create_estimator_list()
 
         self.data_df = data_df or pd.DataFrame()
@@ -154,6 +161,7 @@ class AutoCausality:
                         "ForestDRLearner",
                         "LinearDRLearner",
                         "Ortho",
+                        "TransformedOutcome",
                     ]
                 ]
             ):
@@ -252,22 +260,13 @@ class AutoCausality:
             {}
         )  # We need to keep track of the tune results to access the best config
 
-        for estimator in self.estimator_list:
-            self.estimator = estimator
-            self.estimator_cfg = self.cfg.method_params(estimator)
+        for estimator_name in self.estimator_list:
+            self.estimator_name = estimator_name
+            self.estimator_cfg = self.cfg.method_params(estimator_name)
             if self.estimator_cfg["search_space"] == {}:
-                self._estimate_effect()
-                scores = self._compute_metrics()
-                self.scores[self.estimator] = scores["train"][
-                    self._settings["metric"].lower()
-                ]
-                self.tune_results[estimator] = {}
-                if self._settings["tuner"]["verbose"] > 0:
-                    print(f"... Estimator: {self.estimator}")
-                for metric in [self._settings["metric"]] + self._settings[
-                    "metrics_to_report"
-                ]:
-                    print(f" {metric} (train): {scores['train'][metric]:6f}")
+                self.tune_results[estimator_name] = {}
+
+                last_result = self._estimate_effect(self.estimator_cfg["init_params"])
             else:
                 results = tune.run(
                     self._tune_with_config,
@@ -280,24 +279,25 @@ class AutoCausality:
                 )
 
                 # log results
-                best_trial = results.get_best_trial()
-                if best_trial is None:
-                    # if hpo didn't converge for some reason, just log None
-                    self.scores[self.estimator] = None
+                self.tune_results[estimator_name] = results.best_config
+
+                if results.get_best_trial() is None:
+                    print(f"OPTIMIZATION FAILED FOR {estimator_name}")
+                    self.scores[self.estimator_name] = None
+                    continue
                 else:
-                    self.scores[self.estimator] = best_trial.last_result[
-                        self._settings["metric"]
-                    ]
-                self.tune_results[estimator] = results.best_config
-                if self._settings["tuner"]["verbose"] > 0:
-                    print(f"... Estimator: {self.estimator}")
-                    for metric in [self._settings["metric"]] + self._settings[
-                        "metrics_to_report"
-                    ]:
-                        if not (best_trial is None):
-                            print(
-                                f" {metric} (train): {best_trial.last_result[metric]:6f}"
-                            )
+                    last_result = results.get_best_trial().last_result
+
+            self.estimates[self.estimator_name] = last_result.pop("estimator")
+            self.full_scores[estimator_name] = last_result.pop("scores")
+            self.scores[self.estimator_name] = last_result[self._settings["metric"]]
+
+            if self._settings["tuner"]["verbose"] > 0:
+                print(f"... Estimator: {self.estimator_name}")
+                for metric in [self._settings["metric"]] + self._settings[
+                    "metrics_to_report"
+                ]:
+                    print(f" {metric} (train): {last_result[metric]:6f}")
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -310,39 +310,36 @@ class AutoCausality:
         Returns:
             dict: values of metrics after optimisation
         """
-        # add params that are tuned by flaml:
-        print(f"config: {config}")
-        params_to_tune = {
-            **self.estimator_cfg["init_params"],
-            **config,
-        }
 
         # estimate effect with current config
         # spawn a separate process to prevent cross-talk between tuner and automl on component models:
-        res = Parallel(n_jobs=2)(
-            delayed(self._estimate_effect)(params_to_tune) for i in range(1)
-        )
-        self.estimates[self.estimator] = res[0]
-        # Store the fitted Econml estimator
-        self.trained_estimators_dict[self.estimator] = self.estimates[
-            self.estimator
-        ].estimator.estimator
+        estimates = Parallel(n_jobs=2)(
+            delayed(self._estimate_effect)(config) for i in range(1)
+        )[0]
 
-        # compute a metric and return results
-        scores = self._compute_metrics()
-        results = {
-            k: float(scores["train"][k])
-            for k in [self._settings["metric"]] + self._settings["metrics_to_report"]
+        # self.estimates[self.estimator] = res[0]
+        # # Store the fitted Econml estimator
+        # self.trained_estimators_dict[self.estimator] = self.estimates[
+        #     self.estimator
+        # ].estimator.estimator
+        return estimates
+
+    def _estimate_effect(self, config):
+        """estimates effect with chosen estimator"""
+
+        # add params that are tuned by flaml:
+        config = clean_config(config)
+        init_params = self.estimator_cfg["init_params"]
+        print(f"config: {config}, \n init_params: {init_params}")
+        params_to_tune = {
+            **init_params,
+            **config,
         }
 
-        return results
-
-    def _estimate_effect(self, params_to_tune):
-        """estimates effect with chosen estimator"""
-        if hasattr(self, "estimator"):
-            estimated_effect = self.causal_model.estimate_effect(
+        if hasattr(self, "estimator_name"):
+            estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,
-                method_name=self.estimator,
+                method_name=self.estimator_name,
                 control_value=0,
                 treatment_value=1,
                 target_units="ate",  # condition used for CATE
@@ -352,37 +349,37 @@ class AutoCausality:
                     "fit_params": {},
                 },
             )
-
-            return estimated_effect
+            scores = self._compute_metrics(estimate)
+            flat_results = {
+                k: float(scores["train"][k])
+                for k in [self._settings["metric"]]
+                + self._settings["metrics_to_report"]
+            }
+            last_result = {"estimator": estimate, "scores": scores}
+            return {**flat_results, **last_result}
         else:
             raise AttributeError("No estimator for causal model specified")
 
-    def _compute_metrics(self) -> dict:
+    def _compute_metrics(self, estimator) -> dict:
         """computes metrics to score causal estimators"""
         try:
-            te_train = self.estimates[self.estimator].cate_estimates
-            X_test = self.test_df[
-                self.estimates[self.estimator].estimator._effect_modifier_names
-            ]
-            te_test = (
-                self.estimates[self.estimator]
-                .estimator.estimator.effect(X_test)
-                .flatten()
-            )
+            te_train = estimator.cate_estimates
+            X_test = self.test_df[estimator.estimator._effect_modifier_names]
+            te_test = estimator.estimator.estimator.effect(X_test).flatten()
         except Exception:
-            te_train = self.estimates[self.estimator].estimator.effect(self.train_df)
-            te_test = self.estimates[self.estimator].estimator.effect(self.test_df)
+            te_train = estimator.estimator.effect(self.train_df)
+            te_test = estimator.estimator.effect(self.test_df)
 
         scores = {
-            "estimator": self.estimator,
+            "estimator_name": self.estimator_name,
             "train": make_scores(
-                self.estimates[self.estimator],
+                estimator,
                 self.train_df,
                 te_train,
                 r_scorer=self.r_scorer.train,
             ),
             "test": make_scores(
-                self.estimates[self.estimator],
+                estimator,
                 self.test_df,
                 te_test,
                 r_scorer=self.r_scorer.test,

@@ -44,7 +44,10 @@ def import_ihdp():
     data["random"] = np.random.randint(0, 2, size=len(data))
 
     used_df = featurize(
-        data, features=features, exclude_cols=[treatment] + targets, drop_first=False,
+        data,
+        features=features,
+        exclude_cols=[treatment] + targets,
+        drop_first=False,
     )
     used_features = [
         c for c in used_df.columns if c not in ignore_cols + [treatment] + targets
@@ -66,37 +69,42 @@ class TestEndToEnd(object):
     """
 
     def test_imports(self):
-        """tests if AutoCausality can be imported
-        """
+        """tests if AutoCausality can be imported"""
 
         from auto_causality import AutoCausality  # noqa F401
 
     def test_data_preprocessing(self):
-        """tests data preprocessing routines
-        """
+        """tests data preprocessing routines"""
 
         data = import_ihdp()  # noqa F484
 
     def test_init_autocausality(self):
-        """tests if autocausality object can be instantiated without errors
-        """
+        """tests if autocausality object can be instantiated without errors"""
 
         from auto_causality import AutoCausality  # noqa F401
 
         auto_causality = AutoCausality()  # noqa F484
 
     def test_endtoend(self):
-        """tests if model can be instantiated and fit to data
-        """
+        """tests if model can be instantiated and fit to data"""
 
         from auto_causality import AutoCausality  # noqa F401
 
         data_df, features_X, features_W, targets, treatment = import_ihdp()
 
-        estimator_list = ["SparseLinearDML", "ForestDR"]
+        estimator_list = [
+            "SparseLinearDML",
+            "ForestDRLearner",
+            "TransformedOutcome",
+            "CausalForestDML",
+            ".LinearDML",
+            "DomainAdaptationLearner",
+            "SLearner",
+        ]
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=1, estimator_list=estimator_list,
+            time_budget=30,
+            estimator_list=estimator_list,
         )
 
         auto_causality.fit(data_df, treatment, outcome, features_W, features_X)
@@ -106,3 +114,4 @@ class TestEndToEnd(object):
 
 if __name__ == "__main__":
     pytest.main([__file__])
+    # TestEndToEnd().test_endtoend()

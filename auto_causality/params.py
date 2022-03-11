@@ -2,7 +2,7 @@ from flaml import tune
 from copy import deepcopy
 from typing import Optional
 
-from econml.inference import BootstrapInference # noqa F401
+from econml.inference import BootstrapInference  # noqa F401
 from sklearn import linear_model
 
 
@@ -31,7 +31,8 @@ class SimpleParamService:
         return list(self._configs().keys())
 
     def method_params(
-        self, estimator: str,
+        self,
+        estimator: str,
     ):
         return self._configs()[estimator]
 
@@ -55,7 +56,8 @@ class SimpleParamService:
             "backdoor.propensity_score_weighting": {
                 "propensity_score_model": linear_model.LogisticRegression(
                     max_iter=10000
-                )
+                ),
+                "search_space": {}
                 # "init_params": {
                 #     "propensity_score_model":
                 #       linear_model.LogisticRegression(
@@ -65,7 +67,9 @@ class SimpleParamService:
                 # "fit_params": {},
             },
             "backdoor.econml.metalearners.SLearner": {
-                "init_params": {"overall_model": outcome_model, },
+                "init_params": {
+                    "overall_model": outcome_model,
+                },
                 "fit_params": {},
                 "search_space": {}
                 # TODO Egor please look into this
@@ -74,7 +78,9 @@ class SimpleParamService:
                 # else {"inference": bootstrap},
             },
             "backdoor.econml.metalearners.TLearner": {
-                "init_params": {"models": outcome_model, },
+                "init_params": {
+                    "models": outcome_model,
+                },
                 "fit_params": {},
                 "search_space": {}
                 # TODO Egor please look into this
@@ -128,8 +134,7 @@ class SimpleParamService:
                     "max_samples": tune.uniform(0, 0.5),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
                     "honest": tune.choice([0, 1]),
-                    # Difficult as needs to be a factor of 'n_estimators'
-                    # "subforest_size":,
+                    "subforest_size": tune.randint(0, 10),
                 },
             },
             "backdoor.econml.dr.LinearDRLearner": {
@@ -207,7 +212,7 @@ class SimpleParamService:
                     "mc_iters": tune.randint(0, 10),
                     "drate": tune.choice([0, 1]),
                     "n_estimators": tune.randint(2, 500),
-                    "criterion": tune.choice(["squared_error", "het"]),
+                    "criterion": tune.choice(["mse", "het"]),
                     "max_depth": tune.randint(2, 1000),
                     "min_samples_split": tune.randint(1, 50),
                     "min_samples_leaf": tune.randint(1, 25),
@@ -221,16 +226,16 @@ class SimpleParamService:
                     "inference": tune.choice([0, 1]),
                     "fit_intercept": tune.choice([0, 1]),
                     # Difficult as needs to be a factor of 'n_estimators'
-                    # "subforest_size":,
+                    "subforest_size": tune.randint(0, 10),
                 },
             },
-            "backdoor.auto_causality.dowhy_wrapper.\
-                direct_uplift.DirectUpliftDoWhyWrapper": {
+            "backdoor.auto_causality.models.TransformedOutcome": {
                 "init_params": {
                     "propensity_model": propensity_model,
                     "outcome_model": outcome_model,
                 },
                 "fit_params": {},
+                "search_space": {},
             },
             # leaving out DML and NonParamDML as they're base classes for the 3
             # above

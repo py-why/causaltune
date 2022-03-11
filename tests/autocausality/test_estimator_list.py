@@ -5,8 +5,7 @@ from auto_causality.params import SimpleParamService
 
 
 class TestEstimatorListGenerator:
-    """tests if estimator list is correctly generated
-    """
+    """tests if estimator list is correctly generated"""
 
     def test_auto_list(self):
         """tests if "auto" setting yields all available estimators"""

@@ -37,7 +37,7 @@ class RScoreWrapper:
 
 
 class RScorer:
-    """ Scorer based on the RLearner loss. Fits residual models at fit time and calculates
+    """Scorer based on the RLearner loss. Fits residual models at fit time and calculates
     residuals of the evaluation data in a cross-fitting manner::
 
         Yres = Y - E[Y|X, W]
@@ -227,7 +227,7 @@ class RScorer:
             return 1 - np.mean((Y_res - Y_res_pred) ** 2) / self.base_score_
 
     def best_model(self, cate_models, return_scores=False):
-        """ Chooses the best among a list of models
+        """Chooses the best among a list of models
 
         Parameters
         ----------
@@ -251,7 +251,7 @@ class RScorer:
             return cate_models[best], rscores[best]
 
     def ensemble(self, cate_models, eta=1000.0, return_scores=False):
-        """ Ensembles a list of models based on their performance
+        """Ensembles a list of models based on their performance
 
         Parameters
         ----------

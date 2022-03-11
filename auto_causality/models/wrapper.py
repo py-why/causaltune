@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from dowhy.causal_estimator import CausalEstimator, CausalEstimate
-from auto_causality.transformed_outcome import DirectUpliftFitter
+from auto_causality.transformed_outcome import TransformedOutcomeFitter
 
 
 def remove_list(x: Any):
@@ -35,7 +35,7 @@ class DirectUpliftDoWhyWrapper(CausalEstimator):
         self._outcome_name = remove_list(outcome)
         self._effect_modifier_names = effect_modifiers
 
-        self.estimator = DirectUpliftFitter(
+        self.estimator = TransformedOutcomeFitter(
             treatment=self._treatment_name,
             outcome=self._outcome_name,
             propensity_modifiers=effect_modifiers,
