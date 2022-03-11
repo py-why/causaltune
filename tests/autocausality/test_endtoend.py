@@ -94,9 +94,9 @@ class TestEndToEnd(object):
 
         estimator_list = [
             "SparseLinearDML",
-            # "ForestDR",
+            "ForestDRLearner",
             "TransformedOutcome",
-            # "CausalForestDML",
+            "CausalForestDML",
             ".LinearDML",
             "DomainAdaptationLearner",
             "SLearner",

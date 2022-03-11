@@ -134,8 +134,7 @@ class SimpleParamService:
                     "max_samples": tune.uniform(0, 0.5),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
                     "honest": tune.choice([0, 1]),
-                    # Difficult as needs to be a factor of 'n_estimators'
-                    # "subforest_size":,
+                    "subforest_size": tune.randint(0, 10),
                 },
             },
             "backdoor.econml.dr.LinearDRLearner": {
@@ -213,7 +212,7 @@ class SimpleParamService:
                     "mc_iters": tune.randint(0, 10),
                     "drate": tune.choice([0, 1]),
                     "n_estimators": tune.randint(2, 500),
-                    "criterion": tune.choice(["squared_error", "het"]),
+                    "criterion": tune.choice(["mse", "het"]),
                     "max_depth": tune.randint(2, 1000),
                     "min_samples_split": tune.randint(1, 50),
                     "min_samples_leaf": tune.randint(1, 25),
@@ -227,7 +226,7 @@ class SimpleParamService:
                     "inference": tune.choice([0, 1]),
                     "fit_intercept": tune.choice([0, 1]),
                     # Difficult as needs to be a factor of 'n_estimators'
-                    # "subforest_size":,
+                    "subforest_size": tune.randint(0, 10),
                 },
             },
             "backdoor.auto_causality.models.TransformedOutcome": {

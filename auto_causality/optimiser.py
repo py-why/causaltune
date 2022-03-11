@@ -1,15 +1,18 @@
 import warnings
+from typing import List
+from copy import deepcopy
+
 import pandas as pd
 from flaml import tune, AutoML
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
+from dowhy import CausalModel
+from joblib import Parallel, delayed
+
 from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores
-from typing import List
-from dowhy import CausalModel
 from auto_causality.r_score import RScoreWrapper
-from copy import deepcopy
-from joblib import Parallel, delayed
+from auto_causality.utils import clean_config
 
 
 class AutoCausality:
@@ -325,9 +328,11 @@ class AutoCausality:
         """estimates effect with chosen estimator"""
 
         # add params that are tuned by flaml:
-        print(f"config: {config}")
+        config = clean_config(config)
+        init_params = self.estimator_cfg["init_params"]
+        print(f"config: {config}, \n init_params: {init_params}")
         params_to_tune = {
-            **self.estimator_cfg["init_params"],
+            **init_params,
             **config,
         }
 

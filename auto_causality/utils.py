@@ -1,9 +1,18 @@
 from typing import List, Any
+import math
 
 from sklearn.preprocessing import RobustScaler
 import pandas as pd
 
 from auto_causality.memoizer import MemoizingWrapper
+
+
+def clean_config(params: dict):
+    if "subforest_size" in params and "n_estimators" in params:
+        params["n_estimators"] = params["subforest_size"] * math.ceil(
+            params["n_estimators"] / params["subforest_size"]
+        )
+    return params
 
 
 def featurize(
