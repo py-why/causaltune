@@ -8,8 +8,8 @@ def synth_ihdp() -> pd.DataFrame:
     The Infant Health and Development Program (IHDP) dataset contains data on the impact of visits by specialists
     on the cognitive development of children. The dataset consists of 25 covariates describing various features
     of these children and their mothers, a binary treatment variable (visit/no visit) and a continuous outcome.
-    
-    If used for academic purposes, consider citing the authors:    
+
+    If used for academic purposes, consider citing the authors:
     @article{hill2011,
         title={Bayesian nonparametric modeling for causal inference.},
         author={Hill, Jennifer},
@@ -73,9 +73,11 @@ def synth_acic(condition=1) -> pd.DataFrame:
     """
 
     covariates = pd.read_csv(
-        "https://raw.githubusercontent.com/IBM/causallib/master/causallib/datasets/data/acic_challenge_2016/x.csv"
+        """https://raw.githubusercontent.com/IBM/causallib/
+        master/causallib/datasets/data/acic_challenge_2016/x.csv"""
     )
-    url = f"https://raw.githubusercontent.com/IBM/causallib/master/causallib/datasets/data/acic_challenge_2016/zymu_{condition}.csv"
+    url = f"""https://raw.githubusercontent.com/IBM/causallib/master/causallib/
+    datasets/data/acic_challenge_2016/zymu_{condition}.csv"""
     z_y_mu = pd.read_csv(url)
     z_y_mu["y_factual"] = z_y_mu.apply(
         lambda row: row["y1"] if row["z"] else row["y0"], axis=1
