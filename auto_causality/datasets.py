@@ -3,6 +3,41 @@ import numpy as np
 from auto_causality.utils import featurize
 
 
+def lalonde() -> pd.DataFrame:
+    """loads the LaLonde dataset
+    The dataset described the impact of a job training programme on the real earnings
+    of individuals several years later.
+    The data consists of the treatment indicator (training yes no), covariates (age, race,
+    academic background, real earnings 1976, real earnings 1977) and the outcome (real earnings in 1978)
+
+    If used for academic purposes, please consider citing the authors:
+    Lalonde, Robert: "Evaluating the Econometric Evaluations of Training Programs," American Economic Review,
+    Vol. 76, pp. 604-620
+
+    Returns:
+        pd.DataFrame: dataset with cols "treatment", "y_factual" and covariates "x1" to "x8"
+    """
+
+    df_control = pd.read_csv(
+        "https://users.nber.org/~rdehejia/data/nswre74_control.txt", sep=" "
+    ).dropna(axis=1)
+    df_control.columns = (
+        ["treatment"] + ["x_" + str(x) for x in range(1, 9)] + ["y_factual"]
+    )
+    df_treatment = pd.read_csv(
+        "https://users.nber.org/~rdehejia/data/nswre74_treated.txt", sep=" "
+    ).dropna(axis=1)
+    df_treatment.columns = (
+        ["treatment"] + ["x_" + str(x) for x in range(1, 9)] + ["y_factual"]
+    )
+    df = (
+        pd.concat([df_control, df_treatment], axis=0, ignore_index=True)
+        .sample(frac=1)
+        .reset_index(drop=True)
+    )
+    return df
+
+
 def amazon_reviews(rating="pos") -> pd.DataFrame:
     """loads amazon reviews dataset
     The dataset describes the impact of positive (or negative) reviews for products on Amazon on sales.
