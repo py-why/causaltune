@@ -9,7 +9,8 @@ def lalonde() -> pd.DataFrame:
     of individuals several years later.
     The data consists of the treatment indicator (training yes no), covariates (age, race,
     academic background, real earnings 1976, real earnings 1977) and the outcome (real earnings in 1978)
-
+    See also https://rdrr.io/cran/qte/man/lalonde.html#heading-0 
+    
     If used for academic purposes, please consider citing the authors:
     Lalonde, Robert: "Evaluating the Econometric Evaluations of Training Programs," American Economic Review,
     Vol. 76, pp. 604-620
