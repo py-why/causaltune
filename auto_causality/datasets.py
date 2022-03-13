@@ -3,13 +3,54 @@ import numpy as np
 from auto_causality.utils import featurize
 
 
+def nhefs() -> pd.DataFrame:
+    """loads the NHEFS dataset
+    The dataset describes the impact of quitting smoke on weight gain over a period of 11 years
+    The data consists of the treatment (quit smoking yes no), the outcome (change in weight) and
+    a series of covariates of which we include a subset of 9 (see below).
+
+    If used for academic purposes, pelase consider citing the authors:
+    Hernán MA, Robins JM (2020). Causal Inference: What If. Boca Raton: Chapman & Hall/CRC.
+
+    Returns:
+        pd.DataFrame: dataset with cols "treatment", "y_factual" and covariates "x1" to "x9"
+    """
+
+    df = pd.read_csv(
+        "https://cdn1.sph.harvard.edu/wp-content/uploads/sites/1268/1268/20/nhefs.csv"
+    )
+    covariates = [
+        "active",
+        "age",
+        "education",
+        "exercise",
+        "race",
+        "sex",
+        "smokeintensity",
+        "smokeyrs",
+        "wt71",
+    ]
+
+    has_missing = ["wt82"]
+    missing = df[has_missing].isnull().any(axis="columns")
+    df = df.loc[~missing]
+
+    df = df[covariates + ["qsmk"] + ["wt82_71"]]
+    df.rename(columns={"qsmk": "treatment", "wt82_71": "y_factual"}, inplace=True)
+    df.rename(
+        columns={c: "x" + str(i + 1) for i, c in enumerate(covariates)}, inplace=True
+    )
+
+    return df
+
+
 def lalonde_nsw() -> pd.DataFrame:
     """loads the Lalonde NSW dataset
     The dataset described the impact of a job training programme on the real earnings
     of individuals several years later.
     The data consists of the treatment indicator (training yes no), covariates (age, race,
     academic background, real earnings 1976, real earnings 1977) and the outcome (real earnings in 1978)
-    See also https://rdrr.io/cran/qte/man/lalonde.html#heading-0 
+    See also https://rdrr.io/cran/qte/man/lalonde.html#heading-0
 
     If used for academic purposes, please consider citing the authors:
     Lalonde, Robert: "Evaluating the Econometric Evaluations of Training Programs," American Economic Review,
