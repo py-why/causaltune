@@ -163,6 +163,10 @@ def synth_acic(condition=1) -> pd.DataFrame:
     Returns:
         pd.DataFrame: dataset for causal inference with columns "treatment", "y_factual" and covariates "x_1" to "x_58"
     """
+    try:
+        assert condition in range(1, 11)
+    except AssertionError:
+        print("'condition' needs to be in [1,10]")
 
     covariates = pd.read_csv(
         """https://raw.githubusercontent.com/IBM/causallib/
