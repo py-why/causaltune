@@ -64,13 +64,13 @@ def lalonde_nsw() -> pd.DataFrame:
         "https://users.nber.org/~rdehejia/data/nswre74_control.txt", sep=" "
     ).dropna(axis=1)
     df_control.columns = (
-        ["treatment"] + ["x_" + str(x) for x in range(1, 9)] + ["y_factual"]
+        ["treatment"] + ["x" + str(x) for x in range(1, 9)] + ["y_factual"]
     )
     df_treatment = pd.read_csv(
         "https://users.nber.org/~rdehejia/data/nswre74_treated.txt", sep=" "
     ).dropna(axis=1)
     df_treatment.columns = (
-        ["treatment"] + ["x_" + str(x) for x in range(1, 9)] + ["y_factual"]
+        ["treatment"] + ["x" + str(x) for x in range(1, 9)] + ["y_factual"]
     )
     df = (
         pd.concat([df_control, df_treatment], axis=0, ignore_index=True)
@@ -111,6 +111,7 @@ def amazon_reviews(rating="pos") -> pd.DataFrame:
         print(
             "you need to specify which rating dataset you'd like to load. The options are 'pos' or 'neg'"
         )
+        return None
 
     try:
         import gdown
@@ -118,14 +119,17 @@ def amazon_reviews(rating="pos") -> pd.DataFrame:
         gdown = None
 
     if gdown:
-        if rating == "pos":
-            url = "https://drive.google.com/file/d/167CYEnYinePTNtKpVpsg0BVkoTwOwQfK/view?usp=sharing"
-        elif rating == "neg":
-            url = "https://drive.google.com/file/d/1b-MPNqxCyWSJE5uyn5-VJUwC8056HM8u/view?usp=sharing"
-        gdown.download(url, "amazon_" + rating + ".csv", fuzzy=True)
-        df = pd.read_csv("amazon_" + rating + ".csv")
+        try:
+            df = pd.read_csv("amazon_" + rating + ".csv")
+        except FileNotFoundError:
+            if rating == "pos":
+                url = "https://drive.google.com/file/d/167CYEnYinePTNtKpVpsg0BVkoTwOwQfK/view?usp=sharing"
+            elif rating == "neg":
+                url = "https://drive.google.com/file/d/1b-MPNqxCyWSJE5uyn5-VJUwC8056HM8u/view?usp=sharing"
+            gdown.download(url, "amazon_" + rating + ".csv", fuzzy=True)
+            df = pd.read_csv("amazon_" + rating + ".csv")
         df.drop(df.columns[[2, 3, 4]], axis=1, inplace=True)
-        df.columns = ["treatment", "y_factual"] + ["x_" + str(i) for i in range(1, 301)]
+        df.columns = ["treatment", "y_factual"] + ["x" + str(i) for i in range(1, 301)]
         return df
     else:
         print(
@@ -134,6 +138,7 @@ def amazon_reviews(rating="pos") -> pd.DataFrame:
             Alternatively, you can download it from the following link and store it in the datasets folder:
             {url}"""
         )
+        return None
 
 
 def synth_ihdp() -> pd.DataFrame:
@@ -208,13 +213,23 @@ def synth_acic(condition=1) -> pd.DataFrame:
         assert condition in range(1, 11)
     except AssertionError:
         print("'condition' needs to be in [1,10]")
+        return None
 
     covariates = pd.read_csv(
-        """https://raw.githubusercontent.com/IBM/causallib/
-        master/causallib/datasets/data/acic_challenge_2016/x.csv"""
+        "https://raw.githubusercontent.com/IBM/causallib/"
+        + "master/causallib/datasets/data/acic_challenge_2016/x.csv"
     )
-    url = f"""https://raw.githubusercontent.com/IBM/causallib/master/causallib/
-    datasets/data/acic_challenge_2016/zymu_{condition}.csv"""
+    cols = covariates.columns
+    covariates.rename(
+        columns={
+            c: c.replace("_", "") for c in cols
+        },
+        inplace=True,
+    )
+    url = (
+        "https://raw.githubusercontent.com/IBM/causallib/master/causallib/"
+        + f"datasets/data/acic_challenge_2016/zymu_{condition}.csv"
+    )
     z_y_mu = pd.read_csv(url)
     z_y_mu["y_factual"] = z_y_mu.apply(
         lambda row: row["y1"] if row["z"] else row["y0"], axis=1
@@ -225,7 +240,9 @@ def synth_acic(condition=1) -> pd.DataFrame:
     return data
 
 
-def preprocess_dataset(data: pd.DataFrame) -> tuple:
+def preprocess_dataset(
+    data: pd.DataFrame, treatment="treatment", targets=["y_factual"]
+) -> tuple:
     """preprocesses dataset for causal inference
 
     Args:
@@ -234,24 +251,28 @@ def preprocess_dataset(data: pd.DataFrame) -> tuple:
     Returns:
         tuple: dataset, features_x, features_w, list of targets, name of treatment
     """
+    if (treatment not in data.columns) or any(t not in data.columns for t in targets):
+        print("some of the requested variables are not part of this dataset.")
+        print(f"available columns are {[c for c in data.colums if 'x' not in c]}.")
+        return None
+    else:
+        # prepare the data
+        features = [c for c in data.columns if c not in [treatment] + targets]
 
-    # prepare the data
+        data[treatment] = data[treatment].astype(int)
+        # this is a trick to bypass some DoWhy/EconML bugs
+        data["random"] = np.random.randint(0, 2, size=len(data))
 
-    treatment = "treatment"
-    targets = ["y_factual"]  # it's good to allow multiple ones
-    features = [c for c in data.columns if c not in [treatment] + targets]
+        used_df = featurize(
+            data,
+            features=features,
+            exclude_cols=[treatment] + targets,
+            drop_first=False,
+        )
+        used_features = [c for c in used_df.columns if c not in [treatment] + targets]
 
-    data[treatment] = data[treatment].astype(int)
-    # this is a trick to bypass some DoWhy/EconML bugs
-    data["random"] = np.random.randint(0, 2, size=len(data))
+        # Let's treat all features as effect modifiers
+        features_X = [f for f in used_features if f != "random"]
+        features_W = [f for f in used_features if f not in features_X]
 
-    used_df = featurize(
-        data, features=features, exclude_cols=[treatment] + targets, drop_first=False,
-    )
-    used_features = [c for c in used_df.columns if c not in [treatment] + targets]
-
-    # Let's treat all features as effect modifiers
-    features_X = [f for f in used_features if f != "random"]
-    features_W = [f for f in used_features if f not in features_X]
-
-    return used_df, features_X, features_W, targets, treatment
+        return used_df, features_X, features_W, targets, treatment
