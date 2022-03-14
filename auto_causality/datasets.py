@@ -118,14 +118,15 @@ def amazon_reviews(rating="pos") -> pd.DataFrame:
     except ImportError:
         gdown = None
 
+    if rating == "pos":
+        url = "https://drive.google.com/file/d/167CYEnYinePTNtKpVpsg0BVkoTwOwQfK/view?usp=sharing"
+    elif rating == "neg":
+        url = "https://drive.google.com/file/d/1b-MPNqxCyWSJE5uyn5-VJUwC8056HM8u/view?usp=sharing"
+
     if gdown:
         try:
             df = pd.read_csv("amazon_" + rating + ".csv")
         except FileNotFoundError:
-            if rating == "pos":
-                url = "https://drive.google.com/file/d/167CYEnYinePTNtKpVpsg0BVkoTwOwQfK/view?usp=sharing"
-            elif rating == "neg":
-                url = "https://drive.google.com/file/d/1b-MPNqxCyWSJE5uyn5-VJUwC8056HM8u/view?usp=sharing"
             gdown.download(url, "amazon_" + rating + ".csv", fuzzy=True)
             df = pd.read_csv("amazon_" + rating + ".csv")
         df.drop(df.columns[[2, 3, 4]], axis=1, inplace=True)
@@ -221,10 +222,7 @@ def synth_acic(condition=1) -> pd.DataFrame:
     )
     cols = covariates.columns
     covariates.rename(
-        columns={
-            c: c.replace("_", "") for c in cols
-        },
-        inplace=True,
+        columns={c: c.replace("_", "") for c in cols}, inplace=True,
     )
     url = (
         "https://raw.githubusercontent.com/IBM/causallib/master/causallib/"
