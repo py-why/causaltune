@@ -1,7 +1,9 @@
 # Auto-Causality: A library for automated Causal Inference model estimation and selection                                                                                                                                                                                                                                                                                                                   
 
 
-**AutoCausality** is a library for automated Causal Inference, building on the [FLAML](https://github.com/microsoft/FLAML) package for hyperparamter optimisation and the [EconML](https://github.com/microsoft/EconML/) and [DoWhy](https://github.com/microsoft/DoWhy/) packages for ML-based Causal Inference. It performs automated hyperparameter tuning of first stage models (for the treatment and outcome models) as well as hyperparamter tuning and model selection for the second stage model (causal estimator).  
+**AutoCausality** is a library for automated Causal Inference, building on the [FLAML](https://github.com/microsoft/FLAML) package for hyperparameter optimisation and the [EconML](https://github.com/microsoft/EconML/) and [DoWhy](https://github.com/microsoft/DoWhy/) packages for ML-based Causal Inference. It performs automated hyperparameter tuning of first stage models (for the treatment and outcome models) as well as hyperparameter tuning and model selection for the second stage model (causal estimator).  
+
+For now, the package only supports CATE models, instrumental variable models are coming next!
 
 
 <summary><strong><em>Table of Contents</em></strong></summary>
