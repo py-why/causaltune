@@ -222,7 +222,8 @@ def synth_acic(condition=1) -> pd.DataFrame:
     )
     cols = covariates.columns
     covariates.rename(
-        columns={c: c.replace("_", "") for c in cols}, inplace=True,
+        columns={c: c.replace("_", "") for c in cols},
+        inplace=True,
     )
     url = (
         "https://raw.githubusercontent.com/IBM/causallib/master/causallib/"
