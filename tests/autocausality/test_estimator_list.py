@@ -17,7 +17,7 @@ class TestEstimatorListGenerator:
         assert all(e in available_estimators for e in estimator_list)
 
     def test_empty_list(self):
-        """ tests if empty list is correctly handled"""
+        """tests if empty list is correctly handled"""
         autocausality = AutoCausality(estimator_list=[])
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
@@ -25,7 +25,7 @@ class TestEstimatorListGenerator:
         assert all(e in available_estimators for e in estimator_list)
 
     def test_substring_group(self):
-        """ tests if substring match to group of estimators works"""
+        """tests if substring match to group of estimators works"""
         autocausality = AutoCausality(estimator_list=["dml"])
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())

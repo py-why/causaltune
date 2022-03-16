@@ -134,7 +134,7 @@ class SimpleParamService:
                     "max_samples": tune.uniform(0, 0.5),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
                     "honest": tune.choice([0, 1]),
-                    "subforest_size": tune.randint(0, 10),
+                    "subforest_size": tune.randint(1, 10),
                 },
             },
             "backdoor.econml.dr.LinearDRLearner": {
@@ -205,7 +205,7 @@ class SimpleParamService:
                     # "max_depth": self.max_depth,
                     # "n_estimators": self.n_estimators,
                     "discrete_treatment": True,
-                    # "inference": self.n_bootstrap_samples is not None,
+                    "inference": False,
                 },
                 "fit_params": {},
                 "search_space": {
@@ -223,10 +223,10 @@ class SimpleParamService:
                     "max_samples": tune.uniform(0, 1),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
                     "honest": tune.choice([0, 1]),
-                    "inference": tune.choice([0, 1]),
+                    # "inference": tune.choice([0, 1]),
                     "fit_intercept": tune.choice([0, 1]),
                     # Difficult as needs to be a factor of 'n_estimators'
-                    "subforest_size": tune.randint(0, 10),
+                    "subforest_size": tune.randint(1, 10),
                 },
             },
             "backdoor.auto_causality.models.TransformedOutcome": {
@@ -267,7 +267,7 @@ class SimpleParamService:
                     "min_leaf_size": tune.randint(1, 50),
                     "max_depth": tune.randint(2, 1000),
                     "subsample_ratio": tune.uniform(0, 1),
-                    "bootstrap": tune.choice([0, 1]),
+                    # "bootstrap": tune.choice([0, 1]),
                     "lambda_reg": tune.uniform(0, 1),
                 },
             },
@@ -291,7 +291,7 @@ class SimpleParamService:
                     "min_leaf_size": tune.randint(1, 50),
                     "max_depth": tune.randint(2, 1000),
                     "subsample_ratio": tune.uniform(0, 1),
-                    "bootstrap": tune.choice([0, 1]),
+                    # "bootstrap": tune.choice([0, 1]),
                     "lambda_reg": tune.uniform(0, 1),
                 },
             },

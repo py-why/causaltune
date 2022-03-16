@@ -297,7 +297,7 @@ class AutoCausality:
                 for metric in [self._settings["metric"]] + self._settings[
                     "metrics_to_report"
                 ]:
-                    print(f" {metric} (train): {last_result[metric]:6f}")
+                    print(f" {metric} (validation): {last_result[metric]:6f}")
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -330,7 +330,7 @@ class AutoCausality:
         # add params that are tuned by flaml:
         config = clean_config(config)
         init_params = self.estimator_cfg["init_params"]
-        print(f"config: {config}, \n init_params: {init_params}")
+        print(f"config: {config}")
         params_to_tune = {
             **init_params,
             **config,
@@ -351,7 +351,7 @@ class AutoCausality:
             )
             scores = self._compute_metrics(estimate)
             flat_results = {
-                k: float(scores["train"][k])
+                k: float(scores["validation"][k])
                 for k in [self._settings["metric"]]
                 + self._settings["metrics_to_report"]
             }
@@ -378,7 +378,7 @@ class AutoCausality:
                 te_train,
                 r_scorer=self.r_scorer.train,
             ),
-            "test": make_scores(
+            "validation": make_scores(
                 estimator,
                 self.test_df,
                 te_test,
