@@ -261,6 +261,7 @@ class AutoCausality:
         )  # We need to keep track of the tune results to access the best config
 
         for estimator_name in self.estimator_list:
+            print("Starting fit of ", estimator_name)
             self.estimator_name = estimator_name
             self.estimator_cfg = self.cfg.method_params(estimator_name)
             if self.estimator_cfg["search_space"] == {}:

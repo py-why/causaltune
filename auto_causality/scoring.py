@@ -106,6 +106,7 @@ def make_scores(
     estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, r_scorer=None
 ) -> dict:
 
+    df = df.copy().reset_index()
     est = estimate.estimator
     treatment_name = est._treatment_name
     if not isinstance(treatment_name, str):
@@ -122,8 +123,9 @@ def make_scores(
         propensity_model=DummyClassifier(strategy="prior"),
         X_names=est._effect_modifier_names,
     )
+    # TODO: adjust for multiple categorical treatments
     erupt.fit(df)
-    values = df[[treatment_name, est._outcome_name]].reset_index(drop=True)
+    values = df[[treatment_name, est._outcome_name]]  # .reset_index(drop=True)
     values["p"] = erupt.propensity_model.predict_proba(df)[:, 1]
     values["policy"] = cate_estimate > 0
     values["weights"] = erupt.weights(df, lambda x: cate_estimate > 0)
@@ -132,7 +134,9 @@ def make_scores(
 
     assert len(values) == len(df), "Index weirdness when adding columns!"
 
-    return {
+    values = values.copy()
+
+    out = {
         "erupt": erupt_make_scores(estimate, df, cate_estimate),
         "qini": qini_make_score(estimate, df, cate_estimate),
         "auc": auc_make_score(estimate, df, cate_estimate),
@@ -143,6 +147,9 @@ def make_scores(
         "intrp": intrp,
         "values": values,
     }
+
+    del df
+    return out
 
 
 def ate(
