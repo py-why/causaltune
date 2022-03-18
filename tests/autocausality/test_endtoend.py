@@ -116,5 +116,5 @@ class TestEndToEnd(object):
 
 
 if __name__ == "__main__":
-    # pytest.main([__file__])
-    TestEndToEnd().test_endtoend()
+    pytest.main([__file__])
+    # TestEndToEnd().test_endtoend()
