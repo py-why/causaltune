@@ -160,7 +160,8 @@ class AutoCausality:
                         "SparseLinearDML",
                         "ForestDRLearner",
                         "LinearDRLearner",
-                        "Ortho",
+                        # "DROrthoForest",
+                        # "DMLOrthoForest",
                         "TransformedOutcome",
                     ]
                 ]

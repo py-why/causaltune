@@ -1,10 +1,9 @@
-from typing import List, Any, Union
+from typing import List, Any, Union, Callable
 
 import pandas as pd
 import numpy as np
 
 from dowhy.causal_estimator import CausalEstimator, CausalEstimate
-from auto_causality.transformed_outcome import TransformedOutcomeFitter
 
 
 def remove_list(x: Any):
@@ -14,7 +13,7 @@ def remove_list(x: Any):
         return x[0]
 
 
-class DirectUpliftDoWhyWrapper(CausalEstimator):
+class DoWhyWrapper(CausalEstimator):
     def __init__(
         self,
         data: pd.DataFrame,
@@ -22,6 +21,7 @@ class DirectUpliftDoWhyWrapper(CausalEstimator):
         treatment: str,
         outcome: str,
         effect_modifiers: List[str],
+        inner_class: Callable,
         params: dict = None,
         control_value=0,
         treatment_value=1,
@@ -38,7 +38,7 @@ class DirectUpliftDoWhyWrapper(CausalEstimator):
         # this is a hack to accomodate different DoWhy versions
         params = {**params, **kwargs}
 
-        self.estimator = TransformedOutcomeFitter(
+        self.estimator = inner_class(
             treatment=self._treatment_name,
             outcome=self._outcome_name,
             propensity_modifiers=effect_modifiers,
