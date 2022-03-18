@@ -100,6 +100,9 @@ class TestEndToEnd(object):
             ".LinearDML",
             "DomainAdaptationLearner",
             "SLearner",
+            "XLearner",
+            "TLearner",
+            "Ortho",
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(

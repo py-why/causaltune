@@ -34,6 +34,7 @@ class DirectUpliftDoWhyWrapper(CausalEstimator):
         self._outcome_name = remove_list(outcome)
         self._effect_modifier_names = effect_modifiers
 
+        params = {} if params is None else params
         # this is a hack to accomodate different DoWhy versions
         params = {**params, **kwargs}
 
