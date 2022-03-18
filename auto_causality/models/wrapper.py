@@ -22,18 +22,20 @@ class DirectUpliftDoWhyWrapper(CausalEstimator):
         treatment: str,
         outcome: str,
         effect_modifiers: List[str],
-        params: dict,
+        params: dict = None,
         control_value=0,
         treatment_value=1,
         test_significance=False,
         evaluate_effect_strength=False,
         confidence_intervals=False,
-        *args,
         **kwargs
     ):
         self._treatment_name = remove_list(treatment)
         self._outcome_name = remove_list(outcome)
         self._effect_modifier_names = effect_modifiers
+
+        # this is a hack to accomodate different DoWhy versions
+        params = {**params, **kwargs}
 
         self.estimator = TransformedOutcomeFitter(
             treatment=self._treatment_name,
