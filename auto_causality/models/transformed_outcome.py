@@ -3,19 +3,13 @@ from typing import List, Union
 import pandas as pd
 import numpy as np
 
+from . import DoWhyMethods
+
 
 def transformed_outcome(
     treatment: np.ndarray, outcome: np.ndarray, p: np.ndarray
 ) -> np.ndarray:
     return (treatment - p) * outcome / (p * (1 - p))
-
-
-class DoWhyMethods:
-    def effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-        return self.predict(x)
-
-    def const_marginal_effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-        return self.predict(x)
 
 
 class TransformedOutcomeFitter(DoWhyMethods):
@@ -51,8 +45,9 @@ class TransformedOutcomeFitter(DoWhyMethods):
             X = X[self.outcome_modifiers].values
         return self.outcome_model.predict(X)
 
-    def effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-        return self.predict(x)
-
-    def const_marginal_effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-        return self.predict(x)
+    #
+    # def effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+    #     return self.predict(x)
+    #
+    # def const_marginal_effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+    #     return self.predict(x)

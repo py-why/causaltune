@@ -93,6 +93,7 @@ class TestEndToEnd(object):
         data_df, features_X, features_W, targets, treatment = import_ihdp()
 
         estimator_list = [
+            "Dummy",
             "SparseLinearDML",
             "ForestDRLearner",
             "TransformedOutcome",

@@ -13,6 +13,14 @@ def remove_list(x: Any):
         return x[0]
 
 
+class DoWhyMethods:
+    def effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+        return self.predict(x)
+
+    def const_marginal_effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+        return self.predict(x)
+
+
 class DoWhyWrapper(CausalEstimator):
     def __init__(
         self,

@@ -53,6 +53,11 @@ class SimpleParamService:
             final_model = deepcopy(self.final_model)
 
         configs = {
+            "backdoor.auto_causality.models.Dummy": {
+                "init_params": {},
+                "fit_params": {},
+                "search_space": {},
+            },
             "backdoor.propensity_score_weighting": {
                 "propensity_score_model": linear_model.LogisticRegression(
                     max_iter=10000
@@ -117,8 +122,6 @@ class SimpleParamService:
                 "init_params": {
                     "model_propensity": propensity_model,
                     "model_regression": outcome_model,
-                    # "max_depth": self.max_depth,
-                    # "n_estimators": self.n_estimators,
                 },
                 "fit_params": {},
                 "search_space": {
