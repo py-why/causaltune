@@ -54,6 +54,9 @@ class ERUPT:
         ), "Policy values must be non-negative integers"
 
         p = self.propensity_model.predict_proba(df[self.X_names])
+        # normalize to hopefully avoid NaNs
+        p = np.maximum(p, 1e-4)
+
         weight = np.zeros(len(df))
 
         for i in W.unique():
@@ -68,5 +71,7 @@ class ERUPT:
 
         # and just for paranoia's sake let's normalize, though it shouldn't matter for big samples
         weight *= len(df) / sum(weight)
+
+        assert not np.isnan(weight.sum()), "NaNs in ERUPT weights"
 
         return pd.Series(index=df.index, data=weight)

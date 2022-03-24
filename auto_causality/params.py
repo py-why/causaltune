@@ -134,7 +134,7 @@ class SimpleParamService:
                     "max_samples": tune.uniform(0, 0.5),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
                     "honest": tune.choice([0, 1]),
-                    "subforest_size": tune.randint(1, 10),
+                    "subforest_size": tune.randint(2, 10),
                 },
             },
             "backdoor.econml.dr.LinearDRLearner": {
@@ -226,7 +226,7 @@ class SimpleParamService:
                     # "inference": tune.choice([0, 1]),
                     "fit_intercept": tune.choice([0, 1]),
                     # Difficult as needs to be a factor of 'n_estimators'
-                    "subforest_size": tune.randint(1, 10),
+                    "subforest_size": tune.randint(2, 10),
                 },
             },
             "backdoor.auto_causality.models.TransformedOutcome": {
