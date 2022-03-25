@@ -154,6 +154,7 @@ class AutoCausality:
                 [
                     e in estimator
                     for e in [
+                        "Dummy",
                         "metalearners",
                         "CausalForestDML",
                         ".LinearDML",
@@ -276,7 +277,7 @@ class AutoCausality:
                     resources_per_trial={"cpu": 1, "gpu": 0.5},
                     metric=self._settings["metric"],
                     mode="max",
-                    points_to_evaluate=[{}],
+                    points_to_evaluate=[self.estimator_cfg.get("defaults", {})],
                     low_cost_partial_config={},
                     **self._settings["tuner"],
                 )
@@ -313,8 +314,10 @@ class AutoCausality:
         Returns:
             dict: values of metrics after optimisation
         """
-
         # estimate effect with current config
+
+        print(self.estimator_name, config)
+
         # spawn a separate process to prevent cross-talk between tuner and automl on component models:
         estimates = Parallel(n_jobs=2)(
             delayed(self._estimate_effect)(config) for i in range(1)
