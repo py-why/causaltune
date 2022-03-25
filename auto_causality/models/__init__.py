@@ -28,4 +28,4 @@ class DummyModel(DoWhyMethods):
         pass
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-        return np.random.normal(size=(len(X), 1))
+        return np.random.normal(size=(len(X),))
