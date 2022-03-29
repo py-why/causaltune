@@ -117,10 +117,7 @@ class AutoCausality:
         self.outcome_model = AutoML(**self._settings["component_models"])
 
         # config with method-specific params
-        self.cfg = SimpleParamService(
-            self.propensity_model,
-            self.outcome_model,
-        )
+        self.cfg = SimpleParamService(self.propensity_model, self.outcome_model,)
 
         self.estimates = {}
         self.scores = {}
@@ -261,47 +258,85 @@ class AutoCausality:
         self.tune_results = (
             {}
         )  # We need to keep track of the tune results to access the best config
+        search_space = self._create_searchspace()
+        self.results = tune.run(
+            self._tune_with_config,
+            search_space,
+            resources_per_trial={"cpu": 1, "gpu": 0.5},
+            metric=self._settings["metric"],
+            mode="max",
+            low_cost_partial_config={},
+            **self._settings["tuner"],
+        )
 
-        for estimator_name in self.estimator_list:
-            print("Starting fit of ", estimator_name)
-            self.estimator_name = estimator_name
-            self.estimator_cfg = self.cfg.method_params(estimator_name)
-            if self.estimator_cfg["search_space"] == {}:
-                self.tune_results[estimator_name] = {}
+        # for estimator_name in self.estimator_list:
+        #     print("Starting fit of ", estimator_name)
+        #     self.estimator_name = estimator_name
+        #     self.estimator_cfg = self.cfg.method_params(estimator_name)
+        #     if self.estimator_cfg["search_space"] == {}:
+        #         self.tune_results[estimator_name] = {}
 
-                last_result = self._estimate_effect(self.estimator_cfg["init_params"])
-            else:
-                results = tune.run(
-                    self._tune_with_config,
-                    self.estimator_cfg["search_space"],
-                    resources_per_trial={"cpu": 1, "gpu": 0.5},
-                    metric=self._settings["metric"],
-                    mode="max",
-                    points_to_evaluate=[self.estimator_cfg.get("defaults", {})],
-                    low_cost_partial_config={},
-                    **self._settings["tuner"],
-                )
+        #         last_result = self._estimate_effect(self.estimator_cfg["init_params"])
+        #     else:
+        #         results = tune.run(
+        #             self._tune_with_config,
+        #             self.estimator_cfg["search_space"],
+        #             resources_per_trial={"cpu": 1, "gpu": 0.5},
+        #             metric=self._settings["metric"],
+        #             mode="max",
+        #             points_to_evaluate=[self.estimator_cfg.get("defaults", {})],
+        #             low_cost_partial_config={},
+        #             **self._settings["tuner"],
+        #         )
 
-                # log results
-                self.tune_results[estimator_name] = results.best_config
+        #         # log results
+        #         self.tune_results[estimator_name] = results.best_config
 
-                if results.get_best_trial() is None:
-                    print(f"OPTIMIZATION FAILED FOR {estimator_name}")
-                    self.scores[self.estimator_name] = None
-                    continue
-                else:
-                    last_result = results.get_best_trial().last_result
+        #         if results.get_best_trial() is None:
+        #             print(f"OPTIMIZATION FAILED FOR {estimator_name}")
+        #             self.scores[self.estimator_name] = None
+        #             continue
+        #         else:
+        #             last_result = results.get_best_trial().last_result
 
-            self.estimates[self.estimator_name] = last_result.pop("estimator")
-            self.full_scores[estimator_name] = last_result.pop("scores")
-            self.scores[self.estimator_name] = last_result[self._settings["metric"]]
+        #     self.estimates[self.estimator_name] = last_result.pop("estimator")
+        #     self.full_scores[estimator_name] = last_result.pop("scores")
+        #     self.scores[self.estimator_name] = last_result[self._settings["metric"]]
 
-            if self._settings["tuner"]["verbose"] > 0:
-                print(f"... Estimator: {self.estimator_name}")
-                for metric in [self._settings["metric"]] + self._settings[
-                    "metrics_to_report"
-                ]:
-                    print(f" {metric} (validation): {last_result[metric]:6f}")
+        #     if self._settings["tuner"]["verbose"] > 0:
+        #         print(f"... Estimator: {self.estimator_name}")
+        #         for metric in [self._settings["metric"]] + self._settings[
+        #             "metrics_to_report"
+        #         ]:
+        #             print(f" {metric} (validation): {last_result[metric]:6f}")
+
+    def _create_searchspace(self) -> dict:
+        """constructs search space with estimators and their respective configs
+
+        Returns:
+            dict: hierarchical search space
+        """
+        search_space = []
+        for est in self.estimator_list:
+            space = {}
+            est_params = self.cfg.method_params(est)
+            space = {
+                "estimator": est,
+                **est_params["search_space"],
+            }
+            search_space.append(space)
+        return {"search_space": tune.choice(search_space)}
+
+    # def _set_points_to_eval(self) -> dict:
+    #     """creates dict with points to evaluate for each learner
+
+    #     Returns:
+    #         dict: dict with points to evaluate for each learner
+    #     """
+    #     points = []
+    #     for est in self.estimator_list:
+    #         est_params = self.cfg.method_params(est)
+    #         points.append({est})
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -315,12 +350,12 @@ class AutoCausality:
             dict: values of metrics after optimisation
         """
         # estimate effect with current config
-
-        print(self.estimator_name, config)
+        
+        print(config["search_space"])
 
         # spawn a separate process to prevent cross-talk between tuner and automl on component models:
         estimates = Parallel(n_jobs=2)(
-            delayed(self._estimate_effect)(config) for i in range(1)
+            delayed(self._estimate_effect)(config["search_space"]) for i in range(1)
         )[0]
 
         # self.estimates[self.estimator] = res[0]
@@ -335,12 +370,10 @@ class AutoCausality:
 
         # add params that are tuned by flaml:
         config = clean_config(config)
-        init_params = self.estimator_cfg["init_params"]
         print(f"config: {config}")
-        params_to_tune = {
-            **init_params,
-            **config,
-        }
+        self.estimator_name = config["estimator"]
+        params_to_tune = {k: v for k, v in config.items() if (not k == "estimator")}        
+        cfg = self.cfg.method_params(self.estimator_name)
 
         if hasattr(self, "estimator_name"):
             estimate = self.causal_model.estimate_effect(
@@ -351,7 +384,7 @@ class AutoCausality:
                 target_units="ate",  # condition used for CATE
                 confidence_intervals=False,
                 method_params={
-                    "init_params": deepcopy(params_to_tune),
+                    "init_params": {**deepcopy(params_to_tune), **cfg["init_params"]},
                     "fit_params": {},
                 },
             )
@@ -379,16 +412,10 @@ class AutoCausality:
         scores = {
             "estimator_name": self.estimator_name,
             "train": make_scores(
-                estimator,
-                self.train_df,
-                te_train,
-                r_scorer=self.r_scorer.train,
+                estimator, self.train_df, te_train, r_scorer=self.r_scorer.train,
             ),
             "validation": make_scores(
-                estimator,
-                self.test_df,
-                te_test,
-                r_scorer=self.r_scorer.test,
+                estimator, self.test_df, te_test, r_scorer=self.r_scorer.test,
             ),
         }
         return scores
