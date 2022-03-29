@@ -1,6 +1,8 @@
 import warnings
 from typing import List
 from copy import deepcopy
+from numbers import Number
+from typing import Dict, Optional
 
 import pandas as pd
 from flaml import tune, AutoML
@@ -53,6 +55,7 @@ class AutoCausality:
         components_pred_time_limit=10 / 1e6,
         components_njobs=-1,
         components_time_budget=20,
+        resources_per_trial: Optional[Dict[str, Number]] = None,
     ):
         """constructor.
 
@@ -77,15 +80,23 @@ class AutoCausality:
                 Defaults to -1 (all available cores).
             components_time_budget (float): time budget for HPO of component models in seconds.
                 Defaults to overall time budget / 2.
+            resources_per_trial (Optional[Dict[str, Number]]): resources assigned to each trial.
+                Only used if use_ray=True. Default: {'cpu': 1}.
         """
+        self.use_ray = use_ray
+        resources_per_trial = (
+            resources_per_trial
+            if resources_per_trial is not None
+            else {"cpu": 1}
+        )
+        tuner_settings = {
+            "time_budget_s": time_budget,
+            "num_samples": num_samples,
+            "verbose": verbose,
+            "resources_per_trial": resources_per_trial,
+        }
         self._settings = {}
-        self._settings["tuner"] = {}
-        self._settings["tuner"]["time_budget_s"] = time_budget
-        self._settings["tuner"]["num_samples"] = num_samples
-        self._settings["tuner"]["verbose"] = verbose
-        self._settings["tuner"][
-            "use_ray"
-        ] = use_ray  # requires ray to be installed via pip install flaml[ray]
+        self._settings["tuner"] = tuner_settings
         self._settings["metric"] = metric
         self._settings["metrics_to_report"] = metrics_to_report
         self._settings["estimator_list"] = estimator_list
@@ -270,10 +281,14 @@ class AutoCausality:
 
                 last_result = self._estimate_effect(self.estimator_cfg["init_params"])
             else:
+                eval_function = (
+                    self._estimate_effect
+                    if self.use_ray
+                    else self._joblib_tune
+                )
                 results = tune.run(
-                    self._tune_with_config,
+                    eval_function,
                     self.estimator_cfg["search_space"],
-                    resources_per_trial={"cpu": 1, "gpu": 0.5},
                     metric=self._settings["metric"],
                     mode="max",
                     low_cost_partial_config={},
@@ -301,7 +316,7 @@ class AutoCausality:
                 ]:
                     print(f" {metric} (validation): {last_result[metric]:6f}")
 
-    def _tune_with_config(self, config: dict) -> dict:
+    def _joblib_tune(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
         causal inference estimator
 
@@ -392,7 +407,8 @@ class AutoCausality:
     @property
     def best_estimator(self) -> str:
         """A string indicating the best estimator found"""
-        return max(self.scores, key=self.scores.get)
+        scores = {k: v for k, v in self.scores.items() if v is not None}
+        return max(scores, key=scores.get)
 
     @property
     def model(self):

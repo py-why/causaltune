@@ -31,6 +31,7 @@ setup(
     install_requires=_read_requirements_file("requirements.txt"),
     extras_require={
         "test": _read_requirements_file("requirements-dev.txt"),
+        "ray": _read_requirements_file("requirements-ray.txt")
     },
     packages=find_packages(
         include=["auto_causality", "auto_causality.*"],
