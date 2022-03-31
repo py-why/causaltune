@@ -165,14 +165,15 @@ class AutoCausality:
                 [
                     e in estimator
                     for e in [
+                        "Dummy",
                         "metalearners",
                         "CausalForestDML",
                         ".LinearDML",
                         "SparseLinearDML",
                         "ForestDRLearner",
                         "LinearDRLearner",
-                        # "DROrthoForest",
-                        # "DMLOrthoForest",
+                        "DROrthoForest",
+                        "DMLOrthoForest",
                         "TransformedOutcome",
                     ]
                 ]
@@ -185,8 +186,9 @@ class AutoCausality:
             self._settings["estimator_list"] == "auto"
             or self._settings["estimator_list"] == []
         ):
-            warnings.warn("No estimators specified, adding all available estimators...")
+            warnings.warn("Using all available estimators...")
             return available_estimators
+
         elif self._verify_estimator_list():
             estimators_to_use = list(
                 dict.fromkeys(
@@ -199,10 +201,9 @@ class AutoCausality:
                 )
             )
             if estimators_to_use == []:
-                warnings.warn(
-                    "requested estimators not implemented, continuing with defaults"
+                raise ValueError(
+                    "No valid estimators in" + str(self._settings["estimator_list"])
                 )
-                return available_estimators
             else:
                 return estimators_to_use
         else:
@@ -291,6 +292,7 @@ class AutoCausality:
                     self.estimator_cfg["search_space"],
                     metric=self._settings["metric"],
                     mode="max",
+                    points_to_evaluate=[self.estimator_cfg.get("defaults", {})],
                     low_cost_partial_config={},
                     **self._settings["tuner"],
                 )
@@ -327,8 +329,10 @@ class AutoCausality:
         Returns:
             dict: values of metrics after optimisation
         """
-
         # estimate effect with current config
+
+        print(self.estimator_name, config)
+
         # spawn a separate process to prevent cross-talk between tuner and automl on component models:
         estimates = Parallel(n_jobs=2)(
             delayed(self._estimate_effect)(config) for i in range(1)

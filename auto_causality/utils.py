@@ -12,6 +12,9 @@ def clean_config(params: dict):
         params["n_estimators"] = params["subforest_size"] * math.ceil(
             params["n_estimators"] / params["subforest_size"]
         )
+
+    if "min_samples_split" in params and params["min_samples_split"] > 1.5:
+        params["min_samples_split"] = int(params["min_samples_split"])
     return params
 
 
