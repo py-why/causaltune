@@ -93,24 +93,24 @@ class TestEndToEnd(object):
         data_df, features_X, features_W, targets, treatment = import_ihdp()
 
         estimator_list = [
-            "Dummy",
-            "SparseLinearDML",
+            # "Dummy",
+            # "SparseLinearDML",
             "ForestDRLearner",
-            "TransformedOutcome",
-            "CausalForestDML",
-            ".LinearDML",
-            "DomainAdaptationLearner",
-            "SLearner",
-            "XLearner",
-            "TLearner",
-            # "Ortho",
+            # "TransformedOutcome",
+            # "CausalForestDML",
+            # ".LinearDML",
+            # "DomainAdaptationLearner",
+            # "SLearner",
+            # "XLearner",
+            # "TLearner",
+            # # "Ortho",
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(
             time_budget=30,
             estimator_list=estimator_list,
             use_ray=True,
-            resources_per_trial={'cpu': 0.5},
+            resources_per_trial={"cpu": 0.5},
         )
 
         auto_causality.fit(data_df, treatment, outcome, features_W, features_X)
@@ -119,5 +119,5 @@ class TestEndToEnd(object):
 
 
 if __name__ == "__main__":
-    pytest.main([__file__])
-    # TestEndToEnd().test_endtoend()
+    # pytest.main([__file__])
+    TestEndToEnd().test_endtoend()
