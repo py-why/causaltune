@@ -108,6 +108,8 @@ class TestEndToEnd(object):
         auto_causality = AutoCausality(
             time_budget=30,
             estimator_list=estimator_list,
+            use_ray=True,
+            resources_per_trial={'cpu': 0.5},
         )
 
         auto_causality.fit(data_df, treatment, outcome, features_W, features_X)
