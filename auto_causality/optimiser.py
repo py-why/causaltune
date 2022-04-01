@@ -1,7 +1,5 @@
-import warnings
-from typing import List
 from copy import deepcopy
-
+from typing import List
 import pandas as pd
 import numpy as np
 
@@ -83,6 +81,7 @@ class AutoCausality:
                 Defaults to overall time budget / 2.
             try_init_configs (bool): try list of good performing estimators before continuing with HPO.
                 Defaults to False.
+            blacklisted_estimators (list): [optional] list of estimators not to include in fitting
         """
         self._settings = {}
         self._settings["tuner"] = {}
@@ -145,12 +144,13 @@ class AutoCausality:
         self.cfg = SimpleParamService(
             self.propensity_model,
             self.outcome_model,
+            requested_estimators=self._settings["estimator_list"],
         )
 
         self.estimates = {}
         self.scores = {}
         self.full_scores = {}
-        self.estimator_list = self._create_estimator_list()
+        self.estimator_list = self.cfg.estimators()
 
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
@@ -164,75 +164,6 @@ class AutoCausality:
 
     def get_estimators(self, deep=False):
         return self.estimator_list.copy()
-
-    def _create_estimator_list(self) -> list:
-        """Creates list of estimators via substring matching
-        - Retrieves list of available estimators,
-        - Returns all available estimators is provided list empty or set to 'auto'.
-        - Returns only requested estimators otherwise.
-        - Checks for and removes duplicates"""
-
-        # get list of available estimators:
-        available_estimators = []
-        for estimator in self.cfg.estimators():
-            if any(
-                [
-                    e in estimator
-                    for e in [
-                        "Dummy",
-                        "metalearners",
-                        "CausalForestDML",
-                        ".LinearDML",
-                        "SparseLinearDML",
-                        "ForestDRLearner",
-                        "LinearDRLearner",
-                        "DROrthoForest",
-                        "DMLOrthoForest",
-                        "TransformedOutcome",
-                    ]
-                ]
-            ):
-                available_estimators.append(estimator)
-
-        # match list of requested estimators against list of available estimators
-        # and remove duplicates:
-        if (
-            self._settings["estimator_list"] == "auto"
-            or self._settings["estimator_list"] == []
-        ):
-            warnings.warn("Using all available estimators...")
-            return available_estimators
-
-        elif self._verify_estimator_list():
-            estimators_to_use = list(
-                dict.fromkeys(
-                    [
-                        available_estimator
-                        for requested_estimator in self._settings["estimator_list"]
-                        for available_estimator in available_estimators
-                        if requested_estimator in available_estimator
-                    ]
-                )
-            )
-            if estimators_to_use == []:
-                raise ValueError(
-                    "No valid estimators in" + str(self._settings["estimator_list"])
-                )
-            else:
-                return estimators_to_use
-        else:
-            warnings.warn("invalid estimator list requested, continuing with defaults")
-            return available_estimators
-
-    def _verify_estimator_list(self):
-        """verifies that provided estimator list is in correct format"""
-        if not isinstance(self._settings["estimator_list"], list):
-            return False
-        else:
-            for e in self._settings["estimator_list"]:
-                if not isinstance(e, str):
-                    return False
-        return True
 
     def fit(
         self,
@@ -346,7 +277,7 @@ class AutoCausality:
             search_space.append(space)
         return {"estimator": tune.choice(search_space)}
 
-    def _create_initial_configs(self, estimator_list) -> list:
+    def _create_initial_configs(self) -> list:
         """creates list with initial configs to try before moving
         on to hierarchical HPO.
         The list has been identified by evaluating performance of all
@@ -358,7 +289,7 @@ class AutoCausality:
             list: list of dicts with promising initial configs
         """
         points = []
-        for est in estimator_list:
+        for est in self.estimator_list:
             est_params = self.cfg.method_params(est)
             defaults = est_params.get("defaults", {})
             points.append({"estimator": {"estimator_name": est, **defaults}})
@@ -437,16 +368,10 @@ class AutoCausality:
         scores = {
             "estimator_name": self.estimator_name,
             "train": make_scores(
-                estimator,
-                self.train_df,
-                te_train,
-                r_scorer=self.r_scorer.train,
+                estimator, self.train_df, te_train, r_scorer=self.r_scorer.train,
             ),
             "validation": make_scores(
-                estimator,
-                self.test_df,
-                te_test,
-                r_scorer=self.r_scorer.test,
+                estimator, self.test_df, te_test, r_scorer=self.r_scorer.test,
             ),
         }
         return scores
