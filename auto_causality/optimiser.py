@@ -41,7 +41,7 @@ class AutoCausality:
         self,
         data_df=None,
         metric="erupt",
-        metrics_to_report=["qini", "auc", "ate", "r_score"],
+        metrics_to_report=None,
         time_budget=60,
         num_samples=10,
         verbose=3,
@@ -98,8 +98,21 @@ class AutoCausality:
 
         self._settings["try_init_configs"] = try_init_configs
 
-        self._settings["metric"] = metric
-        self._settings["metrics_to_report"] = metrics_to_report
+        self.metric = metric
+        self.metrics_to_report = (
+            metrics_to_report
+            if metrics_to_report is not None
+            else [
+                "qini",
+                "auc",
+                "ate",
+                "erupt",
+                "norm_erupt",
+            ]  # not "r_score" by default
+        )
+        if self.metric not in self.metrics_to_report:
+            self.metrics_to_report.append(self.metric)
+
         self._settings["estimator_list"] = estimator_list
 
         # params for FLAML on component models:
@@ -259,15 +272,19 @@ class AutoCausality:
             proceed_when_unidentifiable=True
         )
 
-        self.r_scorer = RScoreWrapper(
-            self.outcome_model,
-            self.propensity_model,
-            self.train_df,
-            self.test_df,
-            outcome,
-            treatment,
-            common_causes,
-            effect_modifiers,
+        self.r_scorer = (
+            None
+            if False  # "r_scorer" not in self.metrics_to_report
+            else RScoreWrapper(
+                self.outcome_model,
+                self.propensity_model,
+                self.train_df,
+                self.test_df,
+                outcome,
+                treatment,
+                common_causes,
+                effect_modifiers,
+            )
         )
 
         self.tune_results = (
@@ -283,7 +300,7 @@ class AutoCausality:
         self.results = tune.run(
             self._tune_with_config,
             search_space,
-            metric=self._settings["metric"],
+            metric=self.metric,
             points_to_evaluate=init_cfg,
             mode="max",
             low_cost_partial_config={},
@@ -302,14 +319,12 @@ class AutoCausality:
         #     last_result = self.results.get_best_trial().last_result
 
         # self.estimates[estimator_name] = last_result.pop("estimator")
-        self.scores = best_score_by_estimator(
-            self.results.results, self._settings["metric"]
-        )
-        # self.scores[estimator_name] = last_result[self._settings["metric"]]
+        self.scores = best_score_by_estimator(self.results.results, self.metric)
+        # self.scores[estimator_name] = last_result[self.metric]
 
         # if self._settings["tuner"]["verbose"] > 0:
         #     print(f"... Estimator: {estimator_name}")
-        #     for metric in [self._settings["metric"]] + self._settings[
+        #     for metric in [self.metric] + self._settings[
         #         "metrics_to_report"
         #     ]:
         #         print(f" {metric} (validation): {last_result[metric]:6f}")
@@ -398,21 +413,16 @@ class AutoCausality:
                 },
             )
             scores = self._compute_metrics(estimate)
-            flat_results = {
-                k: float(scores["validation"][k])
-                for k in [self._settings["metric"]]
-                + self._settings["metrics_to_report"]
-            }
 
             return {
-                **flat_results,
+                self.metric: scores["validation"][self.metric],
                 "estimator": estimate,
                 "estimator_name": scores.pop("estimator_name"),
                 "scores": scores,
                 "config": config,
             }
         except Exception as e:
-            return {self._settings["metric"]: -np.inf, "exception": e}
+            return {self.metric: -np.inf, "exception": e}
 
     def _compute_metrics(self, estimator) -> dict:
         """computes metrics to score causal estimators"""
@@ -483,4 +493,4 @@ class AutoCausality:
     @property
     def best_score(self):
         """A float of the best score found."""
-        return self.results.best_result[self._settings["metric"]]
+        return self.results.best_result[self.metric]

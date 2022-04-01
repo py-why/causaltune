@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 import math
 from auto_causality.thirdparty.causalml import metrics
 
