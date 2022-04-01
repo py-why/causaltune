@@ -327,7 +327,7 @@ class AutoCausality:
             search_space.append(space)
         return {"estimator": tune.choice(search_space)}
 
-    def _create_initial_configs(self, estimator_list) -> list:
+    def _create_initial_configs(self) -> list:
         """creates list with initial configs to try before moving
         on to hierarchical HPO.
         The list has been identified by evaluating performance of all
@@ -339,7 +339,7 @@ class AutoCausality:
             list: list of dicts with promising initial configs
         """
         points = []
-        for est in estimator_list:
+        for est in self.estimator_list:
             est_params = self.cfg.method_params(est)
             defaults = est_params.get("defaults", {})
             points.append({"estimator": {"estimator_name": est, **defaults}})
