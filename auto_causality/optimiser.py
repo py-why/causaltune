@@ -205,7 +205,7 @@ class AutoCausality:
 
         self.r_scorer = (
             None
-            if False  # "r_scorer" not in self.metrics_to_report
+            if "r_scorer" not in self.metrics_to_report
             else RScoreWrapper(
                 self.outcome_model,
                 self.propensity_model,
@@ -228,6 +228,7 @@ class AutoCausality:
             if self._settings["try_init_configs"]
             else []
         )
+
         self.results = tune.run(
             self._tune_with_config,
             search_space,
@@ -277,7 +278,7 @@ class AutoCausality:
             search_space.append(space)
         return {"estimator": tune.choice(search_space)}
 
-    def _create_initial_configs(self) -> list:
+    def _create_initial_configs(self, estimator_list) -> list:
         """creates list with initial configs to try before moving
         on to hierarchical HPO.
         The list has been identified by evaluating performance of all
@@ -289,7 +290,7 @@ class AutoCausality:
             list: list of dicts with promising initial configs
         """
         points = []
-        for est in self.estimator_list:
+        for est in estimator_list:
             est_params = self.cfg.method_params(est)
             defaults = est_params.get("defaults", {})
             points.append({"estimator": {"estimator_name": est, **defaults}})
@@ -368,10 +369,16 @@ class AutoCausality:
         scores = {
             "estimator_name": self.estimator_name,
             "train": make_scores(
-                estimator, self.train_df, te_train, r_scorer=self.r_scorer.train,
+                estimator,
+                self.train_df,
+                te_train,
+                r_scorer=None if self.r_scorer is None else self.r_scorer.train,
             ),
             "validation": make_scores(
-                estimator, self.test_df, te_test, r_scorer=self.r_scorer.test,
+                estimator,
+                self.test_df,
+                te_test,
+                r_scorer=None if self.r_scorer is None else self.r_scorer.test,
             ),
         }
         return scores
