@@ -93,7 +93,7 @@ class TestEndToEnd(object):
         data_df, features_X, features_W, targets, treatment = import_ihdp()
 
         estimator_list = [
-            # "Dummy",
+            "Dummy",
             # "SparseLinearDML",
             "ForestDRLearner",
             # "TransformedOutcome",
@@ -109,7 +109,7 @@ class TestEndToEnd(object):
         auto_causality = AutoCausality(
             time_budget=30,
             estimator_list=estimator_list,
-            use_ray=True,
+            use_ray=False,
             resources_per_trial={"cpu": 0.5},
         )
 

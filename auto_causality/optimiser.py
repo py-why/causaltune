@@ -56,6 +56,7 @@ class AutoCausality:
         components_njobs=-1,
         components_time_budget=20,
         try_init_configs=False,
+        resources_per_trial=None,
     ):
         """constructor.
 
@@ -91,6 +92,9 @@ class AutoCausality:
         self._settings["tuner"][
             "use_ray"
         ] = use_ray  # requires ray to be installed via pip install flaml[ray]
+        self._settings["tuner"]["resources_per_trial"] = (
+            resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
+        )
 
         self._settings["try_init_configs"] = try_init_configs
 
@@ -125,7 +129,10 @@ class AutoCausality:
         self.outcome_model = AutoML(**self._settings["component_models"])
 
         # config with method-specific params
-        self.cfg = SimpleParamService(self.propensity_model, self.outcome_model,)
+        self.cfg = SimpleParamService(
+            self.propensity_model,
+            self.outcome_model,
+        )
 
         self.estimates = {}
         self.scores = {}
@@ -274,7 +281,6 @@ class AutoCausality:
         results = tune.run(
             self._tune_with_config,
             search_space,
-            resources_per_trial={"cpu": 1, "gpu": 0.5},
             metric=self._settings["metric"],
             points_to_evaluate=init_cfg,
             mode="max",
@@ -282,7 +288,7 @@ class AutoCausality:
             **self._settings["tuner"],
         )
 
-                    # update with best est:
+        # update with best est:
         estimator_name = results.best_config["estimator"]["estimator_name"]
         self.tune_results[estimator_name] = results.best_config
 
@@ -414,10 +420,16 @@ class AutoCausality:
         scores = {
             "estimator_name": self.estimator_name,
             "train": make_scores(
-                estimator, self.train_df, te_train, r_scorer=self.r_scorer.train,
+                estimator,
+                self.train_df,
+                te_train,
+                r_scorer=self.r_scorer.train,
             ),
             "validation": make_scores(
-                estimator, self.test_df, te_test, r_scorer=self.r_scorer.test,
+                estimator,
+                self.test_df,
+                te_test,
+                r_scorer=self.r_scorer.test,
             ),
         }
         return scores
