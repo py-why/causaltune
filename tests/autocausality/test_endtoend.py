@@ -94,16 +94,16 @@ class TestEndToEnd(object):
 
         estimator_list = [
             "Dummy",
-            # "SparseLinearDML",
+            "SparseLinearDML",
             "ForestDRLearner",
-            # "TransformedOutcome",
-            # "CausalForestDML",
-            # ".LinearDML",
-            # "DomainAdaptationLearner",
-            # "SLearner",
-            # "XLearner",
-            # "TLearner",
-            # # "Ortho",
+            "TransformedOutcome",
+            "CausalForestDML",
+            ".LinearDML",
+            "DomainAdaptationLearner",
+            "SLearner",
+            "XLearner",
+            "TLearner",
+            # "Ortho",
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(
@@ -119,5 +119,5 @@ class TestEndToEnd(object):
 
 
 if __name__ == "__main__":
-    # pytest.main([__file__])
-    TestEndToEnd().test_endtoend()
+    pytest.main([__file__])
+    # TestEndToEnd().test_endtoend()
