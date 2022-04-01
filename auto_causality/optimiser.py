@@ -277,7 +277,7 @@ class AutoCausality:
         if self._settings["hpo_style"] == "hierarchical":
             search_space = self._create_searchspace()
             init_cfg = (
-                self._create_initial_configs()
+                self._create_initial_configs(self.estimator_list)
                 if self._settings["try_init_configs"]
                 else []
             )
@@ -382,7 +382,7 @@ class AutoCausality:
             search_space.append(space)
         return {"estimator": tune.choice(search_space)}
 
-    def _create_initial_configs(self) -> list:
+    def _create_initial_configs(self, estimator_list) -> list:
         """creates list with initial configs to try before moving
         on to hierarchical HPO.
         The list has been identified by evaluating performance of all
@@ -394,12 +394,7 @@ class AutoCausality:
             list: list of dicts with promising initial configs
         """
         points = []
-        best_performers = [
-            "backdoor.econml.metalearners.DomainAdaptationLearner",
-            "backdoor.econml.dr.ForestDRLearner",
-            "backdoor.econml.dr.LinearDRLearner",
-        ]
-        for est in best_performers:
+        for est in estimator_list:
             est_params = self.cfg.method_params(est)
             defaults = est_params.get("defaults", {})
             points.append({"estimator": {"estimator_name": est, **defaults}})
