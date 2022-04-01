@@ -12,7 +12,7 @@ from dowhy import CausalModel
 from joblib import Parallel, delayed
 
 from auto_causality.params import SimpleParamService
-from auto_causality.scoring import make_scores
+from auto_causality.scoring import make_scores, best_score_by_estimator
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
 
@@ -55,7 +55,7 @@ class AutoCausality:
         components_pred_time_limit=10 / 1e6,
         components_njobs=-1,
         components_time_budget=20,
-        try_init_configs=False,
+        try_init_configs=True,
         resources_per_trial=None,
     ):
         """constructor.
@@ -274,11 +274,13 @@ class AutoCausality:
             {}
         )  # We need to keep track of the tune results to access the best config
 
-        search_space = self._create_searchspace()
+        search_space = self._create_searchspace(self.estimator_list)
         init_cfg = (
-            self._create_initial_configs() if self._settings["try_init_configs"] else []
+            self._create_initial_configs(self.estimator_list)
+            if self._settings["try_init_configs"]
+            else []
         )
-        results = tune.run(
+        self.results = tune.run(
             self._tune_with_config,
             search_space,
             metric=self._settings["metric"],
@@ -289,35 +291,37 @@ class AutoCausality:
         )
 
         # update with best est:
-        estimator_name = results.best_config["estimator"]["estimator_name"]
-        self.tune_results[estimator_name] = results.best_config
+        estimator_name = self.results.best_config["estimator"]["estimator_name"]
+        # self.tune_results[estimator_name] = self.results.best_config
 
-        if results.get_best_trial() is None:
+        if self.results.get_best_trial() is None:
             print("OPTIMIZATION FAILED")
             self.scores[estimator_name] = None
 
-        else:
-            last_result = results.get_best_trial().last_result
+        # else:
+        #     last_result = self.results.get_best_trial().last_result
 
-        self.estimates[estimator_name] = last_result.pop("estimator")
-        self.full_scores[estimator_name] = last_result.pop("scores")
-        self.scores[estimator_name] = last_result[self._settings["metric"]]
+        # self.estimates[estimator_name] = last_result.pop("estimator")
+        self.scores = best_score_by_estimator(
+            self.results.results, self._settings["metric"]
+        )
+        # self.scores[estimator_name] = last_result[self._settings["metric"]]
 
-        if self._settings["tuner"]["verbose"] > 0:
-            print(f"... Estimator: {estimator_name}")
-            for metric in [self._settings["metric"]] + self._settings[
-                "metrics_to_report"
-            ]:
-                print(f" {metric} (validation): {last_result[metric]:6f}")
+        # if self._settings["tuner"]["verbose"] > 0:
+        #     print(f"... Estimator: {estimator_name}")
+        #     for metric in [self._settings["metric"]] + self._settings[
+        #         "metrics_to_report"
+        #     ]:
+        #         print(f" {metric} (validation): {last_result[metric]:6f}")
 
-    def _create_searchspace(self) -> dict:
+    def _create_searchspace(self, estimator_list) -> dict:
         """constructs search space with estimators and their respective configs
 
         Returns:
             dict: hierarchical search space
         """
         search_space = []
-        for est in self.estimator_list:
+        for est in estimator_list:
             space = {}
             est_params = self.cfg.method_params(est)
             space = {
@@ -343,6 +347,8 @@ class AutoCausality:
             est_params = self.cfg.method_params(est)
             defaults = est_params.get("defaults", {})
             points.append({"estimator": {"estimator_name": est, **defaults}})
+
+        print("Initial configs:", points)
         return points
 
     def _tune_with_config(self, config: dict) -> dict:
@@ -365,11 +371,6 @@ class AutoCausality:
             delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
 
-        # self.estimates[self.estimator] = res[0]
-        # # Store the fitted Econml estimator
-        # self.trained_estimators_dict[self.estimator] = self.estimates[
-        #     self.estimator
-        # ].estimator.estimator
         return estimates
 
     def _estimate_effect(self, config):
@@ -403,7 +404,13 @@ class AutoCausality:
                 + self._settings["metrics_to_report"]
             }
 
-            return {**flat_results, "estimator": estimate, "scores": scores}
+            return {
+                **flat_results,
+                "estimator": estimate,
+                "estimator_name": scores.pop("estimator_name"),
+                "scores": scores,
+                "config": config,
+            }
         except Exception as e:
             return {self._settings["metric"]: -np.inf, "exception": e}
 
@@ -437,12 +444,12 @@ class AutoCausality:
     @property
     def best_estimator(self) -> str:
         """A string indicating the best estimator found"""
-        return max(self.scores, key=self.scores.get)
+        return self.results.best_result["estimator_name"]
 
     @property
     def model(self):
         """Return the *trained* best estimator"""
-        return self.best_model_for_estimator(self.best_estimator)
+        return self.results.best_result["estimator"]
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
@@ -456,28 +463,24 @@ class AutoCausality:
         """
         # Note that this returns the trained Econml estimator, whose attributes include
         # fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc.
-        return self.trained_estimators_dict[estimator_name]
+        return self.scores[estimator_name]["estimator"]
 
     @property
     def best_config(self):
         """A dictionary containing the best configuration"""
-        return self.best_config_per_estimator[self.best_estimator]
+        return self.results.best_config
 
     @property
     def best_config_per_estimator(self):
         """A dictionary of all estimators' best configuration."""
-        return {
-            estimator: self.tune_results[estimator]
-            for estimator in self.estimator_list
-            if estimator in self.tune_results
-        }
+        return {e: s["config"] for e, s in self.scores.values()}
 
     @property
     def best_score_per_estimator(self):
         """A dictionary of all estimators' best score."""
-        return self.scores
+        return {}
 
     @property
     def best_score(self):
         """A float of the best score found."""
-        return self.scores[self.best_estimator]
+        return self.results.best_result[self._settings["metric"]]

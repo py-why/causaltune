@@ -94,20 +94,21 @@ class TestEndToEnd(object):
 
         estimator_list = [
             "Dummy",
-            "SparseLinearDML",
-            "ForestDRLearner",
-            "TransformedOutcome",
-            "CausalForestDML",
+            # "SparseLinearDML",
+            # "ForestDRLearner",
+            # "TransformedOutcome",
+            # "CausalForestDML",
             ".LinearDML",
-            "DomainAdaptationLearner",
+            # "DomainAdaptationLearner",
             "SLearner",
-            "XLearner",
-            "TLearner",
-            # "Ortho",
+            # "XLearner",
+            # "TLearner",
+            # # "Ortho",
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=30,
+            time_budget=180,
+            components_time_budget=10,
             estimator_list=estimator_list,
             use_ray=False,
             resources_per_trial={"cpu": 0.5},
