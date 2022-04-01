@@ -1,4 +1,3 @@
-
 import warnings
 from flaml import tune
 from copy import deepcopy
@@ -64,10 +63,7 @@ class SimpleParamService:
 
         # match list of requested estimators against list of available estimators
         # and remove duplicates:
-        if (
-            self.requested_estimators == "auto"
-            or self.requested_estimators == []
-        ):
+        if self.requested_estimators == "auto" or self.requested_estimators == []:
             warnings.warn("Using all available estimators...")
             return available_estimators
 
@@ -103,7 +99,8 @@ class SimpleParamService:
         return True
 
     def method_params(
-        self, estimator: str,
+        self,
+        estimator: str,
     ):
         return self._configs()[estimator]
 
