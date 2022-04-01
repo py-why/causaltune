@@ -3,6 +3,8 @@ from typing import List
 from copy import deepcopy
 
 import pandas as pd
+import numpy as np
+
 from flaml import tune, AutoML
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
@@ -436,13 +438,12 @@ class AutoCausality:
         # add params that are tuned by flaml:
         config = clean_config(config)
         print(f"config: {config}")
-        self.estimator_name = config["estimator_name"]
-        params_to_tune = {
-            k: v for k, v in config.items() if (not k == "estimator_name")
-        }
+        self.estimator_name = config.pop("estimator_name")
+        # params_to_tune = {
+        #     k: v for k, v in config.items() if (not k == "estimator_name")
+        # }
         cfg = self.cfg.method_params(self.estimator_name)
-
-        if hasattr(self, "estimator_name"):
+        try:
             estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,
                 method_name=self.estimator_name,
@@ -451,7 +452,7 @@ class AutoCausality:
                 target_units="ate",  # condition used for CATE
                 confidence_intervals=False,
                 method_params={
-                    "init_params": {**deepcopy(params_to_tune), **cfg["init_params"]},
+                    "init_params": {**deepcopy(config), **cfg["init_params"]},
                     "fit_params": {},
                 },
             )
@@ -461,10 +462,10 @@ class AutoCausality:
                 for k in [self._settings["metric"]]
                 + self._settings["metrics_to_report"]
             }
-            last_result = {"estimator": estimate, "scores": scores}
-            return {**flat_results, **last_result}
-        else:
-            raise AttributeError("No estimator for causal model specified")
+
+            return {**flat_results, "estimator": estimate, "scores": scores}
+        except Exception as e:
+            return {self._settings["metric"]: -np.inf, "exception": e}
 
     def _compute_metrics(self, estimator) -> dict:
         """computes metrics to score causal estimators"""
