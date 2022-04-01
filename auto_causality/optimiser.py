@@ -1,8 +1,6 @@
 import warnings
 from typing import List
 from copy import deepcopy
-from numbers import Number
-from typing import Dict, Optional
 
 import pandas as pd
 from flaml import tune, AutoML
@@ -55,7 +53,8 @@ class AutoCausality:
         components_pred_time_limit=10 / 1e6,
         components_njobs=-1,
         components_time_budget=20,
-        resources_per_trial: Optional[Dict[str, Number]] = None,
+        try_init_configs=False,
+        hpo_style="hierarchical",
     ):
         """constructor.
 
@@ -80,23 +79,23 @@ class AutoCausality:
                 Defaults to -1 (all available cores).
             components_time_budget (float): time budget for HPO of component models in seconds.
                 Defaults to overall time budget / 2.
-            resources_per_trial (Optional[Dict[str, Number]]): resources assigned to each trial.
-                Only used if use_ray=True. Default: {'cpu': 1}.
+            try_init_configs (bool): try list of good performing estimators before continuing with HPO.
+                Defaults to False.
+            hpo_style (str): "sequential" (for loop over estimators) vs "hierarchical"
+                (estimators part of search space). Defaults to "hierarchical"
         """
-        self.use_ray = use_ray
-        resources_per_trial = (
-            resources_per_trial
-            if resources_per_trial is not None
-            else {"cpu": 1}
-        )
-        tuner_settings = {
-            "time_budget_s": time_budget,
-            "num_samples": num_samples,
-            "verbose": verbose,
-            "resources_per_trial": resources_per_trial,
-        }
         self._settings = {}
-        self._settings["tuner"] = tuner_settings
+        self._settings["tuner"] = {}
+        self._settings["tuner"]["time_budget_s"] = time_budget
+        self._settings["tuner"]["num_samples"] = num_samples
+        self._settings["tuner"]["verbose"] = verbose
+        self._settings["tuner"][
+            "use_ray"
+        ] = use_ray  # requires ray to be installed via pip install flaml[ray]
+
+        self._settings["try_init_configs"] = try_init_configs
+        self._settings["hpo_style"] = hpo_style
+
         self._settings["metric"] = metric
         self._settings["metrics_to_report"] = metrics_to_report
         self._settings["estimator_list"] = estimator_list
@@ -151,7 +150,7 @@ class AutoCausality:
     def get_estimators(self, deep=False):
         return self.estimator_list.copy()
 
-    def _create_estimator_list(self):
+    def _create_estimator_list(self) -> list:
         """Creates list of estimators via substring matching
         - Retrieves list of available estimators,
         - Returns all available estimators is provided list empty or set to 'auto'.
@@ -273,52 +272,138 @@ class AutoCausality:
             {}
         )  # We need to keep track of the tune results to access the best config
 
-        for estimator_name in self.estimator_list:
-            print("Starting fit of ", estimator_name)
-            self.estimator_name = estimator_name
-            self.estimator_cfg = self.cfg.method_params(estimator_name)
-            if self.estimator_cfg["search_space"] == {}:
-                self.tune_results[estimator_name] = {}
+        if self._settings["hpo_style"] == "hierarchical":
+            search_space = self._create_searchspace()
+            init_cfg = (
+                self._create_initial_configs()
+                if self._settings["try_init_configs"]
+                else []
+            )
+            results = tune.run(
+                self._tune_with_config,
+                search_space,
+                resources_per_trial={"cpu": 1, "gpu": 0.5},
+                metric=self._settings["metric"],
+                points_to_evaluate=init_cfg,
+                mode="max",
+                low_cost_partial_config={},
+                **self._settings["tuner"],
+            )
 
-                last_result = self._estimate_effect(self.estimator_cfg["init_params"])
+            # update with best est:
+            estimator_name = results.best_config["estimator"]["estimator_name"]
+            self.tune_results[estimator_name] = results.best_config
+
+            if results.get_best_trial() is None:
+                print("OPTIMIZATION FAILED")
+                self.scores[estimator_name] = None
             else:
-                eval_function = (
-                    self._estimate_effect
-                    if self.use_ray
-                    else self._joblib_tune
-                )
-                results = tune.run(
-                    eval_function,
-                    self.estimator_cfg["search_space"],
-                    metric=self._settings["metric"],
-                    mode="max",
-                    points_to_evaluate=[self.estimator_cfg.get("defaults", {})],
-                    low_cost_partial_config={},
-                    **self._settings["tuner"],
-                )
+                last_result = results.get_best_trial().last_result
 
-                # log results
-                self.tune_results[estimator_name] = results.best_config
-
-                if results.get_best_trial() is None:
-                    print(f"OPTIMIZATION FAILED FOR {estimator_name}")
-                    self.scores[self.estimator_name] = None
-                    continue
-                else:
-                    last_result = results.get_best_trial().last_result
-
-            self.estimates[self.estimator_name] = last_result.pop("estimator")
+            self.estimates[estimator_name] = last_result.pop("estimator")
             self.full_scores[estimator_name] = last_result.pop("scores")
-            self.scores[self.estimator_name] = last_result[self._settings["metric"]]
+            self.scores[estimator_name] = last_result[self._settings["metric"]]
 
             if self._settings["tuner"]["verbose"] > 0:
-                print(f"... Estimator: {self.estimator_name}")
+                print(f"... Estimator: {estimator_name}")
                 for metric in [self._settings["metric"]] + self._settings[
                     "metrics_to_report"
                 ]:
                     print(f" {metric} (validation): {last_result[metric]:6f}")
 
-    def _joblib_tune(self, config: dict) -> dict:
+        elif self._settings["hpo_style"] == "sequential":
+            for estimator_name in self.estimator_list:
+                print("Starting fit of ", estimator_name)
+                self.estimator_name = estimator_name
+                self.estimator_cfg = self.cfg.method_params(estimator_name)
+                if self.estimator_cfg["search_space"] == {}:
+                    self.tune_results[estimator_name] = {}
+
+                    last_result = self._estimate_effect(
+                        {
+                            "estimator_name": self.estimator_name,
+                            **self.estimator_cfg["init_params"],
+                        }
+                    )
+                else:
+                    results = tune.run(
+                        self._tune_with_config,
+                        {
+                            "estimator": {
+                                "estimator_name": self.estimator_name,
+                                **self.estimator_cfg["search_space"],
+                            }
+                        },
+                        resources_per_trial={"cpu": 1, "gpu": 0.5},
+                        metric=self._settings["metric"],
+                        mode="max",
+                        points_to_evaluate=[self.estimator_cfg.get("defaults", {})],
+                        low_cost_partial_config={},
+                        **self._settings["tuner"],
+                    )
+
+                    # log results
+                    self.tune_results[estimator_name] = results.best_config
+
+                    if results.get_best_trial() is None:
+                        print(f"OPTIMIZATION FAILED FOR {estimator_name}")
+                        self.scores[self.estimator_name] = None
+                        continue
+                    else:
+                        last_result = results.get_best_trial().last_result
+
+                self.estimates[self.estimator_name] = last_result.pop("estimator")
+                self.full_scores[estimator_name] = last_result.pop("scores")
+                self.scores[self.estimator_name] = last_result[self._settings["metric"]]
+
+                if self._settings["tuner"]["verbose"] > 0:
+                    print(f"... Estimator: {self.estimator_name}")
+                    for metric in [self._settings["metric"]] + self._settings[
+                        "metrics_to_report"
+                    ]:
+                        print(f" {metric} (validation): {last_result[metric]:6f}")
+
+    def _create_searchspace(self) -> dict:
+        """constructs search space with estimators and their respective configs
+
+        Returns:
+            dict: hierarchical search space
+        """
+        search_space = []
+        for est in self.estimator_list:
+            space = {}
+            est_params = self.cfg.method_params(est)
+            space = {
+                "estimator_name": est,
+                **est_params["search_space"],
+            }
+            search_space.append(space)
+        return {"estimator": tune.choice(search_space)}
+
+    def _create_initial_configs(self) -> list:
+        """creates list with initial configs to try before moving
+        on to hierarchical HPO.
+        The list has been identified by evaluating performance of all
+        learners on a range of datasets (and metrics).
+        Each entry is a dictionary with a learner and its best-performing
+        hyper params
+        TODO: identify best_performers for list below
+        Returns:
+            list: list of dicts with promising initial configs
+        """
+        points = []
+        best_performers = [
+            "backdoor.econml.metalearners.DomainAdaptationLearner",
+            "backdoor.econml.dr.ForestDRLearner",
+            "backdoor.econml.dr.LinearDRLearner",
+        ]
+        for est in best_performers:
+            est_params = self.cfg.method_params(est)
+            defaults = est_params.get("defaults", {})
+            points.append({"estimator": {"estimator_name": est, **defaults}})
+        return points
+
+    def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
         causal inference estimator
 
@@ -331,11 +416,11 @@ class AutoCausality:
         """
         # estimate effect with current config
 
-        print(self.estimator_name, config)
+        print(config["estimator"])
 
         # spawn a separate process to prevent cross-talk between tuner and automl on component models:
         estimates = Parallel(n_jobs=2)(
-            delayed(self._estimate_effect)(config) for i in range(1)
+            delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
 
         # self.estimates[self.estimator] = res[0]
@@ -350,12 +435,12 @@ class AutoCausality:
 
         # add params that are tuned by flaml:
         config = clean_config(config)
-        init_params = self.estimator_cfg["init_params"]
         print(f"config: {config}")
+        self.estimator_name = config["estimator_name"]
         params_to_tune = {
-            **init_params,
-            **config,
+            k: v for k, v in config.items() if (not k == "estimator_name")
         }
+        cfg = self.cfg.method_params(self.estimator_name)
 
         if hasattr(self, "estimator_name"):
             estimate = self.causal_model.estimate_effect(
@@ -366,7 +451,7 @@ class AutoCausality:
                 target_units="ate",  # condition used for CATE
                 confidence_intervals=False,
                 method_params={
-                    "init_params": deepcopy(params_to_tune),
+                    "init_params": {**deepcopy(params_to_tune), **cfg["init_params"]},
                     "fit_params": {},
                 },
             )
@@ -411,8 +496,7 @@ class AutoCausality:
     @property
     def best_estimator(self) -> str:
         """A string indicating the best estimator found"""
-        scores = {k: v for k, v in self.scores.items() if v is not None}
-        return max(scores, key=scores.get)
+        return max(self.scores, key=self.scores.get)
 
     @property
     def model(self):
