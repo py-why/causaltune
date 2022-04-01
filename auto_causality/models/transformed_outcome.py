@@ -3,7 +3,7 @@ from typing import List, Union
 import pandas as pd
 import numpy as np
 
-from . import DoWhyMethods
+from .wrapper import DoWhyMethods, DoWhyWrapper
 
 
 def transformed_outcome(
@@ -51,3 +51,8 @@ class TransformedOutcomeFitter(DoWhyMethods):
     #
     # def const_marginal_effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
     #     return self.predict(x)
+
+
+class TransformedOutcome(DoWhyWrapper):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, inner_class=TransformedOutcomeFitter, **kwargs)
