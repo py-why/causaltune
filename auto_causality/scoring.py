@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, List
 import math
 from auto_causality.thirdparty.causalml import metrics
 
@@ -22,27 +22,27 @@ class DummyEstimator:
         return self.cate_estimate
 
 
-def erupt_make_scores(
-    estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
-) -> float:
-    est = estimate.estimator
-    treatment_name = est._treatment_name
-    if not isinstance(treatment_name, str):
-        treatment_name = treatment_name[0]
-
-    # prepare the ERUPT scorer
-    erupt = ERUPT(
-        treatment_name=treatment_name,
-        propensity_model=DummyClassifier(strategy="prior"),
-        X_names=est._effect_modifier_names,
-    )
-    erupt.fit(df)
-    erupt_score = erupt.score(
-        df,
-        df[est._outcome_name],
-        cate_estimate > 0,
-    )
-    return erupt_score
+# def erupt_make_scores(
+#     estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
+# ) -> float:
+#     est = estimate.estimator
+#     treatment_name = est._treatment_name
+#     if not isinstance(treatment_name, str):
+#         treatment_name = treatment_name[0]
+#
+#     # prepare the ERUPT scorer
+#     erupt = ERUPT(
+#         treatment_name=treatment_name,
+#         propensity_model=DummyClassifier(strategy="prior"),
+#         X_names=est._effect_modifier_names,
+#     )
+#     erupt.fit(df)
+#     erupt_score = erupt.score(
+#         df,
+#         df[est._outcome_name],
+#         cate_estimate > 0,
+#     )
+#     return erupt_score
 
 
 def qini_make_score(
@@ -112,6 +112,8 @@ def make_scores(
     if not isinstance(treatment_name, str):
         treatment_name = treatment_name[0]
 
+    outcome_name = est._outcome_name
+
     intrp = SingleTreeCateInterpreter(
         include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
     )
@@ -125,10 +127,21 @@ def make_scores(
     )
     # TODO: adjust for multiple categorical treatments
     erupt.fit(df)
-    values = df[[treatment_name, est._outcome_name]]  # .reset_index(drop=True)
+
+    simple_ate = ate(df[treatment_name], df[outcome_name])[0]
+
+    values = df[[treatment_name, outcome_name]]  # .reset_index(drop=True)
     values["p"] = erupt.propensity_model.predict_proba(df)[:, 1]
     values["policy"] = cate_estimate > 0
+    values["norm_policy"] = cate_estimate > simple_ate
     values["weights"] = erupt.weights(df, lambda x: cate_estimate > 0)
+
+    erupt_score = erupt.score(df, df[outcome_name], cate_estimate > 0)
+
+    norm_erupt_score = (
+        erupt.score(df, df[outcome_name], cate_estimate > simple_ate)
+        - simple_ate * values["norm_policy"].mean()
+    )
 
     values = values.rename(columns={treatment_name: "treated"})
 
@@ -137,7 +150,8 @@ def make_scores(
     values = values.copy()
 
     out = {
-        "erupt": erupt_make_scores(estimate, df, cate_estimate),
+        "erupt": erupt_score,
+        "norm_erupt": norm_erupt_score,
         "qini": qini_make_score(estimate, df, cate_estimate),
         "auc": auc_make_score(estimate, df, cate_estimate),
         "r_score": 0
@@ -183,3 +197,15 @@ def group_ate(treatment, outcome, policy):
         out[f"{key}_std"] = std_
         out[f"{key}_count"] = count_
     return out
+
+
+def best_score_by_estimator(scores: Dict[str, dict], metric: str) -> Dict[str, dict]:
+    estimator_names = sorted(list(set([v["estimator_name"] for v in scores.values()])))
+    best = {}
+    for name in estimator_names:
+        best[name] = max(
+            [v for v in scores.values() if v["estimator_name"] == name],
+            key=lambda x: x[metric],
+        )
+
+    return best
