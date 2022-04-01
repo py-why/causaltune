@@ -160,26 +160,7 @@ class AutoCausality:
         - Checks for and removes duplicates"""
 
         # get list of available estimators:
-        available_estimators = []
-        for estimator in self.cfg.estimators():
-            if any(
-                [
-                    e in estimator
-                    for e in [
-                        "Dummy",
-                        "metalearners",
-                        "CausalForestDML",
-                        ".LinearDML",
-                        "SparseLinearDML",
-                        "ForestDRLearner",
-                        "LinearDRLearner",
-                        "DROrthoForest",
-                        "DMLOrthoForest",
-                        "TransformedOutcome",
-                    ]
-                ]
-            ):
-                available_estimators.append(estimator)
+        available_estimators = [est for est in self.cfg.estimators()]
 
         # match list of requested estimators against list of available estimators
         # and remove duplicates:
