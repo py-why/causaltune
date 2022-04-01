@@ -94,16 +94,16 @@ class TestEndToEnd(object):
 
         estimator_list = [
             "Dummy",
-            # "SparseLinearDML",
-            # "ForestDRLearner",
-            # "TransformedOutcome",
-            # "CausalForestDML",
+            "SparseLinearDML",
+            "ForestDRLearner",
+            "TransformedOutcome",
+            "CausalForestDML",
             ".LinearDML",
-            # "DomainAdaptationLearner",
+            "DomainAdaptationLearner",
             "SLearner",
-            # "XLearner",
-            # "TLearner",
-            # # "Ortho",
+            "XLearner",
+            "TLearner",
+            # "Ortho",
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(
