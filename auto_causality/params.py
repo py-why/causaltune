@@ -1,3 +1,5 @@
+
+import warnings
 from flaml import tune
 from copy import deepcopy
 from typing import Optional
@@ -12,6 +14,8 @@ class SimpleParamService:
         propensity_model,
         outcome_model,
         final_model=None,
+        requested_estimators="auto",
+        blacklisted_estimators: Optional[list] = None,
         n_bootstrap_samples: Optional[int] = None,
         n_jobs: Optional[int] = None,
         max_depth=10,
@@ -26,13 +30,80 @@ class SimpleParamService:
         self.max_depth = max_depth
         self.n_estimators = n_estimators
         self.min_leaf_size = min_leaf_size
+        self.requested_estimators = requested_estimators
+        self.blacklisted_estimators = blacklisted_estimators
 
-    def estimators(self):
-        return list(self._configs().keys())
+    def estimators(self) -> list:
+        """returns list of requested estimators, filtered by availability and
+        whether they had beeen blacklisted (i.e. are experimental)
+
+        Returns:
+            list: list of estimator names
+        """
+        available_estimators = self._create_estimator_list()
+        return available_estimators
+
+    def _create_estimator_list(self) -> list:
+        """Creates list of estimators via substring matching
+        - Retrieves list of available estimators,
+        - Returns all available estimators if provided list empty or set to 'auto'.
+        - Returns only requested estimators otherwise.
+        - Checks for and removes duplicates"""
+
+        # get list of available estimators:
+        all_estimators = list(self._configs().keys())
+        # remove blacklisted estimators
+        if not (self.blacklisted_estimators is None):
+            available_estimators = [
+                est
+                for est in all_estimators
+                if not (est in self.blacklisted_estimators)
+            ]
+        else:
+            available_estimators = all_estimators
+
+        # match list of requested estimators against list of available estimators
+        # and remove duplicates:
+        if (
+            self.requested_estimators == "auto"
+            or self.requested_estimators == []
+        ):
+            warnings.warn("Using all available estimators...")
+            return available_estimators
+
+        elif self._verify_estimator_list():
+            estimators_to_use = list(
+                dict.fromkeys(
+                    [
+                        available_estimator
+                        for requested_estimator in self.requested_estimators
+                        for available_estimator in available_estimators
+                        if requested_estimator in available_estimator
+                    ]
+                )
+            )
+            if estimators_to_use == []:
+                raise ValueError(
+                    "No valid estimators in" + str(self.requested_estimators)
+                )
+            else:
+                return estimators_to_use
+        else:
+            warnings.warn("invalid estimator list requested, continuing with defaults")
+            return available_estimators
+
+    def _verify_estimator_list(self):
+        """verifies that provided estimator list is in correct format"""
+        if not isinstance(self.requested_estimators, list):
+            return False
+        else:
+            for e in self.requested_estimators:
+                if not isinstance(e, str):
+                    return False
+        return True
 
     def method_params(
-        self,
-        estimator: str,
+        self, estimator: str,
     ):
         return self._configs()[estimator]
 
