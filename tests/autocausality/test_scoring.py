@@ -1,17 +1,22 @@
 import pytest
 from sklearn.model_selection import train_test_split
+from torch import seed
 from auto_causality.datasets import synth_ihdp, preprocess_dataset
+from auto_causality.scoring import *
+from auto_causality.r_score import RScoreWrapper
 from dowhy import CausalModel
-from econml.metalearners import SLearner
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
 
 
-def simple_model_run():
+def simple_model_run(rscorer=False):
     data_df = synth_ihdp()
-    data_df, features_X, features_W, targets, treatment = preprocess_dataset(data_df)
+    data_df, features_X, features_W, targets, treatment = \
+        preprocess_dataset(data_df)
+    # data_df = data_df.drop(columns = ["random"])
     outcome = targets[0]
     train_df, test_df = train_test_split(
-        data_df, train_size=0.5
+        data_df, train_size=0.5, random_state=123
     )
     causal_model = CausalModel(
         data=train_df,
@@ -19,6 +24,7 @@ def simple_model_run():
         outcome=outcome,
         common_causes=features_W,
         effect_modifiers=features_X,
+        random_state=123,
     )
     identified_estimand = causal_model.identify_effect(
         proceed_when_unidentifiable=True
@@ -29,25 +35,57 @@ def simple_model_run():
         control_value=0,
         treatment_value=1,
         target_units="ate",  # condition used for CATE
-        confidence_intervals=False,)
+        confidence_intervals=False,
+        # random_state=123,
+        method_params={
+            "init_params": {
+                "overall_model": DecisionTreeRegressor(random_state=123)
+                },
+            "fit_params": {},
+                        },)
     te_train = estimate.cate_estimates
-    return estimate, train_df ,te_train
+    if rscorer:
+        return train_df, test_df, outcome, treatment, features_W, features_X
+    else:
+        return estimate, train_df, te_train
 
-simple_model_run()
 
+class TestMetrics():
+    def test_auc_score(self):
+        assert auc_make_score(*simple_model_run()) == pytest.approx(0.6, 0.05)
 
+    def test_qini_make_score(self):
+        assert qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
 
-def test_auc_score():
-    return None
+    def test_r_make_score(self):       
+        rscorer = RScoreWrapper(
+            DecisionTreeRegressor(random_state=123),
+            DummyClassifier(strategy="prior"),
+            *simple_model_run(rscorer=True) 
+        )
+        assert r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(0.05, 0.1)
 
-# qini_make_score
-# auc_make_score
-# real_qini_make_score
-# r_make_score
-# make_scores
-# ate
-# group_ate
-# best_score_by_estimator
+    def test_make_scores_with_rscorer(self):
+        rscorer = RScoreWrapper(
+            DecisionTreeRegressor(random_state=123),
+            DummyClassifier(strategy="prior"),
+            *simple_model_run(rscorer=True) 
+        )
+        scores = make_scores(*simple_model_run(), rscorer.train)
+        true_keys = ["erupt", "norm_erupt", "qini", "auc", "r_score", "ate", "intrp", "values"]
+        for i in scores.keys():
+            print(i)
+            assert i in true_keys
+            if i == 'intrp':
+                assert isinstance(scores[i], SingleTreeCateInterpreter) == True
+            elif i == 'values':
+                assert isinstance(scores[i], pd.DataFrame) == True
+            else:
+                assert isinstance(scores[i], np.float64) == True
+
+    def test_make_scores_without_rscorer(self):
+        scores = make_scores(*simple_model_run())
+        assert scores['r_score'] == 0
 
 if __name__ == "__main__":
-    pytest.main([__file__])
+    pytest.main([__file__]) 
