@@ -100,8 +100,10 @@ class AutoCausality:
 
         self.metric = metric
         if metric not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score"]:
-            raise ValueError(f'Metric, {metric}, must be\
-                 one of "erupt","norm_erupt","qini","auc","ate" or "r_score"')
+            raise ValueError(
+                f'Metric, {metric}, must be\
+                 one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
+            )
         self.metrics_to_report = (
             metrics_to_report
             if metrics_to_report is not None
@@ -117,8 +119,10 @@ class AutoCausality:
             self.metrics_to_report.append(self.metric)
         for i in self.metrics_to_report:
             if i not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score"]:
-                raise ValueError(f'Metric for report, {i}, must be\
-                     one of "erupt","norm_erupt","qini","auc","ate" or "r_score"')
+                raise ValueError(
+                    f'Metric for report, {i}, must be\
+                     one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
+                )
         self._settings["estimator_list"] = estimator_list
 
         # params for FLAML on component models:
