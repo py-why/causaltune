@@ -1,12 +1,15 @@
 import pytest
 from sklearn.model_selection import train_test_split
-from torch import seed
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.dummy import DummyClassifier
 from auto_causality.datasets import synth_ihdp, preprocess_dataset
-from auto_causality.scoring import *
+from auto_causality.scoring \
+    import auc_make_score, r_make_score, make_scores, qini_make_score
 from auto_causality.r_score import RScoreWrapper
 from dowhy import CausalModel
-from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeRegressor
+from econml.cate_interpreter import SingleTreeCateInterpreter
+import pandas as pd
+import numpy as np
 
 
 def simple_model_run(rscorer=False):
@@ -48,11 +51,12 @@ def simple_model_run(rscorer=False):
         confidence_intervals=False,
         # random_state=123,
         method_params={
-            "init_params": {
+            "init_params":
+            {
                 "overall_model": DecisionTreeRegressor(random_state=123)
-                },
+            },
             "fit_params": {},
-                        },)
+        },)
     te_train = estimate.cate_estimates
     if rscorer:
         return train_df, test_df, outcome, treatment, features_W, features_X
@@ -67,40 +71,46 @@ class TestMetrics():
 
     def test_qini_make_score(self):
         '''Tests Qini score is within exceptable range for the test example'''
-        assert qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
+        assert qini_make_score(*simple_model_run()) == \
+            pytest.approx(0.15, 0.05)
 
-    def test_r_make_score(self): 
-        '''Tests RScorer output value is within exceptable range for the test example'''      
+    def test_r_make_score(self):
+        '''Tests RScorer output value is within exceptable range for the test
+        example'''
         rscorer = RScoreWrapper(
             DecisionTreeRegressor(random_state=123),
             DummyClassifier(strategy="prior"),
-            *simple_model_run(rscorer=True) 
+            *simple_model_run(rscorer=True)
         )
-        assert r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(0.05, 0.1)
+        assert r_make_score(*simple_model_run(), rscorer.train) == \
+            pytest.approx(0.05, 0.1)
 
     def test_make_scores_with_rscorer(self):
-        '''Tests make_scores (with rscorer) produces a dictionary of the right structure and composition'''  
+        '''Tests make_scores (with rscorer) produces a dictionary of the right
+        structure and composition'''
         rscorer = RScoreWrapper(
             DecisionTreeRegressor(random_state=123),
             DummyClassifier(strategy="prior"),
-            *simple_model_run(rscorer=True) 
+            *simple_model_run(rscorer=True)
         )
         scores = make_scores(*simple_model_run(), rscorer.train)
-        true_keys = ["erupt", "norm_erupt", "qini", "auc", "r_score", "ate", "intrp", "values"]
+        true_keys = ["erupt", "norm_erupt", "qini", "auc", "r_score", "ate",
+                     "intrp", "values"]
         for i in scores.keys():
             print(i)
             assert i in true_keys
             if i == 'intrp':
-                assert isinstance(scores[i], SingleTreeCateInterpreter) == True
+                assert isinstance(scores[i], SingleTreeCateInterpreter)
             elif i == 'values':
-                assert isinstance(scores[i], pd.DataFrame) == True
+                assert isinstance(scores[i], pd.DataFrame)
             else:
-                assert isinstance(scores[i], np.float64) == True
+                assert isinstance(scores[i], np.float64)
 
     def test_make_scores_without_rscorer(self):
-        '''Tests make_scores (without rscorer) returns 0 for 'r_score' key'''  
+        '''Tests make_scores (without rscorer) returns 0 for 'r_score' key'''
         scores = make_scores(*simple_model_run())
         assert scores['r_score'] == 0
 
+
 if __name__ == "__main__":
-    pytest.main([__file__]) 
+    pytest.main([__file__])
