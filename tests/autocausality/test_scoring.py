@@ -10,6 +10,16 @@ from sklearn.tree import DecisionTreeRegressor
 
 
 def simple_model_run(rscorer=False):
+    '''Creates data to allow testing of metrics
+    Args:
+        rscorer (bool): determines whether the function returns the correct
+        inputs for the RScoreWrapper (True) or for the metrics (False)
+    Returns:
+        if rscorer=True:
+            input parameters for RScoreWrapper
+        if rscorer=False:
+            input parameters for metrics functions (such as qini_make_score
+    '''
     data_df = synth_ihdp()
     data_df, features_X, features_W, targets, treatment = \
         preprocess_dataset(data_df)
@@ -52,12 +62,15 @@ def simple_model_run(rscorer=False):
 
 class TestMetrics():
     def test_auc_score(self):
+        '''Tests AUC Score is within exceptable range for the test example'''
         assert auc_make_score(*simple_model_run()) == pytest.approx(0.6, 0.05)
 
     def test_qini_make_score(self):
+        '''Tests Qini score is within exceptable range for the test example'''
         assert qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
 
-    def test_r_make_score(self):       
+    def test_r_make_score(self): 
+        '''Tests RScorer output value is within exceptable range for the test example'''      
         rscorer = RScoreWrapper(
             DecisionTreeRegressor(random_state=123),
             DummyClassifier(strategy="prior"),
@@ -66,6 +79,7 @@ class TestMetrics():
         assert r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(0.05, 0.1)
 
     def test_make_scores_with_rscorer(self):
+        '''Tests make_scores (with rscorer) produces a dictionary of the right structure and composition'''  
         rscorer = RScoreWrapper(
             DecisionTreeRegressor(random_state=123),
             DummyClassifier(strategy="prior"),
@@ -84,6 +98,7 @@ class TestMetrics():
                 assert isinstance(scores[i], np.float64) == True
 
     def test_make_scores_without_rscorer(self):
+        '''Tests make_scores (without rscorer) returns 0 for 'r_score' key'''  
         scores = make_scores(*simple_model_run())
         assert scores['r_score'] == 0
 
