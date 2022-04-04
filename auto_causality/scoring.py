@@ -154,13 +154,13 @@ def make_scores(
         "norm_erupt": norm_erupt_score,
         "qini": qini_make_score(estimate, df, cate_estimate),
         "auc": auc_make_score(estimate, df, cate_estimate),
-        "r_score": 0
-        if r_scorer is None
-        else r_make_score(estimate, df, cate_estimate, r_scorer),
         "ate": cate_estimate.mean(),
         "intrp": intrp,
         "values": values,
     }
+
+    if r_scorer is not None:
+        out["r_score"] = r_make_score(estimate, df, cate_estimate, r_scorer)
 
     del df
     return out

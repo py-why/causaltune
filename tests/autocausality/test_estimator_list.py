@@ -12,7 +12,7 @@ class TestEstimatorListGenerator:
         autocausality = AutoCausality(estimator_list="auto")
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg.estimators()
+        available_estimators = cfg._configs().keys()
         # verify that returned estimator list includes all available estimators
         assert all(e in available_estimators for e in estimator_list)
 
@@ -21,7 +21,7 @@ class TestEstimatorListGenerator:
         autocausality = AutoCausality(estimator_list=[])
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg.estimators()
+        available_estimators = cfg._configs().keys()
         assert all(e in available_estimators for e in estimator_list)
 
     def test_substring_group(self):
@@ -29,14 +29,14 @@ class TestEstimatorListGenerator:
         autocausality = AutoCausality(estimator_list=["dml"])
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = [e for e in cfg.estimators() if "dml" in e]
+        available_estimators = [e for e in cfg._configs().keys() if "dml" in e]
         # verify that returned estimator list includes all available estimators
         assert all(e in available_estimators for e in estimator_list)
         # or all econml models:
         autocausality = AutoCausality(estimator_list=["econml"])
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = [e for e in cfg.estimators() if "econml" in e]
+        available_estimators = [e for e in cfg._configs().keys() if "econml" in e]
         # verify that returned estimator list includes all available estimators
         assert all(e in available_estimators for e in estimator_list)
 
@@ -67,27 +67,27 @@ class TestEstimatorListGenerator:
         autocausality = AutoCausality(estimator_list=["linear_regression", "pasta", 12])
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg.estimators()
+        available_estimators = cfg._configs().keys()
         assert all(e in available_estimators for e in estimator_list)
 
         # empty string
         autocausality = AutoCausality(estimator_list=[""])
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg.estimators()
+        available_estimators = cfg._configs().keys()
         assert all(e in available_estimators for e in estimator_list)
 
         autocausality = AutoCausality(estimator_list="")
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg.estimators()
+        available_estimators = cfg._configs().keys()
         assert all(e in available_estimators for e in estimator_list)
 
         # test wrong dtype:
         autocausality = AutoCausality(estimator_list=5)
         estimator_list = autocausality.get_estimators()
         cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg.estimators()
+        available_estimators = cfg._configs().keys()
         assert all(e in available_estimators for e in estimator_list)
 
 
