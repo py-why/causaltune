@@ -17,12 +17,9 @@ class TestEstimatorListGenerator:
         assert all(e in available_estimators for e in estimator_list)
 
     def test_empty_list(self):
-        """tests if empty list is correctly handled"""
-        autocausality = AutoCausality(estimator_list=[])
-        estimator_list = autocausality.get_estimators()
-        cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg._configs().keys()
-        assert all(e in available_estimators for e in estimator_list)
+        with pytest.raises(ValueError):
+            """tests if empty list is correctly handled"""
+            AutoCausality(estimator_list=[])
 
     def test_substring_group(self):
         """tests if substring match to group of estimators works"""
@@ -62,33 +59,16 @@ class TestEstimatorListGenerator:
 
     def test_invalid_choice(self):
         """tests if invalid choices are handled correctly"""
-        # this should revert back to defaults (all available estimators)
+        # this should raise a ValueError
         # unavailable estimators:
-        autocausality = AutoCausality(estimator_list=["linear_regression", "pasta", 12])
-        estimator_list = autocausality.get_estimators()
-        cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg._configs().keys()
-        assert all(e in available_estimators for e in estimator_list)
+        with pytest.raises(ValueError):
+            AutoCausality(estimator_list=["linear_regression", "pasta", 12])
 
-        # empty string
-        autocausality = AutoCausality(estimator_list=[""])
-        estimator_list = autocausality.get_estimators()
-        cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg._configs().keys()
-        assert all(e in available_estimators for e in estimator_list)
+        with pytest.raises(ValueError):
+            AutoCausality(estimator_list="")
 
-        autocausality = AutoCausality(estimator_list="")
-        estimator_list = autocausality.get_estimators()
-        cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg._configs().keys()
-        assert all(e in available_estimators for e in estimator_list)
-
-        # test wrong dtype:
-        autocausality = AutoCausality(estimator_list=5)
-        estimator_list = autocausality.get_estimators()
-        cfg = SimpleParamService(propensity_model=AutoML(), outcome_model=AutoML())
-        available_estimators = cfg._configs().keys()
-        assert all(e in available_estimators for e in estimator_list)
+        with pytest.raises(ValueError):
+            AutoCausality(estimator_list=5)
 
 
 if __name__ == "__main__":

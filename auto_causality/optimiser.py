@@ -122,7 +122,6 @@ class AutoCausality:
                     f'Metric for report, {i}, must be\
                      one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
                 )
-        self._settings["estimator_list"] = estimator_list
 
         # params for FLAML on component models:
         self._settings["use_dummyclassifier"] = use_dummyclassifier
@@ -154,13 +153,18 @@ class AutoCausality:
         self.cfg = SimpleParamService(
             self.propensity_model,
             self.outcome_model,
-            requested_estimators=self._settings["estimator_list"],
         )
 
         self.estimates = {}
         self.scores = {}
         self.full_scores = {}
-        self.estimator_list = self.cfg.estimators()
+
+        # TODO: allow specifying an exclusion list, too
+        self.estimator_list = self.cfg.estimator_names_from_patterns(estimator_list)
+        if not self.estimator_list:
+            raise ValueError(
+                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
+            )
 
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
@@ -232,9 +236,9 @@ class AutoCausality:
             {}
         )  # We need to keep track of the tune results to access the best config
 
-        search_space = self._create_searchspace(self.estimator_list)
+        search_space = self.cfg.search_space(self.estimator_list)
         init_cfg = (
-            self._create_initial_configs(self.estimator_list)
+            self.cfg.default_configs(self.estimator_list)
             if self._settings["try_init_configs"]
             else []
         )
@@ -249,64 +253,12 @@ class AutoCausality:
             **self._settings["tuner"],
         )
 
-        # update with best est:
-        estimator_name = self.results.best_config["estimator"]["estimator_name"]
-        # self.tune_results[estimator_name] = self.results.best_config
-
         if self.results.get_best_trial() is None:
-            print("OPTIMIZATION FAILED")
-            self.scores[estimator_name] = None
+            raise Exception(
+                "Optimization failed! Did you set large enough time_budget and components_budget?"
+            )
 
-        # else:
-        #     last_result = self.results.get_best_trial().last_result
-
-        # self.estimates[estimator_name] = last_result.pop("estimator")
         self.scores = best_score_by_estimator(self.results.results, self.metric)
-        # self.scores[estimator_name] = last_result[self.metric]
-
-        # if self._settings["tuner"]["verbose"] > 0:
-        #     print(f"... Estimator: {estimator_name}")
-        #     for metric in [self.metric] + self._settings[
-        #         "metrics_to_report"
-        #     ]:
-        #         print(f" {metric} (validation): {last_result[metric]:6f}")
-
-    def _create_searchspace(self, estimator_list) -> dict:
-        """constructs search space with estimators and their respective configs
-
-        Returns:
-            dict: hierarchical search space
-        """
-        search_space = []
-        for est in estimator_list:
-            space = {}
-            est_params = self.cfg.method_params(est)
-            space = {
-                "estimator_name": est,
-                **est_params["search_space"],
-            }
-            search_space.append(space)
-        return {"estimator": tune.choice(search_space)}
-
-    def _create_initial_configs(self, estimator_list) -> list:
-        """creates list with initial configs to try before moving
-        on to hierarchical HPO.
-        The list has been identified by evaluating performance of all
-        learners on a range of datasets (and metrics).
-        Each entry is a dictionary with a learner and its best-performing
-        hyper params
-        TODO: identify best_performers for list below
-        Returns:
-            list: list of dicts with promising initial configs
-        """
-        points = []
-        for est in estimator_list:
-            est_params = self.cfg.method_params(est)
-            defaults = est_params.get("defaults", {})
-            points.append({"estimator": {"estimator_name": est, **defaults}})
-
-        print("Initial configs:", points)
-        return points
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
