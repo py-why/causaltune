@@ -31,7 +31,7 @@ class SimpleParamService:
             try:
                 for p in patterns:
                     assert isinstance(p, str)
-            except Exception as e:
+            except Exception:
                 raise ValueError("Invalid estimator list")
 
             out = [est for p in patterns for est in self.estimator_names if p in est]
