@@ -114,7 +114,7 @@ class TestMetrics:
     def test_make_scores_without_rscorer(self):
         """Tests make_scores (without rscorer) returns 0 for 'r_score' key"""
         scores = make_scores(*simple_model_run())
-        assert scores["r_score"] == 0
+        assert scores.get("r_score", 0) == 0
 
 
 if __name__ == "__main__":
