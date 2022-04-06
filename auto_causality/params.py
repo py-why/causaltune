@@ -198,7 +198,7 @@ class SimpleParamService:
                 "search_space": {
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
                     # "mc_iters": tune.randint(0, 10),
-                    "n_estimators": tune.randint(2, 500),
+                    "n_estimators": tune.randint(2, 200),
                     # "max_depth": tune.randint(2, 1000),
                     "min_samples_split": tune.randint(2, 20),
                     "min_samples_leaf": tune.randint(1, 25),

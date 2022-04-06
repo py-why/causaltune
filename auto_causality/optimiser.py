@@ -354,6 +354,8 @@ class AutoCausality:
                 "config": config,
             }
         except Exception as e:
+            print("Evaluation failed!\n", config)
+            print(e)
             return {self.metric: -np.inf, "exception": e}
 
     def _compute_metrics(self, estimator) -> dict:
