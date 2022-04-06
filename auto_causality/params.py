@@ -1,4 +1,3 @@
-import warnings
 from flaml import tune
 from copy import deepcopy
 from typing import Optional, Sequence, Union, Iterable
@@ -32,7 +31,7 @@ class SimpleParamService:
             try:
                 for p in patterns:
                     assert isinstance(p, str)
-            except:
+            except Exception as e:
                 raise ValueError("Invalid estimator list")
 
             out = [est for p in patterns for est in self.estimator_names if p in est]
