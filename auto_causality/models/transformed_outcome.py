@@ -45,13 +45,6 @@ class TransformedOutcomeFitter(DoWhyMethods):
             X = X[self.outcome_modifiers].values
         return self.outcome_model.predict(X)
 
-    #
-    # def effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-    #     return self.predict(x)
-    #
-    # def const_marginal_effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
-    #     return self.predict(x)
-
 
 class TransformedOutcome(DoWhyWrapper):
     def __init__(self, *args, **kwargs):
