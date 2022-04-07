@@ -40,12 +40,12 @@ class AutoCausality:
         data_df=None,
         metric="erupt",
         metrics_to_report=None,
-        time_budget=60,
-        num_samples=10,
+        time_budget=300,
         verbose=3,
         use_ray=False,
         estimator_list="auto",
         train_size=0.8,
+        num_samples=-1,
         test_size=None,
         use_dummyclassifier=True,
         components_task="regression",
@@ -160,8 +160,6 @@ class AutoCausality:
         )
 
         self.estimates = {}
-        self.scores = {}
-        self.full_scores = {}
 
         self.original_estimator_list = estimator_list
 
@@ -169,8 +167,8 @@ class AutoCausality:
         self.causal_model = None
         self.identified_estimand = None
 
-        # trained component models for each estimator
-        self.trained_estimators_dict = {}
+        # # trained component models for each estimator
+        # self.trained_estimators_dict = {}
 
     def get_params(self, deep=False):
         return self._settings.copy()
