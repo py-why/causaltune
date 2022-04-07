@@ -2,6 +2,7 @@ from flaml import tune
 from copy import deepcopy
 from typing import Optional, Sequence, Union, Iterable
 
+import warnings
 from econml.inference import BootstrapInference  # noqa F401
 from sklearn import linear_model
 
@@ -23,16 +24,40 @@ class SimpleParamService:
         self.include_experimental = include_experimental
         self.n_bootstrap_samples = n_bootstrap_samples
 
-    def estimator_names_from_patterns(self, patterns: Union[Sequence, str]):
+    def estimator_names_from_patterns(
+        self, patterns: Union[Sequence, str], data_rows: Optional[int] = None
+    ):
 
-        if patterns == "auto":
-            return self.estimator_names
+        if patterns == "all":
+            if data_rows <= 1000:
+                return self.estimator_names
+            else:
+                warnings.warn(
+                    "Excluding OrthoForests as they can have problems with large datasets"
+                )
+                return [e for e in self.estimator_names if "Ortho" not in e]
+
+        elif patterns == "auto":
+            # These are the ones we've seen best results from, empirically,
+            # plus dummy for baseline, and SLearner as that's the simplest possible
+            return self.estimator_names_from_patterns(
+                [
+                    "Dummy",
+                    "SLearner",
+                    "DomainAdaptationLearner",
+                    "TransformedOutcome",
+                    "CausalForestDML",
+                    "ForestDRLearner",
+                ]
+            )
         else:
             try:
                 for p in patterns:
                     assert isinstance(p, str)
             except Exception:
-                raise ValueError("Invalid estimator list")
+                raise ValueError(
+                    "Invalid estimator list, must be 'auto', 'all', or a list of strings"
+                )
 
             out = [est for p in patterns for est in self.estimator_names if p in est]
             return sorted(list(set(out)))

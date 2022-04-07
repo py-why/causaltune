@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List
+from typing import List, Optional, Union
 import pandas as pd
 import numpy as np
 
@@ -55,6 +55,7 @@ class AutoCausality:
         components_time_budget=20,
         try_init_configs=True,
         resources_per_trial=None,
+        include_experimental_estimators=False,
     ):
         """constructor.
 
@@ -67,7 +68,8 @@ class AutoCausality:
             num_samples (int): max number of iterations.
             verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
             use_ray (bool): use Ray backend (nrequires ray to be installed).
-            estimator_list (list): a list of strings for estimator names, or "auto".
+            estimator_list (list): a list of strings for estimator names,
+             or "auto" for a recommended subset, "all" for all, or a list of substrings of estimator names
                e.g. ```['dml', 'CausalForest']```
             train_size (float): Fraction of data used for training set. Defaults to 0.5.
             test_size (float): Optional size of test dataset. Defaults to None.
@@ -153,18 +155,15 @@ class AutoCausality:
         self.cfg = SimpleParamService(
             self.propensity_model,
             self.outcome_model,
+            n_jobs=components_njobs,
+            include_experimental=include_experimental_estimators,
         )
 
         self.estimates = {}
         self.scores = {}
         self.full_scores = {}
 
-        # TODO: allow specifying an exclusion list, too
-        self.estimator_list = self.cfg.estimator_names_from_patterns(estimator_list)
-        if not self.estimator_list:
-            raise ValueError(
-                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
-            )
+        self.original_estimator_list = estimator_list
 
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
@@ -186,6 +185,7 @@ class AutoCausality:
         outcome: str,
         common_causes: List[str],
         effect_modifiers: List[str],
+        estimator_list: Optional[Union[str, List[str]]] = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -232,9 +232,22 @@ class AutoCausality:
             )
         )
 
-        self.tune_results = (
-            {}
-        )  # We need to keep track of the tune results to access the best config
+        # self.tune_results = (
+        #     {}
+        # )  # We need to keep track of the tune results to access the best config
+
+        # TODO: allow specifying an exclusion list, too
+        used_estimator_list = (
+            self.original_estimator_list if estimator_list is None else estimator_list
+        )
+
+        self.estimator_list = self.cfg.estimator_names_from_patterns(
+            used_estimator_list, len(data_df)
+        )
+        if not self.estimator_list:
+            raise ValueError(
+                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
+            )
 
         search_space = self.cfg.search_space(self.estimator_list)
         init_cfg = (
