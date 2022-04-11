@@ -1,40 +1,40 @@
-# Auto-Causality: A library for automated Causal Inference model estimation and selection                                                                                                                                                                                                                                                                                                                   
+c# Auto-Causality: A library for automated Causal Inference model estimation and selection
 
 
-**AutoCausality** is a library for automated Causal Inference, building on the [FLAML](https://github.com/microsoft/FLAML) package for hyperparameter optimisation and the [EconML](https://github.com/microsoft/EconML/) and [DoWhy](https://github.com/microsoft/DoWhy/) packages for ML-based Causal Inference. It performs automated hyperparameter tuning of first stage models (for the treatment and outcome models) as well as hyperparameter tuning and model selection for the second stage model (causal estimator).  
+**AutoCausality** is a library for automated Causal Inference, building on the [FLAML](https://github.com/microsoft/FLAML) package for hyperparameter optimisation and the [EconML](https://github.com/microsoft/EconML/) and [DoWhy](https://github.com/microsoft/DoWhy/) packages for ML-based Causal Inference. It performs automated hyperparameter tuning of first stage models (for the treatment and outcome models) as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
 
 For now, the package only supports CATE models, instrumental variable models are coming next!
 
 
 <summary><strong><em>Table of Contents</em></strong></summary>
 
-- [Installation](#installation)  
+- [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Supported Models](#supported-models)
 - [Supported Metrics](#supported-metrics)
 - [Citation](#citation)
-- [For Developers](#for-developers)  
-    -[Installation from source](#installation-from-source)  
-    -[Tests](#testing)  
+- [For Developers](#for-developers)
+    -[Installation from source](#installation-from-source)
+    -[Tests](#testing)
 
 
 ## Installation
-To install from source, see [For Developers](#for-developers) section below.  
-TODO: make available as package on pypi  
+To install from source, see [For Developers](#for-developers) section below.
+TODO: make available as package on pypi
 
 
-**Requirements**  
+**Requirements**
 AutoCausality requires the following libraries to work:
 - NumPy
 - Pandas
 - EconML
 - DoWhy
-- Scikit-Learn  
+- Scikit-Learn
 
 If you run into any problems, try installing the dependencies manually:
 ```
 pip install -r requirements.txt
-``` 
+```
 
 ## Quick Start
 The autocausality package can be used like a scikit-style estimator:
@@ -78,7 +78,7 @@ The package supports the following causal models:
 
 ## Supported Metrics
 We support a variety of different metrics that quantify the performance of a causal model:
-* ERUPT (Expected Response Under Proposed Treatments) 
+* ERUPT (Expected Response Under Proposed Treatments)
 * Qini coefficient
 * AUC (area under curve)
 * R-Scorer
@@ -86,7 +86,7 @@ We support a variety of different metrics that quantify the performance of a cau
 
 ## Citation
 If you use AutoCausality in your research, please cite us as follows:
-Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Auto-Causality: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/auto-causality. 2022. Version 0.x  
+Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Auto-Causality: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/auto-causality. 2022. Version 0.x
 You can use the following BibTex entry:
 ```
 @misc{autocausality,
