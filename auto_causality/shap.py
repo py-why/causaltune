@@ -3,9 +3,9 @@ from dowhy.causal_model import CausalEstimate
 import shap
 
 final_model_map = {
-    "DomainAdaptationLearner": lambda x: x.final_models[0],
+    # "DomainAdaptationLearner": lambda x: x.final_models[0],
     "TransformedOutcomeFitter": lambda x: x.outcome_model,
-    "ForestDRLearner": lambda x: x.model_final,
+    # "ForestDRLearner": lambda x: x.model_final,
 }
 
 
