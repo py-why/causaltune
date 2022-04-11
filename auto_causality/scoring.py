@@ -197,7 +197,15 @@ def group_ate(treatment, outcome, policy: Union[pd.DataFrame, np.ndarray]):
 
 
 def best_score_by_estimator(scores: Dict[str, dict], metric: str) -> Dict[str, dict]:
-    estimator_names = sorted(list(set([v["estimator_name"] for v in scores.values()])))
+    for k, v in scores.values():
+        if "estimator_name" not in v:
+            print("*****WEIRDNESS*****", k, v)
+
+    estimator_names = sorted(
+        list(
+            set([v["estimator_name"] for v in scores.values() if "estimator_name" in v])
+        )
+    )
     best = {}
     for name in estimator_names:
         best[name] = max(
