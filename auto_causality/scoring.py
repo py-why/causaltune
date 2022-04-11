@@ -209,7 +209,11 @@ def best_score_by_estimator(scores: Dict[str, dict], metric: str) -> Dict[str, d
     best = {}
     for name in estimator_names:
         best[name] = max(
-            [v for v in scores.values() if v["estimator_name"] == name],
+            [
+                v
+                for v in scores.values()
+                if "estimator_name" in v and v["estimator_name"] == name
+            ],
             key=lambda x: x[metric],
         )
 
