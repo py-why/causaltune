@@ -201,6 +201,20 @@ class AutoCausality:
         self.train_df, self.test_df = train_test_split(
             data_df, train_size=self._settings["train_size"]
         )
+
+        # TODO: allow specifying an exclusion list, too
+        used_estimator_list = (
+            self.original_estimator_list if estimator_list is None else estimator_list
+        )
+
+        self.estimator_list = self.cfg.estimator_names_from_patterns(
+            used_estimator_list, len(data_df)
+        )
+        if not self.estimator_list:
+            raise ValueError(
+                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
+            )
+
         if self._settings["test_size"] is not None:
             self.test_df = self.test_df.sample(self._settings["test_size"])
 
@@ -233,19 +247,6 @@ class AutoCausality:
         # self.tune_results = (
         #     {}
         # )  # We need to keep track of the tune results to access the best config
-
-        # TODO: allow specifying an exclusion list, too
-        used_estimator_list = (
-            self.original_estimator_list if estimator_list is None else estimator_list
-        )
-
-        self.estimator_list = self.cfg.estimator_names_from_patterns(
-            used_estimator_list, len(data_df)
-        )
-        if not self.estimator_list:
-            raise ValueError(
-                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
-            )
 
         search_space = self.cfg.search_space(self.estimator_list)
         init_cfg = (
