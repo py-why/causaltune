@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 import math
 from auto_causality.thirdparty.causalml import metrics
 
@@ -179,24 +179,21 @@ def ate(
     return (mean_, std_, len(treatment))
 
 
-def group_ate(treatment, outcome, policy):
-    tmp = {
-        "all": ate(treatment, outcome),
-        "pos": ate(
-            treatment[policy == 1],
-            outcome[policy == 1],
-        ),
-        "neg": ate(
-            treatment[policy == 0],
-            outcome[policy == 0],
-        ),
-    }
-    out = {}
-    for key, (mean_, std_, count_) in tmp.items():
-        out[f"{key}_mean"] = mean_
-        out[f"{key}_std"] = std_
-        out[f"{key}_count"] = count_
-    return out
+def group_ate(treatment, outcome, policy: Union[pd.DataFrame, np.ndarray]):
+
+    tmp = {"all": ate(treatment, outcome)}
+    for p in policy.unique():
+        tmp[p] = ate(
+            treatment[policy == p],
+            outcome[policy == p],
+        )
+
+    tmp2 = [
+        {"policy": str(p), "mean": m, "std": s, "count": c}
+        for p, (m, s, c) in tmp.items()
+    ]
+
+    return pd.DataFrame(tmp2)
 
 
 def best_score_by_estimator(scores: Dict[str, dict], metric: str) -> Dict[str, dict]:
