@@ -1,5 +1,4 @@
 import pytest
-from flaml import AutoML
 from auto_causality import AutoCausality
 from auto_causality.params import SimpleParamService
 
