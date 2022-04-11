@@ -1,5 +1,5 @@
 git+https://github.com/microsoft/dowhy@52dd55f#egg=dowhy
-econml==0.13.0
+econml==0.12.0
 FLAML==1.0.0
 numpy~=1.21.0
 pandas~=1.3.5
