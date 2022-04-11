@@ -20,8 +20,13 @@ def shap_values(estimate: CausalEstimate, df: pd.DataFrame):
             final_model = final_model_map[est_name](estimate.estimator.estimator)
             if final_model.__class__.__name__ == "AutoML":
                 inner_model = final_model.model.estimator
-                explainer = shap.TreeExplainer(inner_model)
-                shap_values = explainer.shap_values(nice_df)
+                try:
+                    explainer = shap.TreeExplainer(inner_model)
+                    shap_values = explainer.shap_values(nice_df)
+                except Exception:
+                    # fall back to the slow algorithm
+                    explainer = shap.Explainer(final_model)
+                    shap_values = explainer.shap_values(nice_df)
                 return shap_values
 
         raise Exception
