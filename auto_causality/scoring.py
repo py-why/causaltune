@@ -197,7 +197,7 @@ def group_ate(treatment, outcome, policy: Union[pd.DataFrame, np.ndarray]):
 
 
 def best_score_by_estimator(scores: Dict[str, dict], metric: str) -> Dict[str, dict]:
-    for k, v in scores.values():
+    for k, v in scores.items():
         if "estimator_name" not in v:
             print("*****WEIRDNESS*****", k, v)
 
