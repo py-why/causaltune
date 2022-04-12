@@ -28,6 +28,8 @@ def json_default(thing):
         return str(bytes(thing))
     if isinstance(thing, pd.DataFrame):
         return (tuple(thing.columns), str(bytes(thing.values)))
+    elif isinstance(thing, pd.Series):
+        return str(bytes(thing.values))
     if isinstance(thing, type):
         return thing.__name__
     raise TypeError(f"object of type {type(thing).__name__} not serializable")

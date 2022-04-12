@@ -1,8 +1,8 @@
-import warnings
 from flaml import tune
 from copy import deepcopy
-from typing import Optional
+from typing import Optional, Sequence, Union, Iterable
 
+import warnings
 from econml.inference import BootstrapInference  # noqa F401
 from sklearn import linear_model
 
@@ -13,90 +13,102 @@ class SimpleParamService:
         propensity_model,
         outcome_model,
         final_model=None,
-        requested_estimators="auto",
-        blacklisted_estimators: Optional[list] = None,
         n_bootstrap_samples: Optional[int] = None,
         n_jobs: Optional[int] = None,
-        max_depth=10,
-        n_estimators=500,
-        min_leaf_size=10,
+        include_experimental=False,
     ):
         self.propensity_model = propensity_model
         self.outcome_model = outcome_model
         self.final_model = final_model
-        self.n_bootstrap_samples = n_bootstrap_samples
         self.n_jobs = n_jobs
-        self.max_depth = max_depth
-        self.n_estimators = n_estimators
-        self.min_leaf_size = min_leaf_size
-        self.requested_estimators = requested_estimators
-        self.blacklisted_estimators = blacklisted_estimators
+        self.include_experimental = include_experimental
+        self.n_bootstrap_samples = n_bootstrap_samples
 
-    def estimators(self) -> list:
-        """returns list of requested estimators, filtered by availability and
-        whether they had beeen blacklisted (i.e. are experimental)
+    def estimator_names_from_patterns(
+        self, patterns: Union[Sequence, str], data_rows: Optional[int] = None
+    ):
+
+        if patterns == "all":
+            if data_rows <= 1000:
+                return self.estimator_names
+            else:
+                warnings.warn(
+                    "Excluding OrthoForests as they can have problems with large datasets"
+                )
+                return [e for e in self.estimator_names if "Ortho" not in e]
+
+        elif patterns == "auto":
+            # These are the ones we've seen best results from, empirically,
+            # plus dummy for baseline, and SLearner as that's the simplest possible
+            return self.estimator_names_from_patterns(
+                [
+                    "Dummy",
+                    "SLearner",
+                    "DomainAdaptationLearner",
+                    "TransformedOutcome",
+                    "CausalForestDML",
+                    "ForestDRLearner",
+                ]
+            )
+        else:
+            try:
+                for p in patterns:
+                    assert isinstance(p, str)
+            except Exception:
+                raise ValueError(
+                    "Invalid estimator list, must be 'auto', 'all', or a list of strings"
+                )
+
+            out = [est for p in patterns for est in self.estimator_names if p in est]
+            return sorted(list(set(out)))
+
+    @property
+    def estimator_names(self):
+        if self.include_experimental:
+            return list(self._configs().keys())
+        else:
+            return [
+                est
+                for est, cfg in self._configs().items()
+                if not cfg.get("experimental", False)
+            ]
+
+    def search_space(self, estimator_list: Iterable[str]):
+        """constructs search space with estimators and their respective configs
 
         Returns:
-            list: list of estimator names
+            dict: hierarchical search space
         """
-        available_estimators = self._create_estimator_list()
-        return available_estimators
+        search_space = [
+            {
+                "estimator_name": est,
+                **est_params["search_space"],
+            }
+            for est, est_params in self._configs().items()
+            if est in estimator_list
+        ]
 
-    def _create_estimator_list(self) -> list:
-        """Creates list of estimators via substring matching
-        - Retrieves list of available estimators,
-        - Returns all available estimators if provided list empty or set to 'auto'.
-        - Returns only requested estimators otherwise.
-        - Checks for and removes duplicates"""
+        return {"estimator": tune.choice(search_space)}
 
-        # get list of available estimators:
-        all_estimators = list(self._configs().keys())
-        # remove blacklisted estimators
-        if not (self.blacklisted_estimators is None):
-            available_estimators = [
-                est
-                for est in all_estimators
-                if not (est in self.blacklisted_estimators)
-            ]
-        else:
-            available_estimators = all_estimators
+    def default_configs(self, estimator_list: Iterable[str]):
+        """creates list with initial configs to try before moving
+        on to hierarchical HPO.
+        The list has been identified by evaluating performance of all
+        learners on a range of datasets (and metrics).
+        Each entry is a dictionary with a learner and its best-performing
+        hyper params
+        TODO: identify best_performers for list below
+        Returns:
+            list: list of dicts with promising initial configs
+        """
+        points = [
+            {"estimator": {"estimator_name": est, **est_params.get("defaults", {})}}
+            for est, est_params in self._configs().items()
+            if est in estimator_list
+        ]
 
-        # match list of requested estimators against list of available estimators
-        # and remove duplicates:
-        if self.requested_estimators == "auto" or self.requested_estimators == []:
-            warnings.warn("Using all available estimators...")
-            return available_estimators
-
-        elif self._verify_estimator_list():
-            estimators_to_use = list(
-                dict.fromkeys(
-                    [
-                        available_estimator
-                        for requested_estimator in self.requested_estimators
-                        for available_estimator in available_estimators
-                        if requested_estimator in available_estimator
-                    ]
-                )
-            )
-            if estimators_to_use == []:
-                raise ValueError(
-                    "No valid estimators in" + str(self.requested_estimators)
-                )
-            else:
-                return estimators_to_use
-        else:
-            warnings.warn("invalid estimator list requested, continuing with defaults")
-            return available_estimators
-
-    def _verify_estimator_list(self):
-        """verifies that provided estimator list is in correct format"""
-        if not isinstance(self.requested_estimators, list):
-            return False
-        else:
-            for e in self.requested_estimators:
-                if not isinstance(e, str):
-                    return False
-        return True
+        print("Initial configs:", points)
+        return points
 
     def method_params(
         self,
@@ -130,7 +142,8 @@ class SimpleParamService:
                 "propensity_score_model": linear_model.LogisticRegression(
                     max_iter=10000
                 ),
-                "search_space": {}
+                "search_space": {},
+                "experimental": True,
                 # "init_params": {
                 #     "propensity_score_model":
                 #       linear_model.LogisticRegression(
@@ -198,7 +211,7 @@ class SimpleParamService:
                 "search_space": {
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
                     # "mc_iters": tune.randint(0, 10),
-                    "n_estimators": tune.randint(2, 500),
+                    "n_estimators": tune.randint(2, 200),
                     # "max_depth": tune.randint(2, 1000),
                     "min_samples_split": tune.randint(2, 20),
                     "min_samples_leaf": tune.randint(1, 25),

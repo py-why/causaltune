@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 import math
 from auto_causality.thirdparty.causalml import metrics
 
@@ -179,32 +179,41 @@ def ate(
     return (mean_, std_, len(treatment))
 
 
-def group_ate(treatment, outcome, policy):
-    tmp = {
-        "all": ate(treatment, outcome),
-        "pos": ate(
-            treatment[policy == 1],
-            outcome[policy == 1],
-        ),
-        "neg": ate(
-            treatment[policy == 0],
-            outcome[policy == 0],
-        ),
-    }
-    out = {}
-    for key, (mean_, std_, count_) in tmp.items():
-        out[f"{key}_mean"] = mean_
-        out[f"{key}_std"] = std_
-        out[f"{key}_count"] = count_
-    return out
+def group_ate(treatment, outcome, policy: Union[pd.DataFrame, np.ndarray]):
+
+    tmp = {"all": ate(treatment, outcome)}
+    for p in policy.unique():
+        tmp[p] = ate(
+            treatment[policy == p],
+            outcome[policy == p],
+        )
+
+    tmp2 = [
+        {"policy": str(p), "mean": m, "std": s, "count": c}
+        for p, (m, s, c) in tmp.items()
+    ]
+
+    return pd.DataFrame(tmp2)
 
 
 def best_score_by_estimator(scores: Dict[str, dict], metric: str) -> Dict[str, dict]:
-    estimator_names = sorted(list(set([v["estimator_name"] for v in scores.values()])))
+    for k, v in scores.items():
+        if "estimator_name" not in v:
+            print("*****WEIRDNESS*****", k, v)
+
+    estimator_names = sorted(
+        list(
+            set([v["estimator_name"] for v in scores.values() if "estimator_name" in v])
+        )
+    )
     best = {}
     for name in estimator_names:
         best[name] = max(
-            [v for v in scores.values() if v["estimator_name"] == name],
+            [
+                v
+                for v in scores.values()
+                if "estimator_name" in v and v["estimator_name"] == name
+            ],
             key=lambda x: x[metric],
         )
 

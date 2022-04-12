@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List
+from typing import List, Optional, Union
 import pandas as pd
 import numpy as np
 
@@ -40,12 +40,12 @@ class AutoCausality:
         data_df=None,
         metric="erupt",
         metrics_to_report=None,
-        time_budget=60,
-        num_samples=10,
+        time_budget=300,
         verbose=3,
         use_ray=False,
         estimator_list="auto",
         train_size=0.8,
+        num_samples=-1,
         test_size=None,
         use_dummyclassifier=True,
         components_task="regression",
@@ -55,6 +55,7 @@ class AutoCausality:
         components_time_budget=20,
         try_init_configs=True,
         resources_per_trial=None,
+        include_experimental_estimators=False,
     ):
         """constructor.
 
@@ -67,7 +68,8 @@ class AutoCausality:
             num_samples (int): max number of iterations.
             verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
             use_ray (bool): use Ray backend (nrequires ray to be installed).
-            estimator_list (list): a list of strings for estimator names, or "auto".
+            estimator_list (list): a list of strings for estimator names,
+             or "auto" for a recommended subset, "all" for all, or a list of substrings of estimator names
                e.g. ```['dml', 'CausalForest']```
             train_size (float): Fraction of data used for training set. Defaults to 0.5.
             test_size (float): Optional size of test dataset. Defaults to None.
@@ -122,7 +124,6 @@ class AutoCausality:
                     f'Metric for report, {i}, must be\
                      one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
                 )
-        self._settings["estimator_list"] = estimator_list
 
         # params for FLAML on component models:
         self._settings["use_dummyclassifier"] = use_dummyclassifier
@@ -154,20 +155,20 @@ class AutoCausality:
         self.cfg = SimpleParamService(
             self.propensity_model,
             self.outcome_model,
-            requested_estimators=self._settings["estimator_list"],
+            n_jobs=components_njobs,
+            include_experimental=include_experimental_estimators,
         )
 
         self.estimates = {}
-        self.scores = {}
-        self.full_scores = {}
-        self.estimator_list = self.cfg.estimators()
+
+        self.original_estimator_list = estimator_list
 
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
 
-        # trained component models for each estimator
-        self.trained_estimators_dict = {}
+        # # trained component models for each estimator
+        # self.trained_estimators_dict = {}
 
     def get_params(self, deep=False):
         return self._settings.copy()
@@ -182,6 +183,7 @@ class AutoCausality:
         outcome: str,
         common_causes: List[str],
         effect_modifiers: List[str],
+        estimator_list: Optional[Union[str, List[str]]] = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -199,6 +201,20 @@ class AutoCausality:
         self.train_df, self.test_df = train_test_split(
             data_df, train_size=self._settings["train_size"]
         )
+
+        # TODO: allow specifying an exclusion list, too
+        used_estimator_list = (
+            self.original_estimator_list if estimator_list is None else estimator_list
+        )
+
+        self.estimator_list = self.cfg.estimator_names_from_patterns(
+            used_estimator_list, len(data_df)
+        )
+        if not self.estimator_list:
+            raise ValueError(
+                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
+            )
+
         if self._settings["test_size"] is not None:
             self.test_df = self.test_df.sample(self._settings["test_size"])
 
@@ -228,13 +244,13 @@ class AutoCausality:
             )
         )
 
-        self.tune_results = (
-            {}
-        )  # We need to keep track of the tune results to access the best config
+        # self.tune_results = (
+        #     {}
+        # )  # We need to keep track of the tune results to access the best config
 
-        search_space = self._create_searchspace(self.estimator_list)
+        search_space = self.cfg.search_space(self.estimator_list)
         init_cfg = (
-            self._create_initial_configs(self.estimator_list)
+            self.cfg.default_configs(self.estimator_list)
             if self._settings["try_init_configs"]
             else []
         )
@@ -249,64 +265,12 @@ class AutoCausality:
             **self._settings["tuner"],
         )
 
-        # update with best est:
-        estimator_name = self.results.best_config["estimator"]["estimator_name"]
-        # self.tune_results[estimator_name] = self.results.best_config
-
         if self.results.get_best_trial() is None:
-            print("OPTIMIZATION FAILED")
-            self.scores[estimator_name] = None
+            raise Exception(
+                "Optimization failed! Did you set large enough time_budget and components_budget?"
+            )
 
-        # else:
-        #     last_result = self.results.get_best_trial().last_result
-
-        # self.estimates[estimator_name] = last_result.pop("estimator")
         self.scores = best_score_by_estimator(self.results.results, self.metric)
-        # self.scores[estimator_name] = last_result[self.metric]
-
-        # if self._settings["tuner"]["verbose"] > 0:
-        #     print(f"... Estimator: {estimator_name}")
-        #     for metric in [self.metric] + self._settings[
-        #         "metrics_to_report"
-        #     ]:
-        #         print(f" {metric} (validation): {last_result[metric]:6f}")
-
-    def _create_searchspace(self, estimator_list) -> dict:
-        """constructs search space with estimators and their respective configs
-
-        Returns:
-            dict: hierarchical search space
-        """
-        search_space = []
-        for est in estimator_list:
-            space = {}
-            est_params = self.cfg.method_params(est)
-            space = {
-                "estimator_name": est,
-                **est_params["search_space"],
-            }
-            search_space.append(space)
-        return {"estimator": tune.choice(search_space)}
-
-    def _create_initial_configs(self, estimator_list) -> list:
-        """creates list with initial configs to try before moving
-        on to hierarchical HPO.
-        The list has been identified by evaluating performance of all
-        learners on a range of datasets (and metrics).
-        Each entry is a dictionary with a learner and its best-performing
-        hyper params
-        TODO: identify best_performers for list below
-        Returns:
-            list: list of dicts with promising initial configs
-        """
-        points = []
-        for est in estimator_list:
-            est_params = self.cfg.method_params(est)
-            defaults = est_params.get("defaults", {})
-            points.append({"estimator": {"estimator_name": est, **defaults}})
-
-        print("Initial configs:", points)
-        return points
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -364,6 +328,8 @@ class AutoCausality:
                 "config": config,
             }
         except Exception as e:
+            print("Evaluation failed!\n", config)
+            print(e)
             return {self.metric: -np.inf, "exception": e}
 
     def _compute_metrics(self, estimator) -> dict:
