@@ -95,3 +95,6 @@ class DoWhyWrapper(CausalEstimator):
 
     def const_marginal_effect(self, X):
         return self.effect(self, X)
+
+    def shap_values(self, df: pd.DataFrame):
+        return self.estimator.shap_values(df[self._effect_modifier_names])

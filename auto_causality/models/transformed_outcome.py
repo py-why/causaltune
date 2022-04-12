@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 from .wrapper import DoWhyMethods, DoWhyWrapper
+from auto_causality.shap import shap_with_automl
 
 
 def transformed_outcome(
@@ -44,6 +45,9 @@ class TransformedOutcomeFitter(DoWhyMethods):
         if isinstance(X, pd.DataFrame):
             X = X[self.outcome_modifiers].values
         return self.outcome_model.predict(X)
+
+    def shap_values(self, df: pd.DataFrame):
+        return shap_with_automl(self.outcome_model, df)
 
 
 class TransformedOutcome(DoWhyWrapper):
