@@ -1,6 +1,5 @@
 from typing import Optional, Dict, Union
 import math
-import traceback
 
 import numpy as np
 import pandas as pd
