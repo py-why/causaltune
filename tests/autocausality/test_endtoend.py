@@ -93,24 +93,24 @@ class TestEndToEnd(object):
 
         data_df, features_X, features_W, targets, treatment = import_ihdp()
 
-        # estimator_list = [
-        #     "Dummy",
-        #     "SparseLinearDML",
-        #     "ForestDRLearner",
-        #     "TransformedOutcome",
-        #     "CausalForestDML",
-        #     ".LinearDML",
-        #     "DomainAdaptationLearner",
-        #     "SLearner",
-        #     "XLearner",
-        #     "TLearner",
-        #     "Ortho",
-        # ]
+        estimator_list = [
+            "Dummy",
+            "SparseLinearDML",
+            "ForestDRLearner",
+            "TransformedOutcome",
+            "CausalForestDML",
+            ".LinearDML",
+            "DomainAdaptationLearner",
+            "SLearner",
+            "XLearner",
+            "TLearner",
+            "Ortho",
+        ]
         outcome = targets[0]
         auto_causality = AutoCausality(
             time_budget=600,
             components_time_budget=10,
-            estimator_list="all",  # estimator_list,
+            estimator_list=estimator_list,  # "all",  #
             use_ray=False,
             verbose=3,
             components_verbose=2,
@@ -123,11 +123,7 @@ class TestEndToEnd(object):
         for est_name, scores in auto_causality.scores.items():
             # Dummy model doesn't support Shapley values
             # Orthoforest shapley calc is VERY slow
-            if (
-                "Dummy" not in est_name
-                and "Ortho" not in est_name
-                and "Transformed" not in est_name
-            ):
+            if "Dummy" not in est_name and "Ortho" not in est_name:
 
                 print("Calculating Shapley values for", est_name)
                 shap_values(scores["estimator"], data_df[:10])
