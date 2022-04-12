@@ -1,4 +1,6 @@
 import pytest
+import pandas as pd
+
 from auto_causality import AutoCausality
 from auto_causality.params import SimpleParamService
 
@@ -81,7 +83,14 @@ class TestEstimatorListGenerator:
         with pytest.raises(ValueError):
             """tests if empty list is correctly handled"""
             ac = AutoCausality()
-            ac.fit([0], "", "", [], [], estimator_list=[])
+            ac.fit(
+                pd.DataFrame({"treatment": [0, 1]}),
+                "treatment",
+                "outcome",
+                [],
+                [],
+                estimator_list=[],
+            )
 
 
 if __name__ == "__main__":
