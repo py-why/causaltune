@@ -1,5 +1,7 @@
 from copy import deepcopy
 from typing import List, Optional, Union
+import traceback
+
 import pandas as pd
 import numpy as np
 
@@ -197,6 +199,10 @@ class AutoCausality:
             effect_modifiers (List[str]): list of names of effect modifiers
         """
 
+        assert (
+            len(data_df[treatment].unique()) > 1
+        ), "Treatment must take at least 2 values, eg 0 and 1!"
+
         self.data_df = data_df
         self.train_df, self.test_df = train_test_split(
             data_df, train_size=self._settings["train_size"]
@@ -330,7 +336,11 @@ class AutoCausality:
         except Exception as e:
             print("Evaluation failed!\n", config)
             print(e)
-            return {self.metric: -np.inf, "exception": e}
+            return {
+                self.metric: -np.inf,
+                "exception": e,
+                "traceback": traceback.format_exc(),
+            }
 
     def _compute_metrics(self, estimator) -> dict:
         """computes metrics to score causal estimators"""

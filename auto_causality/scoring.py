@@ -1,14 +1,16 @@
 from typing import Optional, Dict, Union
 import math
-from auto_causality.thirdparty.causalml import metrics
 
 import numpy as np
 import pandas as pd
+
 from econml.cate_interpreter import SingleTreeCateInterpreter
 from sklearn.dummy import DummyClassifier
-
-from auto_causality.erupt import ERUPT
 from dowhy.causal_estimator import CausalEstimate
+
+
+from auto_causality.thirdparty.causalml import metrics
+from auto_causality.erupt import ERUPT
 
 
 class DummyEstimator:
