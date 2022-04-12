@@ -1,5 +1,7 @@
 from copy import deepcopy
 from typing import List, Optional, Union
+import traceback
+
 import pandas as pd
 import numpy as np
 
@@ -330,7 +332,11 @@ class AutoCausality:
         except Exception as e:
             print("Evaluation failed!\n", config)
             print(e)
-            return {self.metric: -np.inf, "exception": e}
+            return {
+                self.metric: -np.inf,
+                "exception": e,
+                "traceback": traceback.format_exc(),
+            }
 
     def _compute_metrics(self, estimator) -> dict:
         """computes metrics to score causal estimators"""
