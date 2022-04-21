@@ -5,7 +5,8 @@ import traceback
 import pandas as pd
 import numpy as np
 
-from flaml import tune, AutoML
+from flaml import tune
+from flaml import AutoML as FLAMLAutoML
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
 from dowhy import CausalModel
@@ -15,6 +16,12 @@ from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores, best_score_by_estimator
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
+
+
+# this is needed for smooth calculation of Shapley values in DomainAdaptationLearner
+class AutoML(FLAMLAutoML):
+    def __call__(self, *args, **kwargs):
+        return self.predict(*args, **kwargs)
 
 
 class AutoCausality:
