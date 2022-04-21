@@ -17,8 +17,8 @@ from auto_causality.scoring import make_scores, best_score_by_estimator
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
 
-# this is needed for smooth calculation of Shapley values in
-# DomainAdaptationLearner
+
+# this is needed for smooth calculation of Shapley values in DomainAdaptationLearner
 class AutoML(FLAMLAutoML):
     def __call__(self, *args, **kwargs):
         return self.predict(*args, **kwargs)
