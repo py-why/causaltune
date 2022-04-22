@@ -90,7 +90,7 @@ class TestMetrics:
             DummyClassifier(strategy="prior"),
             *simple_model_run(rscorer=True)
         )
-        scores = make_scores(*simple_model_run(), rscorer.train)
+        scores = make_scores(*(simple_model_run()[:2]), rscorer.train)
         true_keys = [
             "erupt",
             "norm_erupt",
@@ -113,7 +113,7 @@ class TestMetrics:
 
     def test_make_scores_without_rscorer(self):
         """Tests make_scores (without rscorer) returns 0 for 'r_score' key"""
-        scores = make_scores(*simple_model_run())
+        scores = make_scores(*(simple_model_run()[:2]))
         assert scores.get("r_score", 0) == 0
 
 
