@@ -105,11 +105,17 @@ def r_make_score(
 
 
 def make_scores(
-    estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, r_scorer=None
+    estimate: CausalEstimate,
+    df: pd.DataFrame,
+    # cate_estimate: np.ndarray = None,
+    r_scorer=None,
 ) -> dict:
 
     df = df.copy().reset_index()
     est = estimate.estimator
+
+    cate_estimate = est.effect(df)
+
     treatment_name = est._treatment_name
     if not isinstance(treatment_name, str):
         treatment_name = treatment_name[0]
