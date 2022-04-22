@@ -119,7 +119,7 @@ def make_scores(
     intrp = SingleTreeCateInterpreter(
         include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
     )
-    intrp.interpret(DummyEstimator(cate_estimate), df)
+    intrp.interpret(DummyEstimator(cate_estimate), df[est._effect_modifier_names])
     intrp.feature_names = est._effect_modifier_names
 
     erupt = ERUPT(
