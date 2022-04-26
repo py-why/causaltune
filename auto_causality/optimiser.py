@@ -169,12 +169,16 @@ class AutoCausality:
         )
 
         self.estimates = {}
+        self.results = None
 
         self.original_estimator_list = estimator_list
 
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
+        # properties that are used to resume fits (warm start)
+        self.resume_scores = []
+        self.resume_cfg = []
 
         # # trained component models for each estimator
         # self.trained_estimators_dict = {}
@@ -193,6 +197,8 @@ class AutoCausality:
         common_causes: List[str],
         effect_modifiers: List[str],
         estimator_list: Optional[Union[str, List[str]]] = None,
+        resume: Optional[bool] = False,
+        time_budget: Optional[int] = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -204,6 +210,9 @@ class AutoCausality:
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
             effect_modifiers (List[str]): list of names of effect modifiers
+            estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
+            resume (Optional[bool]): set to True to continue previous fit
+            time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
         """
 
         assert (
@@ -214,7 +223,8 @@ class AutoCausality:
         self.train_df, self.test_df = train_test_split(
             data_df, train_size=self._settings["train_size"]
         )
-
+        if time_budget:
+            self._settings["tuner"]["time_budget_s"] = time_budget
         # TODO: allow specifying an exclusion list, too
         used_estimator_list = (
             self.original_estimator_list if estimator_list is None else estimator_list
@@ -256,7 +266,6 @@ class AutoCausality:
                 effect_modifiers,
             )
         )
-
         # self.tune_results = (
         #     {}
         # )  # We need to keep track of the tune results to access the best config
@@ -268,11 +277,25 @@ class AutoCausality:
             else []
         )
 
+        if resume and self.results:
+            # pull out configs and resume_scores from previous trials:
+            for _, result in self.results.results.items():
+                self.resume_scores.append(result[self.metric])
+                self.resume_cfg.append(result["config"])
+            # append init_cfgs that have not yet been evaluated
+            for cfg in init_cfg:
+                self.resume_cfg.append(cfg) if cfg not in self.resume_cfg else None
+
         self.results = tune.run(
             self._tune_with_config,
             search_space,
             metric=self.metric,
-            points_to_evaluate=init_cfg,
+            points_to_evaluate=init_cfg
+            if len(self.resume_cfg) == 0
+            else self.resume_cfg,
+            evaluated_rewards=[]
+            if len(self.resume_scores) == 0
+            else self.resume_scores,
             mode="max",
             low_cost_partial_config={},
             **self._settings["tuner"],
