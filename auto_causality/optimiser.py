@@ -169,6 +169,7 @@ class AutoCausality:
         )
 
         self.estimates = {}
+        self.results = None
 
         self.original_estimator_list = estimator_list
 
@@ -193,6 +194,7 @@ class AutoCausality:
         common_causes: List[str],
         effect_modifiers: List[str],
         estimator_list: Optional[Union[str, List[str]]] = None,
+        resume: Optional[bool] = False,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -204,6 +206,8 @@ class AutoCausality:
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
             effect_modifiers (List[str]): list of names of effect modifiers
+            estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
+            resume (Optional[bool]): set to True to continue previous fit
         """
 
         assert (
@@ -256,10 +260,12 @@ class AutoCausality:
                 effect_modifiers,
             )
         )
-
         # self.tune_results = (
         #     {}
         # )  # We need to keep track of the tune results to access the best config
+
+        resume_scores = None
+        resume_cfg = None
 
         search_space = self.cfg.search_space(self.estimator_list)
         init_cfg = (
@@ -268,11 +274,23 @@ class AutoCausality:
             else []
         )
 
+        if resume and self.results:
+            # pull out configs and resume_scores from previous trials:
+            resume_scores = []
+            resume_cfg = []
+            for _, result in self.results.results.items():
+                resume_scores.append(result[self.metric])
+                resume_cfg.append(result["config"])
+            # append init_cfgs that have not yet been evaluated
+            for cfg in init_cfg:
+                resume_cfg.append(cfg) if cfg not in resume_cfg else None
+
         self.results = tune.run(
             self._tune_with_config,
             search_space,
             metric=self.metric,
-            points_to_evaluate=init_cfg,
+            points_to_evaluate=init_cfg if resume_cfg is None else resume_cfg,
+            evaluated_rewards=[] if resume_scores is None else resume_scores,
             mode="max",
             low_cost_partial_config={},
             **self._settings["tuner"],
