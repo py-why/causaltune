@@ -1,9 +1,11 @@
 from copy import deepcopy
 from typing import List, Optional, Union
 import traceback
+from collections import defaultdict
 
 import pandas as pd
 import numpy as np
+
 
 from flaml import tune
 from flaml import AutoML as FLAMLAutoML
@@ -168,7 +170,7 @@ class AutoCausality:
             include_experimental=include_experimental_estimators,
         )
 
-        self.estimates = {}
+        self._best_estimators = defaultdict(lambda: (float("-inf"), None))
 
         self.original_estimator_list = estimator_list
 
@@ -283,7 +285,16 @@ class AutoCausality:
                 "Optimization failed! Did you set large enough time_budget and components_budget?"
             )
 
+        self.update_summary_scores()
+
+    def update_summary_scores(self):
         self.scores = best_score_by_estimator(self.results.results, self.metric)
+        # now inject the separately saved model objects
+        for est_name in self.scores:
+            assert (
+                self._best_estimators[est_name][0] == self.scores[est_name][self.metric]
+            ), "Can't match best model to score"
+            self.scores[est_name]["estimator"] = self._best_estimators[est_name][1]
 
     def _tune_with_config(self, config: dict) -> dict:
         """Performs Hyperparameter Optimisation for a
@@ -304,6 +315,17 @@ class AutoCausality:
         estimates = Parallel(n_jobs=2)(
             delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
+
+        # pop and cache separately the fitted model object, so we only store the best ones per estimator
+        if (
+            "exception" not in estimates
+            and self._best_estimators[estimates["estimator_name"]][0]
+            < estimates[self.metric]
+        ):
+            self._best_estimators[estimates["estimator_name"]] = (
+                estimates[self.metric],
+                estimates.pop("estimator"),
+            )
 
         return estimates
 
