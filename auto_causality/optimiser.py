@@ -176,6 +176,9 @@ class AutoCausality:
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
+        # properties that are used to resume fits (warm start)
+        self.resume_scores = []
+        self.resume_cfg = []
 
         # # trained component models for each estimator
         # self.trained_estimators_dict = {}
@@ -264,9 +267,6 @@ class AutoCausality:
         #     {}
         # )  # We need to keep track of the tune results to access the best config
 
-        resume_scores = None
-        resume_cfg = None
-
         search_space = self.cfg.search_space(self.estimator_list)
         init_cfg = (
             self.cfg.default_configs(self.estimator_list)
@@ -276,21 +276,24 @@ class AutoCausality:
 
         if resume and self.results:
             # pull out configs and resume_scores from previous trials:
-            resume_scores = []
-            resume_cfg = []
             for _, result in self.results.results.items():
-                resume_scores.append(result[self.metric])
-                resume_cfg.append(result["config"])
+                self.resume_scores.append(result[self.metric])
+                self.resume_cfg.append(result["config"])
             # append init_cfgs that have not yet been evaluated
             for cfg in init_cfg:
-                resume_cfg.append(cfg) if cfg not in resume_cfg else None
+                self.resume_cfg.append(cfg) if cfg not in self.resume_cfg else None
+            print(f"RESUMING FIT! {self.resume_scores}")
 
         self.results = tune.run(
             self._tune_with_config,
             search_space,
             metric=self.metric,
-            points_to_evaluate=init_cfg if resume_cfg is None else resume_cfg,
-            evaluated_rewards=[] if resume_scores is None else resume_scores,
+            points_to_evaluate=init_cfg
+            if len(self.resume_cfg) == 0
+            else self.resume_cfg,
+            evaluated_rewards=[]
+            if len(self.resume_scores) == 0
+            else self.resume_scores,
             mode="max",
             low_cost_partial_config={},
             **self._settings["tuner"],
