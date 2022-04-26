@@ -350,27 +350,16 @@ class AutoCausality:
             }
 
     def _compute_metrics(self, estimator) -> dict:
-        """computes metrics to score causal estimators"""
-        # try:
-        #     te_train = estimator.cate_estimates
-        #     X_test = self.test_df[estimator.estimator._effect_modifier_names]
-        #     te_test = estimator.estimator.estimator.effect(X_test).flatten()
-        # except Exception:
-        #     te_train = estimator.estimator.effect(self.train_df)
-        #     te_test = estimator.estimator.effect(self.test_df)
-
         scores = {
             "estimator_name": self.estimator_name,
             "train": make_scores(
                 estimator,
                 self.train_df,
-                # None,  # te_train,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.train,
             ),
             "validation": make_scores(
                 estimator,
                 self.test_df,
-                # None,  # te_test,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.test,
             ),
         }
