@@ -2,7 +2,8 @@ import pytest
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.dummy import DummyClassifier
-from auto_causality.datasets import synth_ihdp, preprocess_dataset
+from auto_causality.datasets import synth_ihdp
+from auto_causality.data_utils import preprocess_dataset
 from auto_causality.scoring import (
     auc_make_score,
     r_make_score,
@@ -28,7 +29,9 @@ def simple_model_run(rscorer=False):
             input parameters for metrics functions (such as qini_make_score
     """
     data_df = synth_ihdp()
-    data_df, features_X, features_W, targets, treatment = preprocess_dataset(data_df)
+    treatment = "treatment"
+    targets = ["y_factual"]
+    data_df, features_X, features_W = preprocess_dataset(data_df, treatment, targets)
     # data_df = data_df.drop(columns = ["random"])
     outcome = targets[0]
     train_df, test_df = train_test_split(data_df, train_size=0.5, random_state=123)

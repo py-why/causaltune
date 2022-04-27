@@ -2,6 +2,9 @@ import pytest
 import subprocess
 import sys
 import pandas as pd
+
+import auto_causality.data_utils
+import auto_causality.utils
 from auto_causality import datasets
 
 
@@ -22,13 +25,13 @@ def check_header(df: pd.DataFrame, n_covariates: int):
     assert len(list(df[xcols].columns)) == n_covariates
 
 
-def check_preprocessor(df: pd.DataFrame):
+def check_preprocessor(df: pd.DataFrame, treatment="treatment", targets=["y_factual"]):
     """checks if dataset can be preprocessed (dummy encoding of vars etc...)
 
     Args:
         df (pd.DataFrame): dataset for causal inference, with cols for treatment, outcome and covariates
     """
-    x = datasets.preprocess_dataset(df)
+    x = auto_causality.data_utils.preprocess_dataset(df, treatment, targets)
     assert x is not None
 
 

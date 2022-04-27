@@ -38,19 +38,24 @@ pip install -r requirements.txt
 
 ## Quick Start
 The autocausality package can be used like a scikit-style estimator:
+
 ```Python
 from auto_causality import AutoCausality
-from auto_causality.datasets import synth_ihdp, preprocess_dataset
+from auto_causality.datasets import synth_ihdp
+from auto_causality.data_utils import preprocess_dataset
+
 # prepare dataset
 data_df = synth_ihdp()
-data_df, features_X, features_W, targets, treatment = preprocess_dataset(data_df)
+treatment = 'treatment'
+targets=['y_factual']
+data_df, features_X, features_W = preprocess_dataset(data_df, treatment, targets)
 
 # init autocausality object with chosen metric to optimise
-ac = AutoCausality(time_budget=10,metric='erupt')
+ac = AutoCausality(time_budget=10, metric='erupt')
 
 # run autocausality
 myresults = ac.fit(data_df, treatment, targets[0],
- features_W, features_X)
+                   features_W, features_X)
 
 # return best estimator
 print(f"Best estimator: {ac.best_estimator}")
