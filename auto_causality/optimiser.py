@@ -58,7 +58,7 @@ class AutoCausality:
         train_size=0.8,
         num_samples=-1,
         test_size=None,
-        use_dummyclassifier=True,
+        propensity_model="dummy",
         components_task="regression",
         components_verbose=0,
         components_pred_time_limit=10 / 1e6,
@@ -137,7 +137,7 @@ class AutoCausality:
                 )
 
         # params for FLAML on component models:
-        self._settings["use_dummyclassifier"] = use_dummyclassifier
+        # self._settings["use_dummyclassifier"] = use_dummyclassifier
         self._settings["component_models"] = {}
         self._settings["component_models"]["task"] = components_task
         self._settings["component_models"]["verbose"] = components_verbose
@@ -154,11 +154,18 @@ class AutoCausality:
         self._settings["test_size"] = test_size
 
         # user can choose between flaml and dummy for propensity model.
-        self.propensity_model = (
-            DummyClassifier(strategy="prior")
-            if self._settings["use_dummyclassifier"]
-            else AutoML(**self._settings["component_models"])
-        )
+        if propensity_model == "dummy":
+            self.propensity_model = DummyClassifier(strategy="prior")
+        elif propensity_model == "auto":
+            self.propensity_model = AutoML(**self._settings["component_models"])
+        elif hasattr(self.propensity_model, "fit") and hasattr(
+            self.propensity_model, "predict_proba"
+        ):
+            self.propensity_model = propensity_model
+        else:
+            raise ValueError(
+                'propensity_model valid values are "dummy", "auto", or a classifier object'
+            )
 
         self.outcome_model = AutoML(**self._settings["component_models"])
 
@@ -400,11 +407,13 @@ class AutoCausality:
             "train": make_scores(
                 estimator,
                 self.train_df,
+                self.propensity_model,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.train,
             ),
             "validation": make_scores(
                 estimator,
                 self.test_df,
+                self.propensity_model,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.test,
             ),
         }
