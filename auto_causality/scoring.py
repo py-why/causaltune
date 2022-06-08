@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from econml.cate_interpreter import SingleTreeCateInterpreter
-from sklearn.dummy import DummyClassifier
 from dowhy.causal_estimator import CausalEstimate
 
 
