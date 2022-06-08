@@ -138,19 +138,17 @@ class SimpleParamService:
                 "fit_params": {},
                 "search_space": {},
             },
+            "backdoor.auto_causality.models.NewDummy": {
+                "search_space": {},
+                "init_params": {"propensity_score_model": propensity_model},
+                "fit_params": {},
+                "experimental": True,
+            },
             "backdoor.propensity_score_weighting": {
-                "propensity_score_model": linear_model.LogisticRegression(
-                    max_iter=10000
-                ),
                 "search_space": {},
                 "experimental": True,
-                # "init_params": {
-                #     "propensity_score_model":
-                #       linear_model.LogisticRegression(
-                #         max_iter=10000
-                #     )
-                # },
-                # "fit_params": {},
+                "init_params": {"propensity_score_model": propensity_model},
+                "fit_params": {},
             },
             "backdoor.econml.metalearners.SLearner": {
                 "init_params": {

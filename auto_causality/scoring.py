@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from econml.cate_interpreter import SingleTreeCateInterpreter
-from sklearn.dummy import DummyClassifier
 from dowhy.causal_estimator import CausalEstimate
 
 
@@ -108,6 +107,7 @@ def make_scores(
     estimate: CausalEstimate,
     df: pd.DataFrame,
     # cate_estimate: np.ndarray = None,
+    propensity_model,
     r_scorer=None,
 ) -> dict:
 
@@ -130,7 +130,7 @@ def make_scores(
 
     erupt = ERUPT(
         treatment_name=treatment_name,
-        propensity_model=DummyClassifier(strategy="prior"),
+        propensity_model=propensity_model,
         X_names=est._effect_modifier_names,
     )
     # TODO: adjust for multiple categorical treatments

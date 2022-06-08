@@ -1,10 +1,18 @@
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
+from dowhy.causal_estimators.propensity_score_weighting_estimator import (
+    PropensityScoreWeightingEstimator,
+)
 
 from auto_causality.models.wrapper import DoWhyMethods, DoWhyWrapper
 from auto_causality.scoring import ate
+
+
+class NewDummy(PropensityScoreWeightingEstimator):
+    def effect(self, x: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+        return self._estimate_effect(x)
 
 
 class DummyModel(DoWhyMethods):
