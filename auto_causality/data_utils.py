@@ -107,28 +107,28 @@ def preprocess_dataset(
     for c in [treatment] + targets:
         assert c in data.columns, f"Column {c} not found in dataset"
 
-    else:
-        # prepare the data
-        features = [c for c in data.columns if c not in [treatment] + targets]
+    # else:
+    # prepare the data
+    features = [c for c in data.columns if c not in [treatment] + targets]
 
-        data[treatment] = data[treatment].astype(int)
+    data[treatment] = data[treatment].astype(int)
 
-        # this is a trick to bypass some DoWhy/EconML bugs
-        data["random"] = np.random.randint(0, 2, size=len(data))
+    # this is a trick to bypass some DoWhy/EconML bugs
+    data["random"] = np.random.randint(0, 2, size=len(data))
 
-        used_df = featurize(
-            data,
-            features=features,
-            exclude_cols=[treatment] + targets,
-            drop_first=drop_first,
-            scale_floats=scale_floats,
-            prune_min_categories=prune_min_categories,
-            prune_thresh=prune_thresh,
-        )
-        used_features = [c for c in used_df.columns if c not in [treatment] + targets]
+    used_df = featurize(
+        data,
+        features=features,
+        exclude_cols=[treatment] + targets,
+        drop_first=drop_first,
+        scale_floats=scale_floats,
+        prune_min_categories=prune_min_categories,
+        prune_thresh=prune_thresh,
+    )
+    used_features = [c for c in used_df.columns if c not in [treatment] + targets]
 
-        # Let's treat all features as effect modifiers
-        features_X = [f for f in used_features if f != "random"]
-        features_W = [f for f in used_features if f not in features_X]
+    # Let's treat all features as effect modifiers
+    features_X = [f for f in used_features if f != "random"]
+    features_W = [f for f in used_features if f not in features_X]
 
-        return used_df, features_X, features_W
+    return used_df, features_X, features_W
