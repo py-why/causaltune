@@ -1,4 +1,5 @@
 from typing import Callable, List, Optional, Union
+import copy
 
 import pandas as pd
 import numpy as np
@@ -16,7 +17,7 @@ class ERUPT:
         remove_tiny: bool = True,
     ):
         self.treatment_name = treatment_name
-        self.propensity_model = propensity_model
+        self.propensity_model = copy.deepcopy(propensity_model)
         self.X_names = X_names
         self.clip = clip
         self.remove_tiny = remove_tiny

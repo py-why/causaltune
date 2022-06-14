@@ -223,7 +223,7 @@ class SimpleParamService:
                 },
                 "defaults": {
                     "min_propensity": 1e-6,
-                    "n_estimators": 1000,  # this is 1000 by default?
+                    "n_estimators": 100,  # this is 1000 by default?
                     "min_samples_split": 5,
                     "min_samples_leaf": 5,
                     "min_weight_fraction_leaf": 0.0,
