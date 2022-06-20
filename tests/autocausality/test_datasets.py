@@ -6,32 +6,33 @@ import pandas as pd
 import auto_causality.data_utils
 import auto_causality.utils
 from auto_causality import datasets
+from auto_causality.datasets import CausalityDataset
 
-
-def check_header(df: pd.DataFrame, n_covariates: int):
+def check_header(cd: CausalityDataset, n_covariates: int):
     """checks if header of dataset is in right format
 
     Args:
-        df (pd.DataFrame): dataset for causal inference, with columns for treatment, outcome and covariates
+        cd (CausalityDataset): CausalityDataset obj with data (pd.DataFrame), treatment and outcome attrimtues
         n_covariates (int): number of covariates in dataset
     """
 
-    cols = list(df.columns)
-    assert "treatment" in cols
-    assert "y_factual" in cols
+    cols = list(cd.data.columns)
+    assert cd.treatment in cols
+    assert cd.outcomes in cols
     for i in range(1, n_covariates + 1):
         assert "x" + str(i) in cols
     xcols = [c for c in cols if "x" in c]
-    assert len(list(df[xcols].columns)) == n_covariates
+    assert len(list(cd.data[xcols].columns)) == n_covariates
 
 
-def check_preprocessor(df: pd.DataFrame, treatment="treatment", targets=["y_factual"]):
+# def check_preprocessor(df: pd.DataFrame, treatment="treatment", targets=["y_factual"]):
+def check_preprocessor(cd: CausalityDataset):
     """checks if dataset can be preprocessed (dummy encoding of vars etc...)
 
     Args:
         df (pd.DataFrame): dataset for causal inference, with cols for treatment, outcome and covariates
     """
-    x = auto_causality.data_utils.preprocess_dataset(df, treatment, targets)
+    x = auto_causality.data_utils.preprocess_dataset(cd.data, cd.treatment, cd.outcomes)
     assert x is not None
 
 
