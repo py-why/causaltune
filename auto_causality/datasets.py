@@ -6,7 +6,7 @@ from dataclasses import dataclass
 class CausalityDataset:
     data: pd.DataFrame
     treatment: str
-    outcome: str
+    outcomes: str
 
 
 def nhefs() -> pd.DataFrame:
@@ -46,7 +46,7 @@ def nhefs() -> pd.DataFrame:
         columns={c: "x" + str(i + 1) for i, c in enumerate(covariates)}, inplace=True
     )
 
-    return CausalityDataset(df, treatment="qmsk", outcome="wt82_71")
+    return CausalityDataset(df, treatment="qsmk", outcomes="wt82_71")
 
 
 def lalonde_nsw() -> pd.DataFrame:
