@@ -190,7 +190,7 @@ def ate(
 def group_ate(treatment, outcome, policy: Union[pd.DataFrame, np.ndarray]):
 
     tmp = {"all": ate(treatment, outcome)}
-    for p in policy.unique():
+    for p in sorted(list(policy.unique())):
         tmp[p] = ate(
             treatment[policy == p],
             outcome[policy == p],
