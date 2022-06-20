@@ -1,22 +1,80 @@
-c# Auto-Causality: A library for automated Causal Inference model estimation and selection
+# Auto-Causality: A library for automated Causal Inference model estimation and selection
 
 
-**AutoCausality** is a library for automated Causal Inference, building on the [FLAML](https://github.com/microsoft/FLAML) package for hyperparameter optimisation and the [EconML](https://github.com/microsoft/EconML/) and [DoWhy](https://github.com/microsoft/DoWhy/) packages for ML-based Causal Inference. It performs automated hyperparameter tuning of first stage models (for the treatment and outcome models) as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
+**AutoCausality** is a library for automated Causal Inference,
+building on the [FLAML](https://github.com/microsoft/FLAML) package for hyperparameter optimisation
+and the [EconML](https://github.com/microsoft/EconML/) and [DoWhy](https://github.com/microsoft/DoWhy/)
+packages for ML-based Causal Inference, with a couple of extra models (currently Transformed Outcome and a
+dummy model to be used as a baseline).
 
-For now, the package only supports CATE models, instrumental variable models are coming next!
-
+It performs automated hyperparameter tuning of first stage models (for the treatment and outcome models) as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
 
 <summary><strong><em>Table of Contents</em></strong></summary>
 
+- [What can this do for you?](#what-can-this-do-for-you)
+  - [Segment A/B tests by per-customer impact](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
+  - [Continuous testing](#2-continuous-testing-combined-with-exploitation)
+  - [Observational inference](#3-observational-inference)
+  - [Impact of customer choosing to use a feature (IV models)](#4-impact-of-customer-choosing-to-use-a-feature-iv-models)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Supported Models](#supported-models)
 - [Supported Metrics](#supported-metrics)
 - [Citation](#citation)
 - [For Developers](#for-developers)
-    -[Installation from source](#installation-from-source)
-    -[Tests](#testing)
+  - [Installation from source](#installation-from-source)
+  - [Tests](#testing)
 
+
+## What can this do for you?
+
+The automated search over the many powerful models from EconML and elsewhere allows you to easily do the following
+
+### 1. Supercharge A/B tests by getting impact by customer, instead of just an average
+By enriching the results of a regular A/B/N test with customer features, and running auto-causality on the
+resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
+impact in the next iteration.
+
+**Currently tested and used**: **binary treatment, strictly random assignment**.
+
+**In development** (expected within a month, if someone raises an issue requesting this,
+guarantee implementation within 2 weeks): **Multiple (categorical) treatments**
+
+### 2. Continuous testing combined with exploitation
+The per-customer impact estimates from the previous section, even if noisy, can be used to implement
+per-customer Thompson sampling for new customers, biasing random treatment assignment towards ones we think
+are most likely to work. As we still control the per-customer propensity to treat, same methods as above can be
+applied to keep refining our impact estimates.
+
+Thus, there is no need to either wait for the test to gather enough data for significance, nor to ever end the
+test, before using its results to assign the most impactful treatment to each customer.
+
+**In development** (expected within a month, if someone raises an issue requesting this,
+guarantee implementation within 2 weeks): **Taking propensity to treat from a column in the supplied dataset**.
+
+### 3. Observational inference
+The traditional application of causal inference. For example, estimating the impact on
+volumes and churn likelihood of the time it takes us to answer a customer query. As the set of customers
+who have support queries is most likely not randomly sampled, confounding corrections are needed.
+
+As with other usecases, the advanced causal inference models allow impact estimation as a function
+of customer features, rather than just averages.
+
+**In development** (expected within a month, if someone raises an issue requesting this,
+guarantee implementation within 2 weeks): **Using FLAML classifier as the propensity function**.
+
+
+### 4. Impact of customer choosing to use a feature (IV models)
+The case we're focussing on is making a feature or a promotion available to a customer, and trying to
+measure the impact of the customer actually choosing to use the feature (the impact of making the feature
+available can be solved with 1. and 2. above).
+
+Here we use feature availability as an instrumental variable, and search over IV models in EconML to estimate the
+impact of the customer choosing to use it. To compare IV models, we use what appears to be a novel approach (described
+[here](https://github.com/transferwise/auto-causality/blob/main/docs/Comparing_IV_models.pdf),
+publication is in the works)
+
+**In development** (an intern is working full-time on this, delivery expected by end of September 2022)
 
 ## Installation
 To install from source, see [For Developers](#for-developers) section below.
@@ -80,6 +138,7 @@ The package supports the following causal models:
 * Ortho Forests:
     * DR Ortho Forest
     * DML Ortho Forest
+* Transformed Outcome
 
 ## Supported Metrics
 We support a variety of different metrics that quantify the performance of a causal model:
