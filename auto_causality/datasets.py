@@ -240,9 +240,9 @@ def synth_acic(condition=1) -> pd.DataFrame:
 
 def bdsianesi() -> pd.DataFrame:
     """ Loads bdsianesi (Blundell, Dearden and Sianesi - 2005) dataset
-        This data extract explores the impact of education (treatment) on wages 
-        for individuals in the UK. The dataset comprises 18 covariates, a multi-valued 
-        treatment (ed) of: No degree, O-level, A-level & Higher degree and 
+        This data extract explores the impact of education (treatment) on wages
+        for individuals in the UK. The dataset comprises 18 covariates, a multi-valued
+        treatment (ed) of: No degree, O-level, A-level & Higher degree and
         a continuous response (wage)
 
         If used for academic purposes, consider citing the authors:
@@ -258,12 +258,9 @@ def bdsianesi() -> pd.DataFrame:
     """
 
     url = ("http://www.stata-press.com/data/r13/bdsianesi5.dta")
-    
     treatment = "ed"
-    outcome = "wage"
     control_val = "none"
     drop_cols = ["lwage"]
-
     data = pd.read_stata(url)
     df = preprocess_mixed(data, treatment, control_val, drop_cols)
 
