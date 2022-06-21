@@ -57,6 +57,7 @@ class AutoCausality:
         estimator_list="auto",
         train_size=0.8,
         num_samples=-1,
+        treatment_val=0,
         test_size=None,
         propensity_model="dummy",
         components_task="regression",
@@ -188,6 +189,9 @@ class AutoCausality:
         # properties that are used to resume fits (warm start)
         self.resume_scores = []
         self.resume_cfg = []
+
+        # accept multi-valued treatement
+        self.treatment_val = treatment_val
 
         # # trained component models for each estimator
         # self.trained_estimators_dict = {}
@@ -375,7 +379,7 @@ class AutoCausality:
                 self.identified_estimand,
                 method_name=self.estimator_name,
                 control_value=0,
-                treatment_value=1,
+                treatment_value=self.treatment_val,
                 target_units="ate",  # condition used for CATE
                 confidence_intervals=False,
                 method_params={
@@ -384,7 +388,6 @@ class AutoCausality:
                 },
             )
             scores = self._compute_metrics(estimate)
-
             return {
                 self.metric: scores["validation"][self.metric],
                 "estimator": estimate,
