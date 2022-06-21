@@ -1,7 +1,7 @@
 import pytest
 import warnings
 
-from auto_causality.datasets import synth_ihdp
+from auto_causality.datasets import synth_ihdp, bdsianesi
 from auto_causality.data_utils import preprocess_dataset
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
@@ -82,6 +82,47 @@ class TestEndToEnd(object):
 
         print(f"Best estimator: {auto_causality.best_estimator}")
 
+    def test_endtoend_mv_treatment(self):
+        """tests if model can be instantiated and fit to data"""
+
+        from auto_causality import AutoCausality  # noqa F401
+        from auto_causality.shap import shap_values  # noqa F401
+
+        treatment = "ed"
+        targets = ["wage"]
+        data_df, features_X, features_W = preprocess_dataset(
+            bdsianesi(),
+            treatment,
+            targets,
+        )
+
+        estimator_list = [
+             "Dummy",
+            "TransformedOutcome",
+        ]
+        outcome = targets[0]
+        auto_causality = AutoCausality(
+            time_budget=200,
+            components_time_budget=10,
+            estimator_list=estimator_list,  # "all",  #
+            use_ray=False,
+            verbose=3,
+            components_verbose=2,
+            resources_per_trial={"cpu": 0.5},
+        )
+
+        auto_causality.fit(data_df, treatment, outcome, features_W, features_X)
+
+        # now let's test Shapley values calculation
+        for est_name, scores in auto_causality.scores.items():
+            # Dummy model doesn't support Shapley values
+            # Orthoforest shapley calc is VERY slow
+            if "Dummy" not in est_name and "Ortho" not in est_name:
+
+                print("Calculating Shapley values for", est_name)
+                shap_values(scores["estimator"], data_df[:10])
+
+        print(f"Best estimator: {auto_causality.best_estimator}")
 
 if __name__ == "__main__":
     pytest.main([__file__])

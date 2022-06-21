@@ -305,9 +305,9 @@ class AutoCausality:
         self.results = tune.run(
             self._tune_with_config,
             search_space,
-            metric = self.metric,
-            points_to_evaluate = eval_pts,
-            evaluated_rewards = eval_rewards,
+            metric=self.metric,
+            points_to_evaluate=eval_pts,
+            evaluated_rewards=eval_rewards,
             mode = "max",
             low_cost_partial_config={},
             **self._settings["tuner"],
