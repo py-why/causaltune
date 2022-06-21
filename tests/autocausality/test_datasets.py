@@ -1,12 +1,11 @@
 import pytest
 import subprocess
 import sys
-import pandas as pd
-
 import auto_causality.data_utils
 import auto_causality.utils
 from auto_causality import datasets
 from auto_causality.datasets import CausalityDataset
+
 
 def check_header(cd: CausalityDataset, n_covariates: int):
     """checks if header of dataset is in right format
