@@ -2,7 +2,9 @@ from typing import List, Any, Union
 
 import numpy as np
 import pandas as pd
+from sklearn.compose import make_column_transformer
 from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 
 def featurize(
@@ -132,3 +134,39 @@ def preprocess_dataset(
     features_W = [f for f in used_features if f not in features_X]
 
     return used_df, features_X, features_W
+
+def preprocess_mixed( 
+    data: pd.DataFrame,
+    treatment: str,
+    control: int or str,
+    cols_to_drop: list
+) -> pd.DataFrame:
+    """
+    Preprocesses mixed dataset, one-hot encoding for categories 
+    & label encoding for treatments
+    """
+
+    # Force control value to be lowest in LabelEncoder
+    data[treatment] = data[treatment].replace(control, "0")
+    categ_data = data.select_dtypes(include=['category'])
+    label_enc = categ_data.apply(LabelEncoder().fit_transform)
+    features = list(set(label_enc.columns.tolist()) ^ set([treatment]))
+
+    enc_categ_data = label_enc[features]
+    transform_data = make_column_transformer(
+        (OneHotEncoder(sparse=False), features), remainder='passthrough'
+    )
+
+    transformed = transform_data.fit_transform(enc_categ_data)
+    cols = transform_data.get_feature_names()
+    cols = [c[15:] for c in cols] 
+    data_ohe = pd.DataFrame(transformed, columns=cols)
+
+    data_treatment = label_enc[treatment].to_frame()
+    data_num = data[data.columns[~data.columns.isin(categ_data.columns.tolist())]]
+    df = pd.concat([data_treatment, data_ohe, data_num], axis=1)
+
+    if bool(cols_to_drop):
+        df = df.drop(cols_to_drop, axis=1)
+
+    return df
