@@ -299,17 +299,16 @@ class AutoCausality:
             for cfg in init_cfg:
                 self.resume_cfg.append(cfg) if cfg not in self.resume_cfg else None
 
+        eval_pts = init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
+        eval_rewards = [] if len(self.resume_scores) == 0 else self.resume_scores
+
         self.results = tune.run(
             self._tune_with_config,
             search_space,
-            metric=self.metric,
-            points_to_evaluate=init_cfg
-            if len(self.resume_cfg) == 0
-            else self.resume_cfg,
-            evaluated_rewards=[]
-            if len(self.resume_scores) == 0
-            else self.resume_scores,
-            mode="max",
+            metric = self.metric,
+            points_to_evaluate = eval_pts,
+            evaluated_rewards = eval_rewards,
+            mode = "max",
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
