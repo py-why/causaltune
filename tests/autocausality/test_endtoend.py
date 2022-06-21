@@ -97,8 +97,8 @@ class TestEndToEnd(object):
         )
 
         estimator_list = [
-             "Dummy",
-            "TransformedOutcome",
+            "Dummy",
+            "TransformedOutcome"
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(
@@ -123,6 +123,7 @@ class TestEndToEnd(object):
                 shap_values(scores["estimator"], data_df[:10])
 
         print(f"Best estimator: {auto_causality.best_estimator}")
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

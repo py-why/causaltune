@@ -248,7 +248,8 @@ def bdsianesi() -> pd.DataFrame:
         If used for academic purposes, consider citing the authors:
         @article{https://doi.org/10.1111/j.1467-985X.2004.00360.x,
             author = {Blundell, Richard and Dearden, Lorraine and Sianesi, Barbara},
-            title = {Evaluating the effect of education on earnings: models, methods and results from the National Child Development Survey},
+            title = {Evaluating the effect of education on earnings: models, methods 
+            and results from the National Child Development Survey},
             journal = {Journal of the Royal Statistical Society: Series A (Statistics in Society)},
             volume = {168},
             number = {3},

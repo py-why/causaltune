@@ -308,7 +308,7 @@ class AutoCausality:
             metric=self.metric,
             points_to_evaluate=eval_pts,
             evaluated_rewards=eval_rewards,
-            mode = "max",
+            mode="max",
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
