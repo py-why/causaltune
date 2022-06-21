@@ -1,4 +1,5 @@
 import pandas as pd
+from .data_utils import preprocess_mixed
 
 
 def nhefs() -> pd.DataFrame:
@@ -235,3 +236,35 @@ def synth_acic(condition=1) -> pd.DataFrame:
     data.rename(columns={"z": "treatment"}, inplace=True)
 
     return data
+
+
+def bdsianesi() -> pd.DataFrame:
+    """ Loads bdsianesi (Blundell, Dearden and Sianesi - 2005) dataset
+        This data extract explores the impact of education (treatment) on wages 
+        for individuals in the UK. The dataset comprises 18 covariates, a multi-valued 
+        treatment (ed) of: No degree, O-level, A-level & Higher degree and 
+        a continuous response (wage)
+
+        If used for academic purposes, consider citing the authors:
+        @article{https://doi.org/10.1111/j.1467-985X.2004.00360.x,
+            author = {Blundell, Richard and Dearden, Lorraine and Sianesi, Barbara},
+            title = {Evaluating the effect of education on earnings: models, methods and results from the National Child Development Survey},
+            journal = {Journal of the Royal Statistical Society: Series A (Statistics in Society)},
+            volume = {168},
+            number = {3},
+            pages = {473-512},
+            year = {2005}
+        }
+    """
+
+    url = ("http://www.stata-press.com/data/r13/bdsianesi5.dta")
+    
+    treatment = "ed"
+    outcome = "wage"
+    control_val = "none"
+    drop_cols = ["lwage"]
+
+    data = pd.read_stata(url)
+    df = preprocess_mixed(data, treatment, control_val, drop_cols)
+
+    return df
