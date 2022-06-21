@@ -135,14 +135,15 @@ def preprocess_dataset(
 
     return used_df, features_X, features_W
 
-def preprocess_mixed( 
+
+def preprocess_mixed(
     data: pd.DataFrame,
     treatment: str,
     control: int or str,
     cols_to_drop: list
 ) -> pd.DataFrame:
     """
-    Preprocesses mixed dataset, one-hot encoding for categories 
+    Preprocesses mixed dataset, one-hot encoding for categories
     & label encoding for treatments
     """
 
@@ -159,12 +160,12 @@ def preprocess_mixed(
 
     transformed = transform_data.fit_transform(enc_categ_data)
     cols = transform_data.get_feature_names()
-    cols = [c[15:] for c in cols] 
-    data_ohe = pd.DataFrame(transformed, columns=cols)
+    cols = [c[15:] for c in cols]
+    onehot_data = pd.DataFrame(transformed, columns=cols)
 
     data_treatment = label_enc[treatment].to_frame()
     data_num = data[data.columns[~data.columns.isin(categ_data.columns.tolist())]]
-    df = pd.concat([data_treatment, data_ohe, data_num], axis=1)
+    df = pd.concat([data_treatment, onehot_data, data_num], axis=1)
 
     if bool(cols_to_drop):
         df = df.drop(cols_to_drop, axis=1)
