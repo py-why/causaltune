@@ -178,11 +178,13 @@ def ate(
     treatment,
     outcome,
 ):
-    treated = (treatment == 1).sum()
+    treated = (treatment >= 1)
+    control = (treatment == 0)
 
-    mean_ = outcome[treatment == 1].mean() - outcome[treatment == 0].mean()
-    std1 = outcome[treatment == 1].std() / (math.sqrt(treated) + 1e-3)
-    std2 = outcome[treatment == 0].std() / (math.sqrt(len(outcome) - treated) + 1e-3)
+    mean_ = outcome[treated].mean() - outcome[control].mean()
+    print("Treated  = ", outcome)
+    std1 = outcome[treated].std() / (math.sqrt(treated.sum()) + 1e-3)
+    std2 = outcome[control].std() / (math.sqrt(len(outcome) - treated.sum()) + 1e-3)
     std_ = math.sqrt(std1 * std1 + std2 * std2)
     return (mean_, std_, len(treatment))
 
