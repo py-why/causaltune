@@ -1,4 +1,12 @@
 import pandas as pd
+from dataclasses import dataclass
+
+
+@dataclass
+class CausalityDataset:
+    data: pd.DataFrame
+    treatment: str
+    outcomes: str
 
 
 def nhefs() -> pd.DataFrame:
@@ -34,12 +42,11 @@ def nhefs() -> pd.DataFrame:
     df = df.loc[~missing]
 
     df = df[covariates + ["qsmk"] + ["wt82_71"]]
-    df.rename(columns={"qsmk": "treatment", "wt82_71": "y_factual"}, inplace=True)
     df.rename(
         columns={c: "x" + str(i + 1) for i, c in enumerate(covariates)}, inplace=True
     )
 
-    return df
+    return CausalityDataset(df, treatment="qsmk", outcomes="wt82_71")
 
 
 def lalonde_nsw() -> pd.DataFrame:
@@ -75,7 +82,7 @@ def lalonde_nsw() -> pd.DataFrame:
         .sample(frac=1)
         .reset_index(drop=True)
     )
-    return df
+    return CausalityDataset(df, "treatment", "y_factual")
 
 
 def amazon_reviews(rating="pos") -> pd.DataFrame:
@@ -129,7 +136,7 @@ def amazon_reviews(rating="pos") -> pd.DataFrame:
             df = pd.read_csv("amazon_" + rating + ".csv")
         df.drop(df.columns[[2, 3, 4]], axis=1, inplace=True)
         df.columns = ["treatment", "y_factual"] + ["x" + str(i) for i in range(1, 301)]
-        return df
+        return CausalityDataset(df, "treatment", "y_factual")
     else:
         print(
             f"""The Amazon dataset is hosted on google drive. As it's quite large, the gdown package is required to download
@@ -180,7 +187,7 @@ def synth_ihdp() -> pd.DataFrame:
     ignore_cols = [c for c in data.columns if any([s in c for s in ignore_patterns])]
     data = data.drop(columns=ignore_cols)
 
-    return data
+    return CausalityDataset(data, "treatment", "y_factual")
 
 
 def synth_acic(condition=1) -> pd.DataFrame:
@@ -234,4 +241,4 @@ def synth_acic(condition=1) -> pd.DataFrame:
     data = pd.concat([z_y_mu["z"], z_y_mu["y_factual"], covariates], axis=1)
     data.rename(columns={"z": "treatment"}, inplace=True)
 
-    return data
+    return CausalityDataset(data, "treatment", "y_factual")
