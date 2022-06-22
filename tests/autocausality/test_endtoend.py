@@ -29,7 +29,7 @@ class TestEndToEnd(object):
 
         from auto_causality import AutoCausality  # noqa F401
 
-        auto_causality = AutoCausality()  # noqa F484
+        auto_causality = AutoCausality(time_budget=0)  # noqa F484
 
     def test_endtoend(self):
         """tests if model can be instantiated and fit to data"""
