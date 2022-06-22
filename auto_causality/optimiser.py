@@ -1,3 +1,4 @@
+import warnings
 from copy import deepcopy
 from typing import List, Optional, Union
 import traceback
@@ -51,7 +52,7 @@ class AutoCausality:
         data_df=None,
         metric="erupt",
         metrics_to_report=None,
-        time_budget=300,
+        time_budget=None,
         verbose=3,
         use_ray=False,
         estimator_list="auto",
@@ -63,7 +64,7 @@ class AutoCausality:
         components_verbose=0,
         components_pred_time_limit=10 / 1e6,
         components_njobs=-1,
-        components_time_budget=20,
+        components_time_budget=None,
         try_init_configs=True,
         resources_per_trial=None,
         include_experimental_estimators=False,
@@ -96,6 +97,10 @@ class AutoCausality:
                 Defaults to False.
             blacklisted_estimators (list): [optional] list of estimators not to include in fitting
         """
+        assert (
+            time_budget is not None or components_time_budget is not None
+        ), "Either time_budget or components_time_budget must be specified"
+
         self._settings = {}
         self._settings["tuner"] = {}
         self._settings["tuner"]["time_budget_s"] = time_budget
@@ -145,11 +150,12 @@ class AutoCausality:
             "pred_time_limit"
         ] = components_pred_time_limit
         self._settings["component_models"]["n_jobs"] = components_njobs
-        self._settings["component_models"]["time_budget"] = (
-            components_time_budget
-            if components_time_budget < time_budget
-            else (time_budget // 2) + 1
-        )
+        self._settings["component_models"]["time_budget"] = components_time_budget
+        # (
+        #     components_time_budget
+        #     if components_time_budget < time_budget
+        #     else (time_budget // 2) + 1
+        # )
         self._settings["train_size"] = train_size
         self._settings["test_size"] = test_size
 
@@ -247,6 +253,26 @@ class AutoCausality:
                 f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
             )
 
+        if self._settings["component_models"]["time_budget"] is None:
+            self._settings["component_models"]["time_budget"] = self._settings["tuner"][
+                "time_budget_s"
+            ] / (2.5 * len(self.estimator_list))
+
+        if self._settings["tuner"]["time_budget_s"] is None:
+            self._settings["tuner"]["time_budget_s"] = (
+                2.5
+                * len(self.estimator_list)
+                * self._settings["component_models"]["time_budget"]
+            )
+
+        cmtb = self._settings["component_models"]["time_budget"]
+
+        if cmtb < 300:
+            warnings.warn(
+                f"Component model time budget is {cmtb}. "
+                f"Recommended value is at least 300 for smallish datasets, 1800 for datasets with> 100K rows"
+            )
+
         if self._settings["test_size"] is not None:
             self.test_df = self.test_df.sample(self._settings["test_size"])
 
@@ -257,6 +283,7 @@ class AutoCausality:
             common_causes=common_causes,
             effect_modifiers=effect_modifiers,
         )
+
         self.identified_estimand = self.causal_model.identify_effect(
             proceed_when_unidentifiable=True
         )

@@ -82,7 +82,7 @@ class TestEstimatorListGenerator:
     def test_invalid_choice_fitter(self):
         with pytest.raises(ValueError):
             """tests if empty list is correctly handled"""
-            ac = AutoCausality()
+            ac = AutoCausality(components_time_budget=10)
             ac.fit(
                 pd.DataFrame({"treatment": [0, 1]}),
                 "treatment",

@@ -208,9 +208,9 @@ class SimpleParamService:
                 "fit_params": {},
                 "search_space": {
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
-                    # "mc_iters": tune.randint(0, 10),
+                    # "mc_iters": tune.randint(0, 10), # is this worth searching over?
                     "n_estimators": tune.randint(2, 200),
-                    # "max_depth": tune.randint(2, 1000),
+                    # "max_depth": is tune.choice([None, tune.randint(2, 1000)]) the right syntax?
                     "min_samples_split": tune.randint(2, 20),
                     "min_samples_leaf": tune.randint(1, 25),
                     "min_weight_fraction_leaf": tune.uniform(0, 0.5),
