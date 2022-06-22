@@ -39,10 +39,11 @@ class TestEndToEnd(object):
 
         treatment = "treatment"
         targets = ["y_factual"]
+        data = synth_ihdp()
         data_df, features_X, features_W = preprocess_dataset(
-            synth_ihdp(),
-            treatment,
-            targets,
+            data.data,
+            data.treatment,
+            data.outcomes,
         )
 
         estimator_list = [
