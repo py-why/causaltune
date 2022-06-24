@@ -17,7 +17,7 @@ def check_header(cd: CausalityDataset, n_covariates: int):
 
     cols = list(cd.data.columns)
     assert cd.treatment in cols
-    assert cd.outcomes in cols
+    assert all([outcome in cols for outcome in cd.outcomes])
     for i in range(1, n_covariates + 1):
         assert "x" + str(i) in cols
     xcols = [c for c in cols if "x" in c]
