@@ -406,7 +406,7 @@ class AutoCausality:
                 target_units="ate",  # condition used for CATE
                 confidence_intervals=False,
                 method_params={
-                    "init_params": {**deepcopy(config), **cfg["init_params"]},
+                    "init_params": {**deepcopy(config), **cfg.init_params},
                     "fit_params": {},
                 },
             )

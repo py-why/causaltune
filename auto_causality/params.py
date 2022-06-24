@@ -1,10 +1,20 @@
 from flaml import tune
 from copy import deepcopy
 from typing import Optional, Sequence, Union, Iterable
+from dataclasses import dataclass, field
 
 import warnings
 from econml.inference import BootstrapInference  # noqa F401
 from sklearn import linear_model
+
+
+@dataclass
+class EstimatorConfig:
+    init_params: dict = field(default_factory=dict)
+    fit_params: dict = field(default_factory=dict)
+    search_space: dict = field(default_factory=dict)
+    defaults: dict = field(default_factory=dict)
+    experimental: bool = False
 
 
 class SimpleParamService:
@@ -67,11 +77,7 @@ class SimpleParamService:
         if self.include_experimental:
             return list(self._configs().keys())
         else:
-            return [
-                est
-                for est, cfg in self._configs().items()
-                if not cfg.get("experimental", False)
-            ]
+            return [est for est, cfg in self._configs().items() if not cfg.experimental]
 
     def search_space(self, estimator_list: Iterable[str]):
         """constructs search space with estimators and their respective configs
@@ -82,7 +88,7 @@ class SimpleParamService:
         search_space = [
             {
                 "estimator_name": est,
-                **est_params["search_space"],
+                **est_params.search_space,
             }
             for est, est_params in self._configs().items()
             if est in estimator_list
@@ -102,7 +108,7 @@ class SimpleParamService:
             list: list of dicts with promising initial configs
         """
         points = [
-            {"estimator": {"estimator_name": est, **est_params.get("defaults", {})}}
+            {"estimator": {"estimator_name": est, **est_params.defaults}}
             for est, est_params in self._configs().items()
             if est in estimator_list
         ]
@@ -132,81 +138,60 @@ class SimpleParamService:
         else:
             final_model = deepcopy(self.final_model)
 
-        configs = {
-            "backdoor.auto_causality.models.Dummy": {
-                "init_params": {},
-                "fit_params": {},
-                "search_space": {},
-            },
-            "backdoor.auto_causality.models.NewDummy": {
-                "search_space": {},
-                "init_params": {"propensity_score_model": propensity_model},
-                "fit_params": {},
-                "experimental": True,
-            },
-            "backdoor.propensity_score_weighting": {
-                "search_space": {},
-                "experimental": True,
-                "init_params": {"propensity_score_model": propensity_model},
-                "fit_params": {},
-            },
-            "backdoor.econml.metalearners.SLearner": {
-                "init_params": {
-                    "overall_model": outcome_model,
-                },
-                "fit_params": {},
-                "search_space": {}
+        configs: dict[str:EstimatorConfig] = {
+            "backdoor.auto_causality.models.Dummy": EstimatorConfig(),
+            "backdoor.auto_causality.models.NewDummy": EstimatorConfig(
+                init_params={"propensity_score_model": propensity_model},
+                experimental=True,
+            ),
+            "backdoor.propensity_score_weighting": EstimatorConfig(
+                init_params={"propensity_score_model": propensity_model},
+                experimental=True,
+            ),
+            "backdoor.econml.metalearners.SLearner": EstimatorConfig(
+                init_params={"overall_model": outcome_model},
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
                 # else {"inference": bootstrap},
-            },
-            "backdoor.econml.metalearners.TLearner": {
-                "init_params": {
-                    "models": outcome_model,
-                },
-                "fit_params": {},
-                "search_space": {}
+            ),
+            "backdoor.econml.metalearners.TLearner": EstimatorConfig(
+                init_params={"overall_model": outcome_model},
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
                 # else {"inference": bootstrap},
-            },
-            "backdoor.econml.metalearners.XLearner": {
-                "init_params": {
+            ),
+            "backdoor.econml.metalearners.XLearner": EstimatorConfig(
+                init_params={
                     "propensity_model": propensity_model,
                     "models": outcome_model,
                 },
-                "fit_params": {},
-                "search_space": {}
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
                 # else {"inference": bootstrap},
-            },
-            "backdoor.econml.metalearners.DomainAdaptationLearner": {
-                "init_params": {
+            ),
+            "backdoor.econml.metalearners.DomainAdaptationLearner": EstimatorConfig(
+                init_params={
                     "propensity_model": propensity_model,
                     "models": outcome_model,
                     "final_models": final_model,
                 },
-                "fit_params": {},
-                "search_space": {}
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
                 # else {"inference": bootstrap},
-            },
-            "backdoor.econml.dr.ForestDRLearner": {
-                "init_params": {
+            ),
+            "backdoor.econml.dr.ForestDRLearner": EstimatorConfig(
+                init_params={
                     "model_propensity": propensity_model,
                     "model_regression": outcome_model,
                     # putting these here for now, until default values can be reconciled with search space
                     "mc_iters": None,
                     "max_depth": None,
                 },
-                "fit_params": {},
-                "search_space": {
+                search_space={
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
                     # "mc_iters": tune.randint(0, 10), # is this worth searching over?
                     "n_estimators": tune.randint(2, 200),
@@ -221,7 +206,7 @@ class SimpleParamService:
                     "honest": tune.choice([0, 1]),
                     "subforest_size": tune.randint(2, 10),
                 },
-                "defaults": {
+                defaults={
                     "min_propensity": 1e-6,
                     "n_estimators": 100,  # this is 1000 by default?
                     "min_samples_split": 5,
@@ -234,32 +219,30 @@ class SimpleParamService:
                     "honest": True,
                     "subforest_size": 4,
                 },
-            },
-            "backdoor.econml.dr.LinearDRLearner": {
-                "init_params": {
+            ),
+            "backdoor.econml.dr.LinearDRLearner": EstimatorConfig(
+                init_params={
                     "model_propensity": propensity_model,
                     "model_regression": outcome_model,
                     "mc_iters": None,
                 },
-                "fit_params": {},
-                "search_space": {
+                search_space={
                     "fit_cate_intercept": tune.choice([0, 1]),
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
                     # "mc_iters": tune.randint(0, 10),
                 },
-                "defaults": {
+                defaults={
                     "fit_cate_intercept": True,
                     "min_propensity": 1e-6,
                 },
-            },
-            "backdoor.econml.dr.SparseLinearDRLearner": {
-                "init_params": {
+            ),
+            "backdoor.econml.dr.SparseLinearDRLearner": EstimatorConfig(
+                init_params={
                     "model_propensity": propensity_model,
                     "model_regression": outcome_model,
                     "mc_iters": None,
                 },
-                "fit_params": {},
-                "search_space": {
+                search_space={
                     "fit_cate_intercept": tune.choice([0, 1]),
                     "n_alphas": tune.lograndint(1, 1000),
                     "n_alphas_cov": tune.lograndint(1, 100),
@@ -269,7 +252,7 @@ class SimpleParamService:
                     "max_iter": tune.qlograndint(100, 100000, 100),
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
-                "defaults": {
+                defaults={
                     "fit_cate_intercept": True,
                     "n_alphas": 100,
                     "n_alphas_cov": 10,
@@ -278,9 +261,9 @@ class SimpleParamService:
                     "max_iter": 10000,
                     "mc_agg": "mean",
                 },
-            },
-            "backdoor.econml.dml.LinearDML": {
-                "init_params": {
+            ),
+            "backdoor.econml.dml.LinearDML": EstimatorConfig(
+                init_params={
                     "model_t": propensity_model,
                     "model_y": outcome_model,
                     "discrete_treatment": True,
@@ -288,19 +271,18 @@ class SimpleParamService:
                     "linear_first_stages": False,
                     "mc_iters": None,
                 },
-                "fit_params": {},
-                "search_space": {
+                search_space={
                     "fit_cate_intercept": tune.choice([0, 1]),
                     # "mc_iters": tune.randint(0, 10),
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
-                "defaults": {
+                defaults={
                     "fit_cate_intercept": True,
                     "mc_agg": "mean",
                 },
-            },
-            "backdoor.econml.dml.SparseLinearDML": {
-                "init_params": {
+            ),
+            "backdoor.econml.dml.SparseLinearDML": EstimatorConfig(
+                init_params={
                     "model_t": propensity_model,
                     "model_y": outcome_model,
                     "discrete_treatment": True,
@@ -308,8 +290,7 @@ class SimpleParamService:
                     "linear_first_stages": False,
                     "mc_iters": None,
                 },
-                "fit_params": {},
-                "search_space": {
+                search_space={
                     "fit_cate_intercept": tune.choice([0, 1]),
                     # "mc_iters": tune.randint(0, 10),
                     "n_alphas": tune.lograndint(1, 1000),
@@ -318,7 +299,7 @@ class SimpleParamService:
                     "max_iter": tune.qlograndint(100, 100000, 100),
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
-                "defaults": {
+                defaults={
                     "fit_cate_intercept": True,
                     "n_alphas": 100,
                     "n_alphas_cov": 10,
@@ -326,9 +307,9 @@ class SimpleParamService:
                     "max_iter": 10000,
                     "mc_agg": "mean",
                 },
-            },
-            "backdoor.econml.dml.CausalForestDML": {
-                "init_params": {
+            ),
+            "backdoor.econml.dml.CausalForestDML": EstimatorConfig(
+                init_params={
                     "model_t": propensity_model,
                     "model_y": outcome_model,
                     # "max_depth": self.max_depth,
@@ -339,8 +320,7 @@ class SimpleParamService:
                     "max_depth": None,
                     "min_var_fraction_leaf": None,
                 },
-                "fit_params": {},
-                "search_space": {
+                search_space={
                     # "mc_iters": tune.randint(0, 10),
                     "drate": tune.choice([0, 1]),
                     "n_estimators": tune.randint(2, 500),
@@ -360,7 +340,7 @@ class SimpleParamService:
                     # Difficult as needs to be a factor of 'n_estimators'
                     "subforest_size": tune.randint(2, 10),
                 },
-                "defaults": {
+                defaults={
                     # "mc_iters": tune.randint(0, 10),
                     "drate": True,
                     "n_estimators": 100,
@@ -377,15 +357,13 @@ class SimpleParamService:
                     "fit_intercept": True,
                     "subforest_size": 4,
                 },
-            },
-            "backdoor.auto_causality.models.TransformedOutcome": {
-                "init_params": {
+            ),
+            "backdoor.auto_causality.models.TransformedOutcome": EstimatorConfig(
+                init_params={
                     "propensity_model": propensity_model,
                     "outcome_model": outcome_model,
                 },
-                "fit_params": {},
-                "search_space": {},
-            },
+            ),
             # leaving out DML and NonParamDML as they're base classes for the 3
             # above
             #
@@ -398,8 +376,8 @@ class SimpleParamService:
             #     },
             #     "fit_params": {},
             # },
-            "backdoor.econml.orf.DROrthoForest": {
-                "init_params": {
+            "backdoor.econml.orf.DROrthoForest": EstimatorConfig(
+                init_params={
                     "propensity_model": propensity_model,
                     "model_Y": linear_model.Ridge(
                         alpha=0.01
@@ -410,8 +388,7 @@ class SimpleParamService:
                     # "min_leaf_size": self.min_leaf_size,
                     "backend": "threading",
                 },
-                "fit_params": {},
-                "search_space": {
+                search_space={
                     "n_trees": tune.randint(2, 750),
                     "min_leaf_size": tune.randint(1, 50),
                     "max_depth": tune.randint(2, 1000),
@@ -419,16 +396,16 @@ class SimpleParamService:
                     # "bootstrap": tune.choice([0, 1]),
                     "lambda_reg": tune.uniform(0, 1),
                 },
-                "defaults": {
+                defaults={
                     "n_trees": 500,
                     "min_leaf_size": 10,
                     "max_depth": 10,
                     "subsample_ratio": 0.7,
                     "lambda_reg": 0.01,
                 },
-            },
-            "backdoor.econml.orf.DMLOrthoForest": {
-                "init_params": {
+            ),
+            "backdoor.econml.orf.DMLOrthoForest": EstimatorConfig(
+                init_params={
                     "model_T": propensity_model,
                     "model_Y": linear_model.Ridge(
                         alpha=0.01
@@ -441,8 +418,7 @@ class SimpleParamService:
                     # Loky was running out of disk space for some reason
                     "backend": "threading",
                 },
-                "fit_params": {},
-                "search_space": {
+                search_space={
                     "n_trees": tune.randint(2, 750),
                     "min_leaf_size": tune.randint(1, 50),
                     "max_depth": tune.randint(2, 1000),
@@ -450,7 +426,7 @@ class SimpleParamService:
                     # "bootstrap": tune.choice([0, 1]),
                     "lambda_reg": tune.uniform(0, 1),
                 },
-                "defaults": {
+                defaults={
                     "n_trees": 500,
                     "min_leaf_size": 10,
                     "max_depth": 10,
@@ -458,7 +434,7 @@ class SimpleParamService:
                     # "bootstrap": tune.choice([0, 1]),
                     "lambda_reg": 0.01,
                 },
-            },
+            ),
         }
 
         return configs
