@@ -48,6 +48,7 @@ class TestEndToEnd(object):
 
         estimator_list = [
             "Dummy",
+            "NewDummy",
             "SparseLinearDML",
             "ForestDRLearner",
             "TransformedOutcome",
