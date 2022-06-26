@@ -435,6 +435,31 @@ class SimpleParamService:
                     "lambda_reg": 0.01,
                 },
             ),
+            "iv.econml.iv.dml.OrthoIV": EstimatorConfig(
+                init_params={
+                    "model_y_xw": outcome_model,
+                    "model_t_xw": propensity_model,
+                    "model_z_xw": deepcopy(propensity_model),
+                }
+            ),
+            "iv.econml.iv.dml.DMLIV": EstimatorConfig(
+                init_params={
+                    "model_y_xw": outcome_model,
+                    "model_t_xw": propensity_model,
+                    "model_t_xwz": deepcopy(propensity_model),
+                    "model_final": final_model,
+                    "discrete_treatment": False
+                },
+                search_space={
+                    "fit_cate_intercept": tune.choice([0, 1]),
+                    # "mc_iters": tune.randint(0, 10),
+                    "mc_agg": tune.choice(["mean", "median"]),
+                },
+                defaults={
+                    "fit_cate_intercept": True,
+                    "mc_agg": "mean",
+                },
+            ),
         }
 
         return configs
