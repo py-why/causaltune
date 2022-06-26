@@ -60,6 +60,7 @@ class AutoCausality:
         num_samples=-1,
         test_size=None,
         propensity_model="dummy",
+        cate_estimator="base",
         components_task="regression",
         components_verbose=0,
         components_pred_time_limit=10 / 1e6,
@@ -198,6 +199,8 @@ class AutoCausality:
         # # trained component models for each estimator
         # self.trained_estimators_dict = {}
 
+        self.cate_est = cate_estimator
+
     def get_params(self, deep=False):
         return self._settings.copy()
 
@@ -211,6 +214,7 @@ class AutoCausality:
         outcome: str,
         common_causes: List[str],
         effect_modifiers: List[str],
+        instruments: List[str] = None,
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
@@ -276,15 +280,18 @@ class AutoCausality:
         if self._settings["test_size"] is not None:
             self.test_df = self.test_df.sample(self._settings["test_size"])
 
-        self.causal_model = CausalModel(
-            data=self.train_df,
-            treatment=treatment,
-            outcome=outcome,
-            common_causes=common_causes,
-            effect_modifiers=effect_modifiers,
-        )
+        causal_model_params = {
+            "data": self.train_df,
+            "treatment": treatment,
+            "outcome": outcome,
+            "common_causes": common_causes,
+            "effect_modifiers": effect_modifiers,
+            "instruments": instruments,
+        }
 
-        self.identified_estimand = self.causal_model.identify_effect(
+        self.causal_model = AnyCausalModel.factory(causal_model_params)
+
+        self.identified_estimand = self.causal_model.M.identify_effect(
             proceed_when_unidentifiable=True
         )
 
@@ -397,19 +404,21 @@ class AutoCausality:
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
         cfg = self.cfg.method_params(self.estimator_name)
+        est_effect_params = {
+            "identified_estimand": self.identified_estimand,
+            "method_name": self.estimator_name,
+            "control_value": 0,
+            "treatment_value": 1,
+            "target_units": "ate",  # condition used for CATE
+            "confidence_intervals": False,
+            "method_params": {
+                "init_params": {**deepcopy(config), **cfg.init_params},
+                "fit_params": {},
+            },
+        }
+
         try:
-            estimate = self.causal_model.estimate_effect(
-                self.identified_estimand,
-                method_name=self.estimator_name,
-                control_value=0,
-                treatment_value=1,
-                target_units="ate",  # condition used for CATE
-                confidence_intervals=False,
-                method_params={
-                    "init_params": {**deepcopy(config), **cfg.init_params},
-                    "fit_params": {},
-                },
-            )
+            estimate = self.causal_model.est_effect(est_effect_params)
             scores = self._compute_metrics(estimate)
 
             return {
@@ -489,3 +498,29 @@ class AutoCausality:
     def best_score(self):
         """A float of the best score found."""
         return self.results.best_result[self.metric]
+
+
+# Dummy / Simple Factory class for base CaTE / IV CaTE model differentiation
+class AnyCausalModel:
+    def factory(args):
+        if bool(args["instruments"]):
+            return IVCaTeACM(args)
+        return BaseCaTeACM(args)
+
+
+class BaseCaTeACM(AnyCausalModel):
+    def __init__(self, args):
+        self.M = CausalModel(**args)
+
+    def est_effect(self, args):
+        return self.M.estimate_effect(**args)
+
+
+class IVCaTeACM(AnyCausalModel):
+    def __init__(self, args):
+        self.M = CausalModel(**args)
+
+    def est_effect(self, args):
+        params = ["identified_estimand", "method_name", "method_params"]
+        iv_args = {k: args[k] for k in args if k in params}
+        return self.M.estimate_effect(**iv_args)
