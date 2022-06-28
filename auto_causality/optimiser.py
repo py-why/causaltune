@@ -256,7 +256,8 @@ class AutoCausality:
         )
         if not self.estimator_list:
             raise ValueError(
-                f"No valid estimators in {str(used_estimator_list)} for {self.cate_method} method, available estimators: {str(self.cfg.estimator_names)}"
+                f"No valid estimators in {str(used_estimator_list)} for {self.cate_method} method, "
+                f"available estimators: {str(self.cfg.estimator_names)}"
             )
 
         if self._settings["component_models"]["time_budget"] is None:
