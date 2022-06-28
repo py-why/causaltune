@@ -95,7 +95,7 @@ if __name__ == "__main__":
             "init_params": OrthoIVParams,
             "fit_params": {},
         },
-        test_significance=False,  # TODO: why enabled? From doWhy example. 
+        test_significance=False,  # TODO: why enabled? From doWhy example.
         # AutoML run is interminable if True. Will investigate
     )
     print(estimate)
