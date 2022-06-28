@@ -404,59 +404,37 @@ class AutoCausality:
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
         cfg = self.cfg.method_params(self.estimator_name)
-        estimate = self.causal_model.estimate_effect(
-            self.identified_estimand,
-            method_name=self.estimator_name,
-            control_value=0,
-            treatment_value=1,
-            target_units="ate",  # condition used for CATE
-            confidence_intervals=False,
-            method_params={
-                "init_params": {**deepcopy(config), **cfg.init_params},
-                "fit_params": {},
-            },
-        )
-        print(estimate)
-        scores = None  # self._compute_metrics(estimate)
 
-        return {
-            self.metric: scores["validation"][self.metric],
-            "estimator": estimate,
-            "estimator_name": scores.pop("estimator_name"),
-            "scores": scores,
-            "config": config,
-        }
+        try:
+            estimate = self.causal_model.estimate_effect(
+                self.identified_estimand,
+                method_name=self.estimator_name,
+                control_value=0,
+                treatment_value=1,
+                target_units="ate",  # condition used for CATE
+                confidence_intervals=False,
+                method_params={
+                    "init_params": {**deepcopy(config), **cfg.init_params},
+                    "fit_params": {},
+                },
+            )
+            scores = self._compute_metrics(estimate)
 
-        # try:
-        #     estimate = self.causal_model.estimate_effect(
-        #         self.identified_estimand,
-        #         method_name=self.estimator_name,
-        #         control_value=0,
-        #         treatment_value=1,
-        #         target_units="ate",  # condition used for CATE
-        #         confidence_intervals=False,
-        #         method_params={
-        #             "init_params": {**deepcopy(config), **cfg.init_params},
-        #             "fit_params": {},
-        #         },
-        #     )
-        #     scores = self._compute_metrics(estimate)
-        #
-        #     return {
-        #         self.metric: scores["validation"][self.metric],
-        #         "estimator": estimate,
-        #         "estimator_name": scores.pop("estimator_name"),
-        #         "scores": scores,
-        #         "config": config,
-        #     }
-        # except Exception as e:
-        #     print("Evaluation failed!\n", config)
-        #     print(e)
-        #     return {
-        #         self.metric: -np.inf,
-        #         "exception": e,
-        #         "traceback": traceback.format_exc(),
-        #     }
+            return {
+                self.metric: scores["validation"][self.metric],
+                "estimator": estimate,
+                "estimator_name": scores.pop("estimator_name"),
+                "scores": scores,
+                "config": config,
+            }
+        except Exception as e:
+            print("Evaluation failed!\n", config)
+            print(e)
+            return {
+                self.metric: -np.inf,
+                "exception": e,
+                "traceback": traceback.format_exc(),
+            }
 
     def _compute_metrics(self, estimator) -> dict:
         scores = {
