@@ -448,6 +448,13 @@ class SimpleParamService:
                         "model_y_xw": outcome_model,
                         "model_t_xw": propensity_model,
                         "model_z_xw": deepcopy(propensity_model),
+                        "discrete_treatment": True,
+                        "discrete_instrument": True,
+                    },
+                    search_space={
+                        "projection": tune.choice([0, 1]),
+                        "fit_cate_intercept": tune.choice([0, 1]),
+                        "mc_agg": tune.choice(["mean", "median"]),
                     }
                 ),
                 "iv.econml.iv.dml.DMLIV": EstimatorConfig(
@@ -456,9 +463,11 @@ class SimpleParamService:
                         "model_t_xw": propensity_model,
                         "model_t_xwz": deepcopy(propensity_model),
                         "model_final": final_model,
-                        "discrete_treatment": False,
+                        "discrete_treatment": True,
+                        "discrete_instrument": True,
                     },
                     search_space={
+                        "projection": tune.choice([0, 1]),
                         "fit_cate_intercept": tune.choice([0, 1]),
                         "mc_agg": tune.choice(["mean", "median"]),
                     },
