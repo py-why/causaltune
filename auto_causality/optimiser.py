@@ -60,6 +60,7 @@ class AutoCausality:
         num_samples=-1,
         test_size=None,
         propensity_model="dummy",
+        cate_method="backdoor",
         components_task="regression",
         components_verbose=0,
         components_pred_time_limit=10 / 1e6,
@@ -179,6 +180,7 @@ class AutoCausality:
         self.cfg = SimpleParamService(
             self.propensity_model,
             self.outcome_model,
+            method=cate_method,
             n_jobs=components_njobs,
             include_experimental=include_experimental_estimators,
         )
@@ -198,6 +200,8 @@ class AutoCausality:
         # # trained component models for each estimator
         # self.trained_estimators_dict = {}
 
+        self.cate_method = cate_method
+
     def get_params(self, deep=False):
         return self._settings.copy()
 
@@ -210,7 +214,8 @@ class AutoCausality:
         treatment: str,
         outcome: str,
         common_causes: List[str],
-        effect_modifiers: List[str],
+        effect_modifiers: List[str] = None,  # can't be none if instruments is none
+        instruments: List[str] = None,
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
@@ -225,6 +230,7 @@ class AutoCausality:
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
             effect_modifiers (List[str]): list of names of effect modifiers
+            instruments (List[str]): list of names of instrumental variables
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
@@ -250,7 +256,8 @@ class AutoCausality:
         )
         if not self.estimator_list:
             raise ValueError(
-                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
+                f"No valid estimators in {str(used_estimator_list)} for {self.cate_method} method, "
+                f"available estimators: {str(self.cfg.estimator_names)}"
             )
 
         if self._settings["component_models"]["time_budget"] is None:
@@ -282,6 +289,7 @@ class AutoCausality:
             outcome=outcome,
             common_causes=common_causes,
             effect_modifiers=effect_modifiers,
+            instruments=instruments,
         )
 
         self.identified_estimand = self.causal_model.identify_effect(
@@ -397,6 +405,7 @@ class AutoCausality:
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
         cfg = self.cfg.method_params(self.estimator_name)
+
         try:
             estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,
