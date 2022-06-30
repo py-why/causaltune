@@ -140,7 +140,7 @@ class SimpleParamService:
         else:
             final_model = deepcopy(self.final_model)
 
-        configs: dict[str: dict[str:EstimatorConfig]] = {
+        configs: dict[str : dict[str:EstimatorConfig]] = {
             "backdoor": {
                 "backdoor.auto_causality.models.Dummy": EstimatorConfig(),
                 "backdoor.auto_causality.models.NewDummy": EstimatorConfig(
@@ -440,9 +440,7 @@ class SimpleParamService:
                 ),
             },
             "iv": {
-                "iv.instrumental_variable": EstimatorConfig(
-                    init_params={}
-                ),
+                "iv.instrumental_variable": EstimatorConfig(init_params={}),
                 "iv.econml.iv.dml.OrthoIV": EstimatorConfig(
                     init_params={
                         "model_y_xw": outcome_model,
@@ -455,7 +453,7 @@ class SimpleParamService:
                         "projection": tune.choice([0, 1]),
                         "fit_cate_intercept": tune.choice([0, 1]),
                         "mc_agg": tune.choice(["mean", "median"]),
-                    }
+                    },
                 ),
                 "iv.econml.iv.dml.DMLIV": EstimatorConfig(
                     init_params={
@@ -476,8 +474,49 @@ class SimpleParamService:
                         "mc_agg": "mean",
                     },
                 ),
-            }
-
-
+                "econml.iv.dr.LinearDRIV": EstimatorConfig(
+                    init_params={
+                        "model_y_xw": outcome_model,
+                        "model_t_xw": propensity_model,
+                        "model_t_xwz": deepcopy(propensity_model),
+                        "model_final": final_model,
+                        "discrete_treatment": True,
+                        "discrete_instrument": True,
+                    },
+                    search_space={
+                        "projection": tune.choice([0, 1]),
+                        "opt_reweighted": tune.choice([0, 1]),
+                        "cov_clip": tune.quniform(0.08, 0.2, 0.01),
+                    },
+                    defaults={"cov_clip": 0.1},
+                ),
+                "econml.iv.dr.SparseLinearDRIV": EstimatorConfig(
+                    init_params={
+                        "model_y_xw": outcome_model,
+                        "model_t_xw": propensity_model,
+                        "model_t_xwz": deepcopy(propensity_model),
+                        "model_final": final_model,
+                        "discrete_treatment": True,
+                        "discrete_instrument": True,
+                    },
+                    search_space={
+                        "projection": tune.choice([0, 1]),
+                        "opt_reweighted": tune.choice([0, 1]),
+                        "cov_clip": tune.quniform(0.08, 0.2, 0.01),
+                    },
+                    defaults={"cov_clip": 0.1},
+                ),
+                "econml.iv.dr.LinearIntentToTreatDRIV": EstimatorConfig(
+                    init_params={
+                        "model_y_xw": outcome_model,
+                        "model_t_xwz": deepcopy(propensity_model),
+                    },
+                    search_space={
+                        "cov_clip": tune.quniform(0.08, 0.2, 0.01),
+                        "opt_reweighted": tune.choice([0, 1]),
+                    },
+                    defaults={"cov_clip": 0.1},
+                ),
+            },
         }
         return configs[self.method]
