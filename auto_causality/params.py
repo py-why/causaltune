@@ -474,7 +474,7 @@ class SimpleParamService:
                         "mc_agg": "mean",
                     },
                 ),
-                "econml.iv.dr.LinearDRIV": EstimatorConfig(
+                "iv.econml.iv.dr.LinearDRIV": EstimatorConfig(
                     init_params={
                         "model_y_xw": outcome_model,
                         "model_t_xw": propensity_model,
@@ -490,7 +490,7 @@ class SimpleParamService:
                     },
                     defaults={"cov_clip": 0.1},
                 ),
-                "econml.iv.dr.SparseLinearDRIV": EstimatorConfig(
+                "iv.econml.iv.dr.SparseLinearDRIV": EstimatorConfig(
                     init_params={
                         "model_y_xw": outcome_model,
                         "model_t_xw": propensity_model,
@@ -506,7 +506,7 @@ class SimpleParamService:
                     },
                     defaults={"cov_clip": 0.1},
                 ),
-                "econml.iv.dr.LinearIntentToTreatDRIV": EstimatorConfig(
+                "iv.econml.iv.dr.LinearIntentToTreatDRIV": EstimatorConfig(
                     init_params={
                         "model_y_xw": outcome_model,
                         "model_t_xwz": deepcopy(propensity_model),
