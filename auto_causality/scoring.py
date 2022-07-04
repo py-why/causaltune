@@ -11,6 +11,8 @@ from dowhy.causal_estimator import CausalEstimate
 from auto_causality.thirdparty.causalml import metrics
 from auto_causality.erupt import ERUPT
 
+import dcor
+
 
 class DummyEstimator:
     def __init__(
@@ -44,6 +46,23 @@ class DummyEstimator:
 #         cate_estimate > 0,
 #     )
 #     return erupt_score
+
+def energy_distance_scores(
+    estimate: CausalEstimate,
+    df: pd.DataFrame,
+):
+    est = estimate.estimator
+    treatment_name = est._treatment_name
+    dy = estimate.estimator.effect(df)
+    df["yhat"] = dy - df[est._outcome_name]
+
+    t1 = df[df[treatment_name] == 1]
+    t0 = df[df[treatment_name] == 0]
+    select_cols = est._effect_modifier_names + ["yhat"]
+
+    edist = dcor.energy_distance(t1[select_cols], t0[select_cols])
+
+    return {"edist": edist}
 
 
 def qini_make_score(
