@@ -35,31 +35,44 @@ class SimpleParamService:
         self.n_bootstrap_samples = n_bootstrap_samples
 
     def estimator_names_from_patterns(
-        self, patterns: Union[Sequence, str], data_rows: Optional[int] = None
+        self,
+        problem: str,
+        patterns: Union[Sequence, str],
+        data_rows: Optional[int] = None,
     ):
+        def problem_match(est_name: str, problem: str) -> bool:
+            return est_name.split(".")[0] == problem
 
         if patterns == "all":
             if data_rows <= 1000:
-                return self.estimator_names
+                return [e for e in self.estimator_names if problem_match(e, problem)]
             else:
                 warnings.warn(
                     "Excluding OrthoForests as they can have problems with large datasets"
                 )
-                return [e for e in self.estimator_names if "Ortho" not in e]
+                return [
+                    e
+                    for e in self.estimator_names
+                    if "Ortho" not in e and problem_match(e, problem)
+                ]
 
         elif patterns == "auto":
-            # These are the ones we've seen best results from, empirically,
-            # plus dummy for baseline, and SLearner as that's the simplest possible
-            return self.estimator_names_from_patterns(
-                [
-                    "Dummy",
-                    "SLearner",
-                    "DomainAdaptationLearner",
-                    "TransformedOutcome",
-                    "CausalForestDML",
-                    "ForestDRLearner",
-                ]
-            )
+            if problem == "backdoor":
+                # These are the ones we've seen best results from, empirically,
+                # plus dummy for baseline, and SLearner as that's the simplest possible
+                return self.estimator_names_from_patterns(
+                    problem,
+                    [
+                        "Dummy",
+                        "SLearner",
+                        "DomainAdaptationLearner",
+                        "TransformedOutcome",
+                        "CausalForestDML",
+                        "ForestDRLearner",
+                    ],
+                )
+            elif problem == "iv":
+                return ValueError("Hudson please fill this in")
         else:
             try:
                 for p in patterns:
@@ -69,7 +82,12 @@ class SimpleParamService:
                     "Invalid estimator list, must be 'auto', 'all', or a list of strings"
                 )
 
-            out = [est for p in patterns for est in self.estimator_names if p in est]
+            out = [
+                est
+                for p in patterns
+                for est in self.estimator_names
+                if p in est and problem_match(est, problem)
+            ]
             return sorted(list(set(out)))
 
     @property

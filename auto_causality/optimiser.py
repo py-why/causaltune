@@ -13,6 +13,7 @@ from flaml import AutoML as FLAMLAutoML
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
 from dowhy import CausalModel
+from dowhy.causal_identifier import IdentifiedEstimand
 from joblib import Parallel, delayed
 
 from auto_causality.params import SimpleParamService
@@ -238,6 +239,24 @@ class AutoCausality:
         self.train_df, self.test_df = train_test_split(
             data_df, train_size=self._settings["train_size"]
         )
+
+        self.causal_model = CausalModel(
+            data=self.train_df,
+            treatment=treatment,
+            outcome=outcome,
+            common_causes=common_causes,
+            effect_modifiers=effect_modifiers,
+        )
+
+        self.identified_estimand: IdentifiedEstimand = (
+            self.causal_model.identify_effect(proceed_when_unidentifiable=True)
+        )
+
+        if "iv" in self.identified_estimand.estimands:
+            problem = "iv"
+        elif "backdoor" in self.identified_estimand.estimands:
+            problem = "backdoor"
+
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
         # TODO: allow specifying an exclusion list, too
@@ -246,8 +265,9 @@ class AutoCausality:
         )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
-            used_estimator_list, len(data_df)
+            problem, used_estimator_list, len(data_df)
         )
+
         if not self.estimator_list:
             raise ValueError(
                 f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
@@ -275,18 +295,6 @@ class AutoCausality:
 
         if self._settings["test_size"] is not None:
             self.test_df = self.test_df.sample(self._settings["test_size"])
-
-        self.causal_model = CausalModel(
-            data=self.train_df,
-            treatment=treatment,
-            outcome=outcome,
-            common_causes=common_causes,
-            effect_modifiers=effect_modifiers,
-        )
-
-        self.identified_estimand = self.causal_model.identify_effect(
-            proceed_when_unidentifiable=True
-        )
 
         self.r_scorer = (
             None
@@ -368,7 +376,9 @@ class AutoCausality:
 
         print(config["estimator"])
 
-        # spawn a separate process to prevent cross-talk between tuner and automl on component models:
+        # if using FLAML < 1.0.7 need to set n_jobs = 2 here
+        # to spawn a separate process to prevent cross-talk between tuner and automl on component models:
+
         estimates = Parallel(n_jobs=2)(
             delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
