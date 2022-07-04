@@ -455,9 +455,6 @@ class SimpleParamService:
                     "lambda_reg": 0.01,
                 },
             ),
-            "iv.instrumental_variable": EstimatorConfig(
-                init_params={}
-            ),
             "iv.econml.iv.dml.OrthoIV": EstimatorConfig(
                 init_params={
                     "model_y_xw": outcome_model,
