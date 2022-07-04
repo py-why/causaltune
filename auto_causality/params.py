@@ -50,7 +50,7 @@ class SimpleParamService:
                 warnings.warn(
                     "Excluding OrthoForests as they can have problems with large datasets"
                 )
-                return [e for e in self.estimator_names if "Ortho" not in e]
+                return [e for e in self.estimator_names if "OrthoForest" not in e]
 
         elif patterns == "auto":
             if problem == "backdoor":
