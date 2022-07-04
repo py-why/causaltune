@@ -6,8 +6,7 @@ from scipy import special
 
 from econml.iv.dml import OrthoIV
 from sklearn.model_selection import train_test_split
-
-warnings.filterwarnings("ignore")
+from dowhy import CausalModel
 
 
 # Modified example (EconML Notebooks):
@@ -48,25 +47,39 @@ if __name__ == "__main__":
 
     train_df, test_df = train_test_split(df, test_size=0.2)
 
-    est1 = OrthoIV(
-        projection=False,
-        discrete_treatment=True,
-        discrete_instrument=True,
+    # 1: Initialize model
+    model = CausalModel(
+        data=train_df,
+        treatment="Tr",
+        outcome="y",
+        effect_modifiers=cov,
+        common_causes=["U"],
+        instruments=["Z"]
     )
 
-    est1.fit(train_df.y, train_df.Tr, Z=train_df.Z, X=None, W=train_df[cov])
-    print("True Treatment Effect: ", TRUE_EFFECT)
-    # print("OrthoIV Summary")
-    # print(est1.summary(alpha=0.05))
+    # Step 2: Identify estimand
+    identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
 
-    # 2 models under models_y_xw, with similar effect on energy_distance
-    corrected_outcome = est1.models_y_xw[0][0].predict(test_df[cov])
-    test_df["coo"] = corrected_outcome
+    # Step 3: Estimate effect
+    estimate = model.estimate_effect(
+        identified_estimand,
+        method_name="iv.econml.iv.dml.DMLIV",  # "iv.econml.iv.dml.OrthoIV"
+        method_params={
+            "init_params": {},
+            "fit_params": {},
+        },
+        test_significance=False,
+    )
+
+    # Step IV: Energy distance scoring
+    dy = estimate.estimator.effect(test_df)
+    test_df["yhat"] = dy - test_df["y"]
 
     t1 = test_df[test_df.Tr == 1]
     t0 = test_df[test_df.Tr == 0]
+    select_cols = cov + ["yhat"]
 
-    cols = cov + ["coo"]
+    edist = dcor.energy_distance(t1[select_cols], t0[select_cols])
+    print("Energy distance = ", edist)
 
-    energy_distance = dcor.energy_distance(t1[cols], t0[cols])
-    print("Energy distance = ", energy_distance)
+
