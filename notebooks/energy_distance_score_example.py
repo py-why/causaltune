@@ -1,10 +1,8 @@
 import dcor
-import warnings
 import numpy as np
 import pandas as pd
 from scipy import special
 
-from econml.iv.dml import OrthoIV
 from sklearn.model_selection import train_test_split
 from dowhy import CausalModel
 
@@ -54,7 +52,7 @@ if __name__ == "__main__":
         outcome="y",
         effect_modifiers=cov,
         common_causes=["U"],
-        instruments=["Z"]
+        instruments=["Z"],
     )
 
     # Step 2: Identify estimand
@@ -63,7 +61,7 @@ if __name__ == "__main__":
     # Step 3: Estimate effect
     estimate = model.estimate_effect(
         identified_estimand,
-        method_name="iv.econml.iv.dml.DMLIV",  # "iv.econml.iv.dml.OrthoIV"
+        method_name="iv.econml.iv.dml.DMLIV",
         method_params={
             "init_params": {},
             "fit_params": {},
@@ -71,7 +69,7 @@ if __name__ == "__main__":
         test_significance=False,
     )
 
-    # Step IV: Energy distance scoring
+    # Step 3: Energy distance scoring
     dy = estimate.estimator.effect(test_df)
     test_df["yhat"] = dy - test_df["y"]
 
@@ -81,5 +79,3 @@ if __name__ == "__main__":
 
     edist = dcor.energy_distance(t1[select_cols], t0[select_cols])
     print("Energy distance = ", edist)
-
-
