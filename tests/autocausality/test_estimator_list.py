@@ -11,37 +11,42 @@ class TestEstimatorListGenerator:
     def test_auto_list(self):
         """tests if "auto" setting yields all available estimators"""
         cfg = SimpleParamService(propensity_model=None, outcome_model=None)
-        auto_estimators = cfg.estimator_names_from_patterns("auto")
+        auto_estimators_iv = cfg.estimator_names_from_patterns("iv", "auto")
+        auto_estimators_backdoor = cfg.estimator_names_from_patterns("backdoor", "auto")
         # verify that returned estimator list includes all available estimators
-        assert len(auto_estimators) == 6
+        # for backdoor or iv problem(s)
+        assert len(auto_estimators_backdoor) == 6
+        assert len(auto_estimators_iv) == 2
 
     def test_all_list(self):
         """tests if "auto" setting yields all available estimators"""
-        cfg = SimpleParamService(
-            propensity_model=None, outcome_model=None, include_experimental=True
-        )
-        all_estimators = cfg.estimator_names_from_patterns("all", data_rows=1)
-        # verify that returned estimator list includes all available estimators
-        assert len(all_estimators) == len(cfg._configs())
+        problems = ["iv", "backdoor"]
+        for p in problems:
+            cfg = SimpleParamService(
+                propensity_model=None, outcome_model=None, include_experimental=True
+            )
+            all_estimators = cfg.estimator_names_from_patterns(p, "all", data_rows=1)
+            # verify that returned estimator list includes all available estimators
+            assert len(all_estimators) == len(cfg._configs())
 
-        cfg = SimpleParamService(
-            propensity_model=None, outcome_model=None, include_experimental=True
-        )
-        all_estimators = cfg.estimator_names_from_patterns("all", data_rows=10000)
-        # verify that returned estimator list includes all available estimators
-        assert len(all_estimators) == len(cfg._configs()) - 2
+            cfg = SimpleParamService(
+                propensity_model=None, outcome_model=None, include_experimental=True
+            )
+            all_estimators = cfg.estimator_names_from_patterns(p, "all", data_rows=10000)
+            # verify that returned estimator list includes all available estimators
+            assert len(all_estimators) == len(cfg._configs()) - 2
 
     def test_substring_group(self):
         """tests if substring match to group of estimators works"""
         cfg = SimpleParamService(propensity_model=None, outcome_model=None)
 
-        estimator_list = cfg.estimator_names_from_patterns(["dml"])
+        estimator_list = cfg.estimator_names_from_patterns("backdoor", ["dml"])
         available_estimators = [e for e in cfg._configs().keys() if "dml" in e]
         # verify that returned estimator list includes all available estimators
         assert all(e in available_estimators for e in estimator_list)
 
         # or all econml models:
-        estimator_list = cfg.estimator_names_from_patterns(["econml"])
+        estimator_list = cfg.estimator_names_from_patterns("backdoor", ["econml"])
         available_estimators = [e for e in cfg._configs().keys() if "econml" in e]
         # verify that returned estimator list includes all available estimators
         assert all(e in available_estimators for e in estimator_list)
@@ -49,7 +54,7 @@ class TestEstimatorListGenerator:
     def test_substring_single(self):
         """tests if substring match to single estimators works"""
         cfg = SimpleParamService(propensity_model=None, outcome_model=None)
-        estimator_list = cfg.estimator_names_from_patterns(["DomainAdaptationLearner"])
+        estimator_list = cfg.estimator_names_from_patterns("backdoor", ["DomainAdaptationLearner"])
         assert estimator_list == [
             "backdoor.econml.metalearners.DomainAdaptationLearner"
         ]
@@ -58,6 +63,7 @@ class TestEstimatorListGenerator:
         """tests if duplicates are removed"""
         cfg = SimpleParamService(propensity_model=None, outcome_model=None)
         estimator_list = cfg.estimator_names_from_patterns(
+            "backdoor",
             [
                 "DomainAdaptationLearner",
                 "DomainAdaptationLearner",
@@ -74,10 +80,10 @@ class TestEstimatorListGenerator:
         cfg = SimpleParamService(propensity_model=None, outcome_model=None)
 
         with pytest.raises(ValueError):
-            cfg.estimator_names_from_patterns(["linear_regression", "pasta", 12])
+            cfg.estimator_names_from_patterns("backdoor", ["linear_regression", "pasta", 12])
 
         with pytest.raises(ValueError):
-            cfg.estimator_names_from_patterns(5)
+            cfg.estimator_names_from_patterns("backdoor", 5)
 
     def test_invalid_choice_fitter(self):
         with pytest.raises(ValueError):

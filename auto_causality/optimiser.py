@@ -13,6 +13,7 @@ from flaml import AutoML as FLAMLAutoML
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
 from dowhy import CausalModel
+from dowhy.causal_identifier import IdentifiedEstimand
 from joblib import Parallel, delayed
 
 from auto_causality.params import SimpleParamService
@@ -60,7 +61,6 @@ class AutoCausality:
         num_samples=-1,
         test_size=None,
         propensity_model="dummy",
-        cate_method="backdoor",
         components_task="regression",
         components_verbose=0,
         components_pred_time_limit=10 / 1e6,
@@ -180,7 +180,6 @@ class AutoCausality:
         self.cfg = SimpleParamService(
             self.propensity_model,
             self.outcome_model,
-            method=cate_method,
             n_jobs=components_njobs,
             include_experimental=include_experimental_estimators,
         )
@@ -200,8 +199,6 @@ class AutoCausality:
         # # trained component models for each estimator
         # self.trained_estimators_dict = {}
 
-        self.cate_method = cate_method
-
     def get_params(self, deep=False):
         return self._settings.copy()
 
@@ -214,7 +211,7 @@ class AutoCausality:
         treatment: str,
         outcome: str,
         common_causes: List[str],
-        effect_modifiers: List[str] = None,  # can't be none if instruments is none
+        effect_modifiers: List[str],
         instruments: List[str] = None,
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
@@ -244,6 +241,25 @@ class AutoCausality:
         self.train_df, self.test_df = train_test_split(
             data_df, train_size=self._settings["train_size"]
         )
+
+        self.causal_model = CausalModel(
+            data=self.train_df,
+            treatment=treatment,
+            outcome=outcome,
+            common_causes=common_causes,
+            effect_modifiers=effect_modifiers,
+            instruments=instruments,
+        )
+
+        self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
+            proceed_when_unidentifiable=True
+        )
+
+        if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
+            problem = "iv"
+        elif bool(self.identified_estimand.estimands["backdoor"]):
+            problem = "backdoor"
+
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
         # TODO: allow specifying an exclusion list, too
@@ -252,11 +268,12 @@ class AutoCausality:
         )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
-            used_estimator_list, len(data_df)
+            problem, used_estimator_list, len(data_df)
         )
+
         if not self.estimator_list:
             raise ValueError(
-                f"No valid estimators in {str(used_estimator_list)} for {self.cate_method} method, "
+                f"No valid estimators in {str(used_estimator_list)}, "
                 f"available estimators: {str(self.cfg.estimator_names)}"
             )
 
@@ -282,19 +299,6 @@ class AutoCausality:
 
         if self._settings["test_size"] is not None:
             self.test_df = self.test_df.sample(self._settings["test_size"])
-
-        self.causal_model = CausalModel(
-            data=self.train_df,
-            treatment=treatment,
-            outcome=outcome,
-            common_causes=common_causes,
-            effect_modifiers=effect_modifiers,
-            instruments=instruments,
-        )
-
-        self.identified_estimand = self.causal_model.identify_effect(
-            proceed_when_unidentifiable=True
-        )
 
         self.r_scorer = (
             None
@@ -376,7 +380,9 @@ class AutoCausality:
 
         print(config["estimator"])
 
-        # spawn a separate process to prevent cross-talk between tuner and automl on component models:
+        # if using FLAML < 1.0.7 need to set n_jobs = 2 here
+        # to spawn a separate process to prevent cross-talk between tuner and automl on component models:
+
         estimates = Parallel(n_jobs=2)(
             delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
