@@ -211,7 +211,7 @@ class AutoCausality:
         treatment: str,
         outcome: str,
         common_causes: List[str],
-        effect_modifiers: List[str] = None,  # can't be none if instruments is none
+        effect_modifiers: List[str],
         instruments: List[str] = None,
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
