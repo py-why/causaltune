@@ -212,6 +212,7 @@ class AutoCausality:
         outcome: str,
         common_causes: List[str],
         effect_modifiers: List[str],
+        instruments: List[str] = None,
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
@@ -226,6 +227,7 @@ class AutoCausality:
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
             effect_modifiers (List[str]): list of names of effect modifiers
+            instruments (List[str]): list of names of instrumental variables
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
@@ -246,15 +248,16 @@ class AutoCausality:
             outcome=outcome,
             common_causes=common_causes,
             effect_modifiers=effect_modifiers,
+            instruments=instruments,
         )
 
-        self.identified_estimand: IdentifiedEstimand = (
-            self.causal_model.identify_effect(proceed_when_unidentifiable=True)
+        self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
+            proceed_when_unidentifiable=True
         )
 
-        if "iv" in self.identified_estimand.estimands:
+        if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
             problem = "iv"
-        elif "backdoor" in self.identified_estimand.estimands:
+        elif bool(self.identified_estimand.estimands["backdoor"]):
             problem = "backdoor"
 
         if time_budget:
@@ -270,7 +273,8 @@ class AutoCausality:
 
         if not self.estimator_list:
             raise ValueError(
-                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
+                f"No valid estimators in {str(used_estimator_list)}, "
+                f"available estimators: {str(self.cfg.estimator_names)}"
             )
 
         if self._settings["component_models"]["time_budget"] is None:
@@ -407,6 +411,7 @@ class AutoCausality:
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
         cfg = self.cfg.method_params(self.estimator_name)
+
         try:
             estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,

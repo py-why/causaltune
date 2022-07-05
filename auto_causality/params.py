@@ -38,7 +38,7 @@ class SimpleParamService:
         self,
         problem: str,
         patterns: Union[Sequence, str],
-        data_rows: Optional[int] = None,
+        data_rows: Optional[int] = None
     ):
         def problem_match(est_name: str, problem: str) -> bool:
             return est_name.split(".")[0] == problem
@@ -50,11 +50,7 @@ class SimpleParamService:
                 warnings.warn(
                     "Excluding OrthoForests as they can have problems with large datasets"
                 )
-                return [
-                    e
-                    for e in self.estimator_names
-                    if "Ortho" not in e and problem_match(e, problem)
-                ]
+                return [e for e in self.estimator_names if "OrthoForest" not in e]
 
         elif patterns == "auto":
             if problem == "backdoor":
@@ -72,7 +68,13 @@ class SimpleParamService:
                     ],
                 )
             elif problem == "iv":
-                return ValueError("Hudson please fill this in")
+                return self.estimator_names_from_patterns(
+                    problem,
+                    [
+                        "OrthoIV",
+                        "DMLIV",
+                    ],
+                )
         else:
             try:
                 for p in patterns:
@@ -156,7 +158,7 @@ class SimpleParamService:
         else:
             final_model = deepcopy(self.final_model)
 
-        configs: dict[str:EstimatorConfig] = {
+        configs: dict[str: dict[str:EstimatorConfig]] = {
             "backdoor.auto_causality.models.Dummy": EstimatorConfig(),
             "backdoor.auto_causality.models.NewDummy": EstimatorConfig(
                 init_params={"propensity_score_model": propensity_model},
@@ -453,6 +455,29 @@ class SimpleParamService:
                     "lambda_reg": 0.01,
                 },
             ),
+            "iv.econml.iv.dml.OrthoIV": EstimatorConfig(
+                init_params={
+                    "model_y_xw": outcome_model,
+                    "model_t_xw": propensity_model,
+                    "model_z_xw": deepcopy(propensity_model),
+                }
+            ),
+            "iv.econml.iv.dml.DMLIV": EstimatorConfig(
+                init_params={
+                    "model_y_xw": outcome_model,
+                    "model_t_xw": propensity_model,
+                    "model_t_xwz": deepcopy(propensity_model),
+                    "model_final": final_model,
+                    "discrete_treatment": False,
+                },
+                search_space={
+                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "mc_agg": tune.choice(["mean", "median"]),
+                },
+                defaults={
+                    "fit_cate_intercept": True,
+                    "mc_agg": "mean",
+                },
+            ),
         }
-
         return configs
