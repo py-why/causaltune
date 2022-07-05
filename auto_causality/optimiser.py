@@ -7,7 +7,6 @@ from collections import defaultdict
 import pandas as pd
 import numpy as np
 
-
 from flaml import tune
 from flaml import AutoML as FLAMLAutoML
 from sklearn.dummy import DummyClassifier
@@ -17,7 +16,7 @@ from dowhy.causal_identifier import IdentifiedEstimand
 from joblib import Parallel, delayed
 
 from auto_causality.params import SimpleParamService
-from auto_causality.scoring import make_scores, best_score_by_estimator
+from auto_causality.scoring import make_scores, best_score_by_estimator, energy_distance_scores
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
 
@@ -117,10 +116,10 @@ class AutoCausality:
         self._settings["try_init_configs"] = try_init_configs
 
         self.metric = metric
-        if metric not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score"]:
+        if metric not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score", "iv_energy_score"]:
             raise ValueError(
                 f'Metric, {metric}, must be\
-                 one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
+                 one of "erupt","norm_erupt","qini","auc","ate", "iv_energy_score" or "r_score"'
             )
         self.metrics_to_report = (
             metrics_to_report
@@ -131,15 +130,16 @@ class AutoCausality:
                 "ate",
                 "erupt",
                 "norm_erupt",
+                "iv_energy_score"
             ]  # not "r_score" by default
         )
         if self.metric not in self.metrics_to_report:
             self.metrics_to_report.append(self.metric)
         for i in self.metrics_to_report:
-            if i not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score"]:
+            if i not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score", "iv_energy_score"]:
                 raise ValueError(
                     f'Metric for report, {i}, must be\
-                     one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
+                     one of "erupt","norm_erupt","qini","auc","ate", "iv_energy_score" or "r_score"'
                 )
 
         # params for FLAML on component models:
@@ -192,6 +192,7 @@ class AutoCausality:
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
+        self._problem = None
         # properties that are used to resume fits (warm start)
         self.resume_scores = []
         self.resume_cfg = []
@@ -256,9 +257,9 @@ class AutoCausality:
         )
 
         if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
-            problem = "iv"
+            self._problem = "iv"
         elif bool(self.identified_estimand.estimands["backdoor"]):
-            problem = "backdoor"
+            self._problem = "backdoor"
 
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
@@ -268,7 +269,7 @@ class AutoCausality:
         )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
-            problem, used_estimator_list, len(data_df)
+            self._problem, used_estimator_list, len(data_df)
         )
 
         if not self.estimator_list:
@@ -444,22 +445,39 @@ class AutoCausality:
             }
 
     def _compute_metrics(self, estimator) -> dict:
-        scores = {
-            "estimator_name": self.estimator_name,
-            "train": make_scores(
-                estimator,
-                self.train_df,
-                self.propensity_model,
-                r_scorer=None if self.r_scorer is None else self.r_scorer.train,
-            ),
-            "validation": make_scores(
-                estimator,
-                self.test_df,
-                self.propensity_model,
-                r_scorer=None if self.r_scorer is None else self.r_scorer.test,
-            ),
-        }
+        if self._problem == "iv":
+            scores = {
+                "estimator_name": self.estimator_name,
+                "train": energy_distance_scores(
+                    estimator,
+                    self.train_df
+                ),
+                "validation": energy_distance_scores(
+                    estimator,
+                    self.test_df
+                )
+            }
+        elif self._problem == "backdoor":
+            scores = {
+                "estimator_name": self.estimator_name,
+                "train": make_scores(
+                    estimator,
+                    self.train_df,
+                    self.propensity_model,
+                    r_scorer=None if self.r_scorer is None else self.r_scorer.train,
+                ),
+                "validation": make_scores(
+                    estimator,
+                    self.test_df,
+                    self.propensity_model,
+                    r_scorer=None if self.r_scorer is None else self.r_scorer.test,
+                ),
+            }
         return scores
+
+    @property
+    def problem(self) -> str:
+        return self._problem
 
     @property
     def best_estimator(self) -> str:
