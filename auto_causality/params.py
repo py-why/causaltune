@@ -38,7 +38,7 @@ class SimpleParamService:
         self,
         problem: str,
         patterns: Union[Sequence, str],
-        data_rows: Optional[int] = None
+        data_rows: Optional[int] = None,
     ):
         def problem_match(est_name: str, problem: str) -> bool:
             return est_name.split(".")[0] == problem
@@ -468,14 +468,12 @@ class SimpleParamService:
                     "model_t_xw": propensity_model,
                     "model_t_xwz": deepcopy(propensity_model),
                     "model_final": final_model,
-                    "discrete_treatment": False,
                 },
                 search_space={
                     "fit_cate_intercept": tune.choice([0, 1]),
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
                 defaults={
-                    "fit_cate_intercept": True,
                     "mc_agg": "mean",
                 },
             ),
