@@ -86,6 +86,7 @@ def preprocess_dataset(
     data: pd.DataFrame,
     treatment: str,
     targets: Union[str, List[str]],
+    instruments: List[str] = [],
     drop_first: bool = False,
     scale_floats: bool = False,
     prune_min_categories: int = 50,
@@ -125,7 +126,9 @@ def preprocess_dataset(
         prune_min_categories=prune_min_categories,
         prune_thresh=prune_thresh,
     )
-    used_features = [c for c in used_df.columns if c not in [treatment] + targets]
+    used_features = [
+        c for c in used_df.columns
+        if c not in [treatment] + targets + instruments]
 
     # Let's treat all features as effect modifiers
     features_X = [f for f in used_features if f != "random"]
