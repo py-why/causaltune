@@ -105,12 +105,13 @@ def preprocess_dataset(
     if isinstance(targets, str):
         targets = [targets]
 
-    for c in [treatment] + targets:
+    cols_to_exclude = [treatment] + targets + instruments
+    for c in cols_to_exclude:
         assert c in data.columns, f"Column {c} not found in dataset"
 
     # else:
     # prepare the data
-    features = [c for c in data.columns if c not in [treatment] + targets]
+    features = [c for c in data.columns if c not in cols_to_exclude]
 
     data[treatment] = data[treatment].astype(int)
 
@@ -120,7 +121,7 @@ def preprocess_dataset(
     used_df = featurize(
         data,
         features=features,
-        exclude_cols=[treatment] + targets,
+        exclude_cols=cols_to_exclude,
         drop_first=drop_first,
         scale_floats=scale_floats,
         prune_min_categories=prune_min_categories,
@@ -128,7 +129,7 @@ def preprocess_dataset(
     )
     used_features = [
         c for c in used_df.columns
-        if c not in [treatment] + targets + instruments]
+        if c not in cols_to_exclude]
 
     # Let's treat all features as effect modifiers
     features_X = [f for f in used_features if f != "random"]
