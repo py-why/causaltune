@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 import numpy as np
 import pandas as pd
 from scipy import special
@@ -40,7 +41,7 @@ def dgp(n, p):
 
 if __name__ == "__main__":
 
-    TRUE_EFFECT = 5
+    TRUE_EFFECT = 10
 
     n = 1000
     p = 10
@@ -52,26 +53,26 @@ if __name__ == "__main__":
     df["Tr"] = T
     df["Z"] = Z
 
-    # train_df, test_df = train_test_split(df, test_size=0.2)
     treatment = "Tr"
     targets = ["y"]
-    data_df, features_X, features_W = preprocess_dataset(df, treatment, targets)
+    instruments = ["Z"]
+    data_df, features_X, features_W = preprocess_dataset(
+        df, treatment, targets, instruments
+    )
 
     outcome = targets[0]
     train_df, test_df = train_test_split(data_df, test_size=0.2)
+    train_df_copy, test_df_copy = train_df.copy(), test_df.copy()
 
     ac = AutoCausality(
         time_budget=120,
-        metric="iv_energy_score",
-        metrics_to_report=["iv_energy_score"],
         verbose=3,
         components_verbose=2,
         components_time_budget=60,
         propensity_model="auto",
     )
 
-    # run autocausality
-    ac.fit(train_df, treatment, outcome, features_W, features_X[:-1], instruments=["Z"])
+    ac.fit(train_df, treatment, outcome, features_W, features_X, instruments)
 
     # return best estimator
     print(f"Best estimator: {ac.best_estimator}")
@@ -79,3 +80,31 @@ if __name__ == "__main__":
     print(f"best config: {ac.best_config}")
     # best score:
     print(f"best score: {ac.best_score}")
+
+    # # Baseline Comparison
+    # baseline_model = CausalModel(
+    #     data=train_df_copy,
+    #     treatment="Tr",
+    #     outcome="y",
+    #     effect_modifiers=cov,
+    #     common_causes=["U"],
+    #     instruments=["Z"],
+    # )
+    #
+    # # Step 2: Identify estimand
+    # identified_estimand =
+    #   baseline_model.identify_effect(proceed_when_unidentifiable=True)
+    #
+    # # Step 3: Estimate effect
+    # estimate = baseline_model.estimate_effect(
+    #     identified_estimand,
+    #     method_name="iv.econml.iv.dml.OrthoIV",
+    #     method_params={
+    #         "init_params": {},
+    #     },
+    #     test_significance=False,
+    # )
+    #
+    # baseline_energy_distance =
+    # Scorer.energy_distance_scores(estimate, test_df_copy)
+    # print("Baseline energy distance score = ", baseline_energy_distance)
