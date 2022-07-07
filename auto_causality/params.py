@@ -460,7 +460,15 @@ class SimpleParamService:
                     "model_y_xw": outcome_model,
                     "model_t_xw": propensity_model,
                     "model_z_xw": deepcopy(propensity_model),
-                }
+                },
+                search_space={
+                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "mc_agg": tune.choice(["mean", "median"]),
+                },
+                defaults={
+                    "fit_cate_intercept": 0,
+                    "mc_agg": "mean",
+                },
             ),
             "iv.econml.iv.dml.DMLIV": EstimatorConfig(
                 init_params={
@@ -474,6 +482,7 @@ class SimpleParamService:
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
                 defaults={
+                    "fit_cate_intercept": 0,
                     "mc_agg": "mean",
                 },
             ),
