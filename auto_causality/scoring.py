@@ -96,7 +96,7 @@ class Scorer:
 
     @staticmethod
     def qini_make_score(
-        df: pd.DataFrame, estimate: CausalEstimate, cate_estimate: np.ndarray
+        estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
     ) -> float:
         est = estimate.estimator
         new_df = pd.DataFrame()
@@ -113,7 +113,7 @@ class Scorer:
 
     @staticmethod
     def auc_make_score(
-        df: pd.DataFrame, estimate: CausalEstimate, cate_estimate: np.ndarray
+        estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
     ) -> float:
         est = estimate.estimator
         new_df = pd.DataFrame()
@@ -228,7 +228,7 @@ class Scorer:
             values["weights"] = erupt.weights(df, lambda x: cate_estimate > 0)
 
             if "ate" in metrics_to_report:
-                out["ate"] = simple_ate
+                out["ate"] = np.float64(simple_ate)
 
             if "erupt" in metrics_to_report:
                 erupt_score = erupt.score(df, df[outcome_name], cate_estimate > 0)
@@ -242,10 +242,10 @@ class Scorer:
                 out["norm_erupt"] = norm_erupt_score
 
             if "qini" in metrics_to_report:
-                out["qini"] = Scorer.qini_make_score(df, estimate, cate_estimate)
+                out["qini"] = Scorer.qini_make_score(estimate, df, cate_estimate)
 
             if "auc" in metrics_to_report:
-                out["auc"] = Scorer.auc_make_score(df, estimate, cate_estimate)
+                out["auc"] = Scorer.auc_make_score(estimate, df, cate_estimate)
 
             if r_scorer is not None:
                 out["r_score"] = Scorer.r_make_score(
