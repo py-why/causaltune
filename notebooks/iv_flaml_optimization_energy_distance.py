@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy import special
 
+from econml.iv.dml import DMLIV
 from sklearn.model_selection import train_test_split
 
 root_path = root_path = os.path.realpath("../..")
@@ -67,8 +68,9 @@ if __name__ == "__main__":
     ac = AutoCausality(
         time_budget=120,
         verbose=3,
+        estimator_list=["DMLIV"],
         components_verbose=2,
-        components_time_budget=60,
+        components_time_budget=30,
         propensity_model="auto",
     )
 
@@ -81,30 +83,16 @@ if __name__ == "__main__":
     # best score:
     print(f"best score: {ac.best_score}")
 
-    # # Baseline Comparison
-    # baseline_model = CausalModel(
-    #     data=train_df_copy,
-    #     treatment="Tr",
-    #     outcome="y",
-    #     effect_modifiers=cov,
-    #     common_causes=["U"],
-    #     instruments=["Z"],
-    # )
-    #
-    # # Step 2: Identify estimand
-    # identified_estimand =
-    #   baseline_model.identify_effect(proceed_when_unidentifiable=True)
-    #
-    # # Step 3: Estimate effect
-    # estimate = baseline_model.estimate_effect(
-    #     identified_estimand,
-    #     method_name="iv.econml.iv.dml.OrthoIV",
-    #     method_params={
-    #         "init_params": {},
-    #     },
-    #     test_significance=False,
-    # )
-    #
-    # baseline_energy_distance =
-    # Scorer.energy_distance_scores(estimate, test_df_copy)
-    # print("Baseline energy distance score = ", baseline_energy_distance)
+    # Comparing best model searched to base IV model configuration
+    base_estimator = DMLIV(
+        discrete_treatment=True,
+        discrete_instrument=True
+    )
+
+    base_estimator.fit(train_df.y, train_df["Tr"], Z=train_df.Z, X=train_df[cov], W=None)
+
+    Xtest = test_df[cov]
+    print()
+    print("True Treatment Effect: ", TRUE_EFFECT)
+    print("(AutoCausality Estimator) Treatment Effect: ", ac.model.estimator.estimator.effect(Xtest).mean())
+    print("(Baseline Estimator) Treatment Effect: ", base_estimator.effect(Xtest).mean())
