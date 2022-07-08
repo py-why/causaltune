@@ -476,7 +476,7 @@ class SimpleParamService:
                     "model_t_xw": propensity_model,
                     # "model_t_xwz": deepcopy(propensity_model),
                     # "model_final": final_model,
-                    "fit_cate_intercept": True
+                    "fit_cate_intercept": True,
                 },
                 search_space={
                     "mc_agg": tune.choice(["mean", "median"]),
