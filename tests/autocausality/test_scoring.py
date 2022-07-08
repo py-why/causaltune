@@ -65,21 +65,21 @@ class TestMetrics:
         """Tests AUC Score is within exceptable range for the test example"""
         assert Scorer.auc_make_score(*simple_model_run()) == pytest.approx(0.6, 0.05)
 
-    def test_qini_make_score(self):
-        """Tests Qini score is within exceptable range for the test example"""
-        assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
-
-    def test_r_make_score(self):
-        """Tests RScorer output value is within exceptable range for the test
-        example"""
-        rscorer = RScoreWrapper(
-            DecisionTreeRegressor(random_state=123),
-            DummyClassifier(strategy="prior"),
-            *simple_model_run(rscorer=True)
-        )
-        assert Scorer.r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(
-            0.05, 0.1
-        )
+    # def test_qini_make_score(self):
+    #     """Tests Qini score is within exceptable range for the test example"""
+    #     assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
+    #
+    # def test_r_make_score(self):
+    #     """Tests RScorer output value is within exceptable range for the test
+    #     example"""
+    #     rscorer = RScoreWrapper(
+    #         DecisionTreeRegressor(random_state=123),
+    #         DummyClassifier(strategy="prior"),
+    #         *simple_model_run(rscorer=True)
+    #     )
+    #     assert Scorer.r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(
+    #         0.05, 0.1
+    #     )
 
     def test_make_scores_with_rscorer(self):
         """Tests make_scores (with rscorer) produces a dictionary of the right
@@ -118,7 +118,10 @@ class TestMetrics:
     def test_make_scores_without_rscorer(self):
         """Tests make_scores (without rscorer) returns 0 for 'r_score' key"""
         scores = Scorer.make_scores(
-            *(simple_model_run()[:2]), DummyClassifier(strategy="prior"), "backdoor", ["ate"]
+            *(simple_model_run()[:2]),
+            DummyClassifier(strategy="prior"),
+            "backdoor",
+            ["ate"]
         )
         assert scores.get("r_score", 0) == 0
 
