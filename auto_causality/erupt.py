@@ -25,7 +25,7 @@ class ERUPT:
     def fit(self, df: pd.DataFrame):
         if self.X_names is None:
             self.X_names = [c for c in df.columns if c != self.treatment_name]
-        self.propensity_model.fit(X=df[self.X_names], y=df[self.treatment_name])
+        self.propensity_model.fit(df[self.X_names], df[self.treatment_name])
 
     def score(
         self, df: pd.DataFrame, outcome: pd.Series, policy: Callable

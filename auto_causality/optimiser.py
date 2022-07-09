@@ -9,7 +9,7 @@ import numpy as np
 
 
 from flaml import tune
-from flaml import AutoML as FLAMLAutoML
+
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
 from dowhy import CausalModel
@@ -20,12 +20,7 @@ from auto_causality.params import SimpleParamService
 from auto_causality.scoring import make_scores, best_score_by_estimator
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
-
-
-# this is needed for smooth calculation of Shapley values in DomainAdaptationLearner
-class AutoML(FLAMLAutoML):
-    def __call__(self, *args, **kwargs):
-        return self.predict(*args, **kwargs)
+from auto_causality.models.monkey_patches import AutoML
 
 
 class AutoCausality:
@@ -86,7 +81,8 @@ class AutoCausality:
                e.g. ```['dml', 'CausalForest']```
             train_size (float): Fraction of data used for training set. Defaults to 0.5.
             test_size (float): Optional size of test dataset. Defaults to None.
-            use_dummyclassifier (bool): use dummy classifier for propensity model or not. Defaults to True.
+            propensity_model (Union[str, Any]): 'dummy' for dummy classifier, 'auto' for AutoML, or an
+                sklearn-style classifier
             components_task (str): task for component models. Defaults to "regression".
             components_verbose (int): verbosity of component model HPO. range (0,3). Defaults to 0.
             components_pred_time_limit (float): prediction time limit for component models
@@ -164,7 +160,9 @@ class AutoCausality:
         if propensity_model == "dummy":
             self.propensity_model = DummyClassifier(strategy="prior")
         elif propensity_model == "auto":
-            self.propensity_model = AutoML(**self._settings["component_models"])
+            self.propensity_model = AutoML(
+                **{**self._settings["component_models"], "task": "classification"}
+            )
         elif hasattr(self.propensity_model, "fit") and hasattr(
             self.propensity_model, "predict_proba"
         ):
@@ -231,6 +229,10 @@ class AutoCausality:
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
         """
 
+        assert isinstance(
+            treatment, str
+        ), "Only a single treatment supported at the moment"
+
         assert (
             len(data_df[treatment].unique()) > 1
         ), "Treatment must take at least 2 values, eg 0 and 1!"
@@ -252,10 +254,13 @@ class AutoCausality:
             self.causal_model.identify_effect(proceed_when_unidentifiable=True)
         )
 
-        if "iv" in self.identified_estimand.estimands:
+        estimands = self.identified_estimand.estimands
+        if "iv" in estimands and estimands["iv"] is not None:
             problem = "iv"
-        elif "backdoor" in self.identified_estimand.estimands:
+        elif "backdoor" in estimands and estimands["backdoor"] is not None:
             problem = "backdoor"
+            # we'll use the 'vanilla' propensity-score-weighted estimator
+            self.initialize_psw_estimator()
 
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
@@ -351,6 +356,21 @@ class AutoCausality:
             )
 
         self.update_summary_scores()
+
+    def initialize_psw_estimator(self):
+        print("Fitting a PSW estimator to be used in scoring tasks")
+        self.psw_estimator = self.causal_model.estimate_effect(
+            self.identified_estimand,
+            method_name="backdoor.auto_causality.models.OutOfSamplePSWEstimator",
+            control_value=0,
+            treatment_value=1,
+            target_units="ate",  # condition used for CATE
+            confidence_intervals=False,
+            method_params={
+                "init_params": {"propensity_score_model": self.propensity_model},
+                "fit_params": {},
+            },
+        )
 
     def update_summary_scores(self):
         self.scores = best_score_by_estimator(self.results.results, self.metric)

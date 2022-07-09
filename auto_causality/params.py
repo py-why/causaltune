@@ -64,6 +64,7 @@ class SimpleParamService:
                     problem,
                     [
                         "Dummy",
+                        "NewDummy",
                         "SLearner",
                         "DomainAdaptationLearner",
                         "TransformedOutcome",
@@ -160,6 +161,10 @@ class SimpleParamService:
             "backdoor.auto_causality.models.Dummy": EstimatorConfig(),
             "backdoor.auto_causality.models.NewDummy": EstimatorConfig(
                 init_params={"propensity_score_model": propensity_model},
+                experimental=False,
+            ),
+            "backdoor.auto_causality.models.OutOfSamplePSWEstimator": EstimatorConfig(
+                init_params={"propensity_score_model": propensity_model},
                 experimental=True,
             ),
             "backdoor.propensity_score_weighting": EstimatorConfig(
@@ -174,7 +179,7 @@ class SimpleParamService:
                 # else {"inference": bootstrap},
             ),
             "backdoor.econml.metalearners.TLearner": EstimatorConfig(
-                init_params={"overall_model": outcome_model},
+                init_params={"models": outcome_model},
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -404,7 +409,7 @@ class SimpleParamService:
                     # "max_depth": self.max_depth,
                     # "n_trees": self.n_estimators,
                     # "min_leaf_size": self.min_leaf_size,
-                    "backend": "threading",
+                    "backend": "loky",
                 },
                 search_space={
                     "n_trees": tune.randint(2, 750),
@@ -434,7 +439,7 @@ class SimpleParamService:
                     # "n_trees": self.n_estimators,
                     # "min_leaf_size": self.min_leaf_size,
                     # Loky was running out of disk space for some reason
-                    "backend": "threading",
+                    "backend": "loky",
                 },
                 search_space={
                     "n_trees": tune.randint(2, 750),
