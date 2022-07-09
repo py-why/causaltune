@@ -79,15 +79,17 @@ class Scorer:
         df: pd.DataFrame,
     ) -> float:
         est = estimate.estimator
-        instrument_name = est.estimating_instrument_names[0]
-        treatment_name = est._treatment_name[0]
+        assert est.identifier_method in ["iv", "backdoor"]
 
         df["dy"] = estimate.estimator.effect(df)
-        df.loc[df[treatment_name] == 0, "dy"] = 0
+        df.loc[df[est._treatment_name[0]] == 0, "dy"] = 0
         df["yhat"] = df[est._outcome_name] - df["dy"]
 
-        X1 = df[df[instrument_name] == 1]
-        X0 = df[df[instrument_name] == 0]
+        split_test_by = (est.estimating_instrument_names[0]
+                         if est.identifier_method == "iv"
+                         else est._treatment_name[0])
+        X1 = df[df[split_test_by] == 1]
+        X0 = df[df[split_test_by] == 0]
         select_cols = est._effect_modifier_names + ["yhat"]
 
         energy_distance_score = dcor.energy_distance(X1[select_cols], X0[select_cols])
