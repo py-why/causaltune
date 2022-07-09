@@ -65,21 +65,23 @@ class TestMetrics:
         """Tests AUC Score is within exceptable range for the test example"""
         assert Scorer.auc_make_score(*simple_model_run()) == pytest.approx(0.6, 0.05)
 
-    # def test_qini_make_score(self):
-    #     """Tests Qini score is within exceptable range for the test example"""
-    #     assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
-    #
-    # def test_r_make_score(self):
-    #     """Tests RScorer output value is within exceptable range for the test
-    #     example"""
-    #     rscorer = RScoreWrapper(
-    #         DecisionTreeRegressor(random_state=123),
-    #         DummyClassifier(strategy="prior"),
-    #         *simple_model_run(rscorer=True)
-    #     )
-    #     assert Scorer.r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(
-    #         0.05, 0.1
-    #     )
+    # TODO: Debug wrong values: 1) QINI
+    def test_qini_make_score(self):
+        """Tests Qini score is within exceptable range for the test example"""
+        assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
+
+    # TODO: Debug wrong values: 2) R-scorer
+    def test_r_make_score(self):
+        """Tests RScorer output value is within exceptable range for the test
+        example"""
+        rscorer = RScoreWrapper(
+            DecisionTreeRegressor(random_state=123),
+            DummyClassifier(strategy="prior"),
+            *simple_model_run(rscorer=True)
+        )
+        assert Scorer.r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(
+            0.05, 0.1
+        )
 
     def test_make_scores_with_rscorer(self):
         """Tests make_scores (with rscorer) produces a dictionary of the right
