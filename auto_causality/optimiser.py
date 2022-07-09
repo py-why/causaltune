@@ -332,7 +332,7 @@ class AutoCausality:
             evaluated_rewards=[]
             if len(self.resume_scores) == 0
             else self.resume_scores,
-            mode="max",
+            mode="min" if self.metric == "erupt" else "max",
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
