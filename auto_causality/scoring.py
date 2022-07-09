@@ -74,7 +74,7 @@ class Scorer:
             )
 
     @staticmethod
-    def energy_distance_scores(
+    def energy_distance_score(
         estimate: CausalEstimate,
         df: pd.DataFrame,
     ) -> float:
@@ -260,7 +260,7 @@ class Scorer:
             out["values"] = values
 
         if "energy_distance" in metrics_to_report:
-            out["energy_distance"] = Scorer.energy_distance_scores(estimate, df)
+            out["energy_distance"] = Scorer.energy_distance_score(estimate, df)
 
         del df
         return out
