@@ -176,7 +176,7 @@ class SimpleParamService:
                 # else {"inference": bootstrap},
             ),
             "backdoor.econml.metalearners.TLearner": EstimatorConfig(
-                init_params={"overall_model": outcome_model},
+                init_params={"models": outcome_model},
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -459,14 +459,13 @@ class SimpleParamService:
                 init_params={
                     "model_y_xw": outcome_model,
                     "model_t_xw": propensity_model,
-                    "model_z_xw": deepcopy(propensity_model),
+                    "fit_cate_intercept": True,
+                    # "model_z_xw": deepcopy(propensity_model),
                 },
                 search_space={
-                    "fit_cate_intercept": tune.choice([0, 1]),
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
                 defaults={
-                    "fit_cate_intercept": 0,
                     "mc_agg": "mean",
                 },
             ),
@@ -474,7 +473,7 @@ class SimpleParamService:
                 init_params={
                     "model_y_xw": outcome_model,
                     "model_t_xw": propensity_model,
-                    # "model_t_xwz": deepcopy(propensity_model),
+                    "model_t_xwz": deepcopy(propensity_model),
                     # "model_final": final_model,
                     "fit_cate_intercept": True,
                 },
@@ -485,5 +484,6 @@ class SimpleParamService:
                     "mc_agg": "mean",
                 },
             ),
+
         }
         return configs
