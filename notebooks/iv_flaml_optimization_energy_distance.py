@@ -1,20 +1,17 @@
-import os
 import sys
+import dcor
 import numpy as np
 import pandas as pd
 from scipy import special
-
-from econml.iv.dml import DMLIV
 from sklearn.model_selection import train_test_split
 
-root_path = root_path = os.path.realpath("../..")
-try:
-    import auto_causality
-except ModuleNotFoundError:
-    sys.path.append(os.path.join(root_path, "auto-causality"))
+from dowhy import CausalModel
+from dowhy.causal_estimator import CausalEstimate
 
+sys.path.append("../")
 from auto_causality import AutoCausality
 from auto_causality.data_utils import preprocess_dataset
+from auto_causality.scoring import Scorer
 
 
 # Modified example (EconML Notebooks):
@@ -38,6 +35,30 @@ def dgp(n, p):
         + 0.1 * np.random.uniform(0, 1, size=(n,))
     )
     return y, T, Z, X
+
+
+# Needed since ac.model.estimator doesn't include additional params -
+# treatment, outcome etc. - needed from CausalEstimate instance
+def energy_scorer_patch(
+    estimate: CausalEstimate,
+    df: pd.DataFrame,
+    treatment: str,
+    outcome: str,
+    instrument: str,
+    effect_modifiers: [],
+):
+
+    df["dy"] = estimate.estimator.effect(df[effect_modifiers])
+    df.loc[df[treatment] == 0, "dy"] = 0
+    df["yhat"] = df[outcome] - df["dy"]
+
+    X1 = df[df[instrument] == 1]
+    X0 = df[df[instrument] == 0]
+    select_cols = effect_modifiers + ["yhat"]
+
+    energy_distance_score = dcor.energy_distance(X1[select_cols], X0[select_cols])
+
+    return energy_distance_score
 
 
 if __name__ == "__main__":
@@ -68,9 +89,8 @@ if __name__ == "__main__":
     ac = AutoCausality(
         time_budget=120,
         verbose=3,
-        estimator_list=["DMLIV"],
         components_verbose=2,
-        components_time_budget=30,
+        components_time_budget=60,
         propensity_model="auto",
     )
 
@@ -84,15 +104,41 @@ if __name__ == "__main__":
     print(f"best score: {ac.best_score}")
 
     # Comparing best model searched to base IV model configuration
-    base_estimator = DMLIV(
-        discrete_treatment=True,
-        discrete_instrument=True
+    model = CausalModel(
+        data=train_df,
+        treatment="Tr",
+        outcome="y",
+        effect_modifiers=cov,
+        common_causes=["random"],
+        instruments=["Z"],
     )
-
-    base_estimator.fit(train_df.y, train_df["Tr"], Z=train_df.Z, X=train_df[cov], W=None)
+    identified_estimand = model.identify_effect(proceed_when_unidentifiable=True)
+    estimate = model.estimate_effect(
+        identified_estimand,
+        method_name="iv.econml.iv.dml.DMLIV",
+        method_params={
+            "init_params": {},
+            "fit_params": {},
+        },
+        test_significance=False,
+    )
 
     Xtest = test_df[cov]
     print()
     print("True Treatment Effect: ", TRUE_EFFECT)
-    print("(AutoCausality Estimator) Treatment Effect: ", ac.model.estimator.estimator.effect(Xtest).mean())
-    print("(Baseline Estimator) Treatment Effect: ", base_estimator.effect(Xtest).mean())
+    print(
+        "(Baseline Estimator) Treatment Effect: ",
+        estimate.estimator.effect(Xtest).mean(),
+    )
+    print(
+        "(AutoCausality Estimator) Treatment Effect: ",
+        ac.model.estimator.estimator.effect(Xtest).mean(),
+    )
+
+    print("Energy distance scores")
+    base_estimator_edist = Scorer.energy_distance_score(estimate, test_df)
+    ac_estimator_edist = energy_scorer_patch(
+        ac.model.estimator, test_df, treatment, outcome, instruments[0], cov
+    )
+    print("(Baseline Estimator) Energy distance score: ", base_estimator_edist)
+    print("(AutoCausality Estimator) Energy distance score: ", ac_estimator_edist)
