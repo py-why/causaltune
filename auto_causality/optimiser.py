@@ -7,7 +7,6 @@ from collections import defaultdict
 import pandas as pd
 import numpy as np
 
-
 from flaml import tune
 
 from sklearn.dummy import DummyClassifier
@@ -17,7 +16,7 @@ from dowhy.causal_identifier import IdentifiedEstimand
 from joblib import Parallel, delayed
 
 from auto_causality.params import SimpleParamService
-from auto_causality.scoring import make_scores, best_score_by_estimator
+from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
 from auto_causality.models.monkey_patches import AutoML
@@ -69,9 +68,11 @@ class AutoCausality:
 
         Args:
             data_df (pandas.DataFrame): dataset to perform causal inference on
-            metric (str): metric to optimise. Defaults to "erupt".
+            metric (str): metric to optimise.
+                Defaults to "erupt" for CATE, "energy_distance" for IV
             metrics_to_report (list). additional metrics to compute and report.
-             Defaults to ["qini","auc","ate","r_score"]
+                Defaults to ["qini","auc","ate","erupt", "norm_erupt"] for CATE
+                or ["energy_distance"] for IV
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
             num_samples (int): max number of iterations.
             verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
@@ -112,31 +113,14 @@ class AutoCausality:
 
         self._settings["try_init_configs"] = try_init_configs
 
+        if metric is not None:
+            Scorer.validate_implemented_metrics(metric)
         self.metric = metric
-        if metric not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score"]:
-            raise ValueError(
-                f'Metric, {metric}, must be\
-                 one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
-            )
-        self.metrics_to_report = (
-            metrics_to_report
-            if metrics_to_report is not None
-            else [
-                "qini",
-                "auc",
-                "ate",
-                "erupt",
-                "norm_erupt",
-            ]  # not "r_score" by default
-        )
-        if self.metric not in self.metrics_to_report:
-            self.metrics_to_report.append(self.metric)
-        for i in self.metrics_to_report:
-            if i not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score"]:
-                raise ValueError(
-                    f'Metric for report, {i}, must be\
-                     one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
-                )
+
+        if metrics_to_report is not None:
+            for m in metrics_to_report:
+                Scorer.validate_implemented_metrics(m)
+        self.metrics_to_report = metrics_to_report
 
         # params for FLAML on component models:
         # self._settings["use_dummyclassifier"] = use_dummyclassifier
@@ -186,10 +170,10 @@ class AutoCausality:
         self._best_estimators = defaultdict(lambda: (float("-inf"), None))
 
         self.original_estimator_list = estimator_list
-
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
+        self.problem = None
         # properties that are used to resume fits (warm start)
         self.resume_scores = []
         self.resume_cfg = []
@@ -210,6 +194,7 @@ class AutoCausality:
         outcome: str,
         common_causes: List[str],
         effect_modifiers: List[str],
+        instruments: List[str] = None,
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
@@ -224,6 +209,7 @@ class AutoCausality:
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
             effect_modifiers (List[str]): list of names of effect modifiers
+            instruments (List[str]): list of names of instrumental variables
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
@@ -248,19 +234,26 @@ class AutoCausality:
             outcome=outcome,
             common_causes=common_causes,
             effect_modifiers=effect_modifiers,
+            instruments=instruments,
         )
 
-        self.identified_estimand: IdentifiedEstimand = (
-            self.causal_model.identify_effect(proceed_when_unidentifiable=True)
+        self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
+            proceed_when_unidentifiable=True
         )
 
-        estimands = self.identified_estimand.estimands
-        if "iv" in estimands and estimands["iv"] is not None:
-            problem = "iv"
-        elif "backdoor" in estimands and estimands["backdoor"] is not None:
-            problem = "backdoor"
-            # we'll use the 'vanilla' propensity-score-weighted estimator
+        if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
+            self.problem = "iv"
+        elif bool(self.identified_estimand.estimands["backdoor"]):
+            self.problem = "backdoor"
+            # we'll use this one for scoring
             self.initialize_psw_estimator()
+        else:
+            raise ValueError("Couldn't identify the kind of problem from " + str(self.identified_estimand.estimands))
+
+        self.metric = Scorer.resolve_metric(self.metric, self.problem)
+        self.metrics_to_report = Scorer.resolve_reported_metrics(
+            self.metrics_to_report, self.metric, self.problem)
+
 
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
@@ -270,12 +263,13 @@ class AutoCausality:
         )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
-            problem, used_estimator_list, len(data_df)
+            self.problem, used_estimator_list, len(data_df)
         )
 
         if not self.estimator_list:
             raise ValueError(
-                f"No valid estimators in {str(estimator_list)}, available estimators: {str(self.cfg.estimator_names)}"
+                f"No valid estimators in {str(used_estimator_list)}, "
+                f"available estimators: {str(self.cfg.estimator_names)}"
             )
 
         if self._settings["component_models"]["time_budget"] is None:
@@ -373,7 +367,7 @@ class AutoCausality:
         )
 
     def update_summary_scores(self):
-        self.scores = best_score_by_estimator(self.results.results, self.metric)
+        self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
         # now inject the separately saved model objects
         for est_name in self.scores:
             assert (
@@ -427,6 +421,7 @@ class AutoCausality:
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
         cfg = self.cfg.method_params(self.estimator_name)
+
         try:
             estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,
@@ -461,16 +456,20 @@ class AutoCausality:
     def _compute_metrics(self, estimator) -> dict:
         scores = {
             "estimator_name": self.estimator_name,
-            "train": make_scores(
+            "train": Scorer.make_scores(
                 estimator,
                 self.train_df,
                 self.propensity_model,
+                self.problem,
+                self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.train,
             ),
-            "validation": make_scores(
+            "validation": Scorer.make_scores(
                 estimator,
                 self.test_df,
                 self.propensity_model,
+                self.problem,
+                self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.test,
             ),
         }
