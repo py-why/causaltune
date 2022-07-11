@@ -223,6 +223,10 @@ class AutoCausality:
             len(data_df[treatment].unique()) > 1
         ), "Treatment must take at least 2 values, eg 0 and 1!"
 
+        assert (
+            isinstance(estimator_list, str) or len(estimator_list) > 0
+        ), "estimator_list must either be a str or an iterable of str"
+
         self.data_df = data_df
         self.train_df, self.test_df = train_test_split(
             data_df, train_size=self._settings["train_size"]
@@ -237,8 +241,8 @@ class AutoCausality:
             instruments=instruments,
         )
 
-        self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
-            proceed_when_unidentifiable=True
+        self.identified_estimand: IdentifiedEstimand = (
+            self.causal_model.identify_effect(proceed_when_unidentifiable=True)
         )
 
         if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
@@ -248,12 +252,15 @@ class AutoCausality:
             # we'll use this one for scoring
             self.initialize_psw_estimator()
         else:
-            raise ValueError("Couldn't identify the kind of problem from " + str(self.identified_estimand.estimands))
+            raise ValueError(
+                "Couldn't identify the kind of problem from "
+                + str(self.identified_estimand.estimands)
+            )
 
         self.metric = Scorer.resolve_metric(self.metric, self.problem)
         self.metrics_to_report = Scorer.resolve_reported_metrics(
-            self.metrics_to_report, self.metric, self.problem)
-
+            self.metrics_to_report, self.metric, self.problem
+        )
 
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget

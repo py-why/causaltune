@@ -5,7 +5,8 @@ import pandas as pd
 
 from auto_causality.models.monkey_patches import PropensityScoreWeightingEstimator
 from auto_causality.models.wrapper import DoWhyMethods, DoWhyWrapper
-from auto_causality.scoring import ate
+
+from auto_causality.scoring import Scorer
 
 
 class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
@@ -77,7 +78,7 @@ class DummyModel(DoWhyMethods):
         pass
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        mean_, _, _ = ate(X[self.treatment], X[self.outcome])
+        mean_, _, _ = Scorer.ate(X[self.treatment], X[self.outcome])
         return np.ones(len(X)) * mean_ * (1 + 0.01 * np.random.normal(size=(len(X),)))
 
 
