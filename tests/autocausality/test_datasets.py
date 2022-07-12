@@ -81,28 +81,28 @@ class TestDatasets:
         data = datasets.synth_acic(condition=12)
         assert data is None
 
-    @pytest.mark.skip(
-        reason="""this test occassionally fails to download the dataset from google drive,
-        due to gdrive's virus check for big files.
-        This however doesn't indicate problems with the code on our end"""
-    )
-    def test_amazon(self):
-        # test error handling:
-        try:
-            import gdown  # noqa F401
-        except ImportError:
-            # check if dataset can be imported:
-            data = datasets.amazon_reviews()
-            assert data is None
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "gdown"])
-        finally:
-            # test if data can be imported and is in right format:
-            for rating in ["pos", "neg"]:
-                data = datasets.amazon_reviews(rating=rating)
-                # check if header variables follow naming convention
-                check_header(data, n_covariates=300)
-                # verify that preprocessing works
-                check_preprocessor(data)
+    # @pytest.mark.skip(
+    #     reason="""this test occassionally fails to download the dataset from google drive,
+    #     due to gdrive's virus check for big files.
+    #     This however doesn't indicate problems with the code on our end"""
+    # )
+    # def test_amazon(self):
+    #     # test error handling:
+    #     try:
+    #         import gdown  # noqa F401
+    #     except ImportError:
+    #         # check if dataset can be imported:
+    #         data = datasets.amazon_reviews()
+    #         assert data is None
+    #         subprocess.check_call([sys.executable, "-m", "pip", "install", "gdown"])
+    #     finally:
+    #         # test if data can be imported and is in right format:
+    #         for rating in ["pos", "neg"]:
+    #             data = datasets.amazon_reviews(rating=rating)
+    #             # check if header variables follow naming convention
+    #             check_header(data, n_covariates=300)
+    #             # verify that preprocessing works
+    #             check_preprocessor(data)
 
 
 if __name__ == "__main__":
