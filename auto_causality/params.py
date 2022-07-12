@@ -72,7 +72,7 @@ class SimpleParamService:
                     problem,
                     [
                         "DMLIV",
-                        "LinearIntentToTreatDRIV",
+                        "LinearDRIV",
                         "OrthoIV",
                     ],
                 )
