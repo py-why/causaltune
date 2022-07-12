@@ -71,8 +71,9 @@ class SimpleParamService:
                 return self.estimator_names_from_patterns(
                     problem,
                     [
-                        "OrthoIV",
                         "DMLIV",
+                        "LinearIntentToTreatDRIV",
+                        "OrthoIV",
                     ],
                 )
         else:
@@ -455,12 +456,20 @@ class SimpleParamService:
                     "lambda_reg": 0.01,
                 },
             ),
+            "iv.econml.iv.dr.LinearDRIV": EstimatorConfig(
+                init_params={
+                    "model_y_xw": outcome_model,
+                    "model_t_xw": propensity_model,
+                },
+                search_space={
+                    "projection": tune.choice([0, 1]),
+                },
+                defaults={"projection": True},
+            ),
             "iv.econml.iv.dml.OrthoIV": EstimatorConfig(
                 init_params={
                     "model_y_xw": outcome_model,
                     "model_t_xw": propensity_model,
-                    "fit_cate_intercept": True,
-                    # "model_z_xw": deepcopy(propensity_model),
                 },
                 search_space={
                     "mc_agg": tune.choice(["mean", "median"]),
@@ -473,9 +482,6 @@ class SimpleParamService:
                 init_params={
                     "model_y_xw": outcome_model,
                     "model_t_xw": propensity_model,
-                    "model_t_xwz": deepcopy(propensity_model),
-                    # "model_final": final_model,
-                    "fit_cate_intercept": True,
                 },
                 search_space={
                     "mc_agg": tune.choice(["mean", "median"]),
@@ -484,6 +490,5 @@ class SimpleParamService:
                     "mc_agg": "mean",
                 },
             ),
-
         }
         return configs
