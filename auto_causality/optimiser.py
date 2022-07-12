@@ -235,8 +235,8 @@ class AutoCausality:
             instruments=instruments,
         )
 
-        self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
-            proceed_when_unidentifiable=True
+        self.identified_estimand: IdentifiedEstimand = (
+            self.causal_model.identify_effect(proceed_when_unidentifiable=True)
         )
 
         if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
@@ -246,7 +246,8 @@ class AutoCausality:
 
         self.metric = Scorer.resolve_metric(self.metric, self.problem)
         self.metrics_to_report = Scorer.resolve_reported_metrics(
-            self.metrics_to_report, self.metric, self.problem)
+            self.metrics_to_report, self.metric, self.problem
+        )
 
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
@@ -332,7 +333,7 @@ class AutoCausality:
             evaluated_rewards=[]
             if len(self.resume_scores) == 0
             else self.resume_scores,
-            mode="min" if self.metric == "erupt" else "max",
+            mode="max" if self.metric == "energy_distance" else "min",
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
@@ -366,8 +367,6 @@ class AutoCausality:
         """
         # estimate effect with current config
 
-        print(config["estimator"])
-
         # if using FLAML < 1.0.7 need to set n_jobs = 2 here
         # to spawn a separate process to prevent cross-talk between tuner and automl on component models:
 
@@ -393,8 +392,8 @@ class AutoCausality:
 
         # add params that are tuned by flaml:
         config = clean_config(config)
-        print(f"config: {config}")
         self.estimator_name = config.pop("estimator_name")
+        print("(Estimate Effect) for = ", self.estimator_name)
         # params_to_tune = {
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
@@ -424,7 +423,6 @@ class AutoCausality:
             }
         except Exception as e:
             print("Evaluation failed!\n", config)
-            print(e)
             return {
                 self.metric: -np.inf,
                 "exception": e,
