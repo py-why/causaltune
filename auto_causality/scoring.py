@@ -85,9 +85,11 @@ class Scorer:
         df.loc[df[est._treatment_name[0]] == 0, "dy"] = 0
         df["yhat"] = df[est._outcome_name] - df["dy"]
 
-        split_test_by = (est.estimating_instrument_names[0]
-                         if est.identifier_method == "iv"
-                         else est._treatment_name[0])
+        split_test_by = (
+            est.estimating_instrument_names[0]
+            if est.identifier_method == "iv"
+            else est._treatment_name[0]
+        )
         X1 = df[df[split_test_by] == 1]
         X0 = df[df[split_test_by] == 0]
         select_cols = est._effect_modifier_names + ["yhat"]
