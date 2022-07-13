@@ -127,9 +127,7 @@ def preprocess_dataset(
         prune_min_categories=prune_min_categories,
         prune_thresh=prune_thresh,
     )
-    used_features = [
-        c for c in used_df.columns
-        if c not in cols_to_exclude]
+    used_features = [c for c in used_df.columns if c not in cols_to_exclude]
 
     # Let's treat all features as effect modifiers
     features_X = [f for f in used_features if f != "random"]

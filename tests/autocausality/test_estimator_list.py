@@ -16,7 +16,7 @@ class TestEstimatorListGenerator:
         # verify that returned estimator list includes all available estimators
         # for backdoor or iv problem(s)
         assert len(auto_estimators_backdoor) == 7
-        assert len(auto_estimators_iv) == 2
+        assert len(auto_estimators_iv) == 3
 
     # def test_all_list(self):
     #     """tests if "auto" setting yields all available estimators"""

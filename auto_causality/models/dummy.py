@@ -5,8 +5,31 @@ import pandas as pd
 
 from auto_causality.models.monkey_patches import PropensityScoreWeightingEstimator
 from auto_causality.models.wrapper import DoWhyMethods, DoWhyWrapper
-
 from auto_causality.scoring import Scorer
+
+# from auto_causality.scoring import ate
+
+
+# Let's engage in a bit of monkey patching as we wait for this to be merged into DoWhy
+# #TODO: delete this as soon as PR #485 is merged into dowhy
+def effect(self, df: pd.DataFrame, **kwargs) -> np.ndarray:
+    # combining them in this way allows to override method_params from kwargs
+    extra_params = {**self.method_params, **kwargs}
+    new_estimator = type(self)(
+        data=df,
+        identified_estimand=self._target_estimand,
+        treatment=self._target_estimand.treatment_variable,
+        outcome=self._target_estimand.outcome_variable,
+        test_significance=False,
+        evaluate_effect_strength=False,
+        confidence_intervals=False,
+        target_units=self._target_units,
+        effect_modifiers=self._effect_modifier_names,
+        **extra_params,
+    )
+    scalar_effect = new_estimator.estimate_effect()
+    return np.ones(len(df)) * scalar_effect.value
+
 
 
 class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
