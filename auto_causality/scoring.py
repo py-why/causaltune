@@ -44,7 +44,7 @@ class Scorer:
             if problem == "iv":
                 return "energy_distance"
             elif problem == "backdoor":
-                return "erupt"
+                return "norm_erupt"
         return metric
 
     @staticmethod
