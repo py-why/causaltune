@@ -94,7 +94,7 @@ class TestEndToEnd(object):
         )
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=30,
+            time_budget=150,
             components_time_budget=10,
             propensity_model="auto",
             resources_per_trial={"cpu": 0.5},
@@ -103,8 +103,9 @@ class TestEndToEnd(object):
             components_verbose=2,
         )
 
-        auto_causality.fit(data_df, treatment, outcome, features_W,
-                           features_X, instruments)
+        auto_causality.fit(
+            data_df, treatment, outcome, features_W, features_X, instruments
+        )
 
         for est_name, scores in auto_causality.scores.items():
             assert est_name in auto_causality.estimator_list
