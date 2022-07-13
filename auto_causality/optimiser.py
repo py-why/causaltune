@@ -1,12 +1,12 @@
 import warnings
 from copy import deepcopy
 from typing import List, Optional, Union
-import traceback
 from collections import defaultdict
 
+import traceback
 import pandas as pd
 import numpy as np
-
+from sklearn.linear_model import _base
 from flaml import tune
 from flaml import AutoML as FLAMLAutoML
 from sklearn.dummy import DummyClassifier
@@ -19,6 +19,34 @@ from auto_causality.params import SimpleParamService
 from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
+
+
+# Patched from sklearn.linear_model._base to adjust rtol and atol values
+def _check_precomputed_gram_matrix(
+    X, precompute, X_offset, X_scale, rtol=1e-4, atol=1e-2
+):
+    n_features = X.shape[1]
+    f1 = n_features // 2
+    f2 = min(f1 + 1, n_features - 1)
+
+    v1 = (X[:, f1] - X_offset[f1]) * X_scale[f1]
+    v2 = (X[:, f2] - X_offset[f2]) * X_scale[f2]
+
+    expected = np.dot(v1, v2)
+    actual = precompute[f1, f2]
+
+    if not np.isclose(expected, actual, rtol=rtol, atol=atol):
+        raise ValueError(
+            "Gram matrix passed in via 'precompute' parameter "
+            "did not pass validation when a single element was "
+            "checked - please check that it was computed "
+            f"properly. For element ({f1},{f2}) we computed "
+            f"{expected} but the user-supplied value was "
+            f"{actual}."
+        )
+
+
+_base._check_precomputed_gram_matrix = _check_precomputed_gram_matrix
 
 
 # this is needed for smooth calculation of Shapley values in DomainAdaptationLearner
