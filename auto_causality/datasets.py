@@ -1,12 +1,17 @@
 import pandas as pd
+import numpy as np
+from scipy import special
 from dataclasses import dataclass
+
+from typing import List
 
 
 @dataclass
 class CausalityDataset:
     data: pd.DataFrame
     treatment: str
-    outcomes: str
+    outcomes: List[str]
+    instruments: List[str] = None
 
 
 def nhefs() -> pd.DataFrame:
@@ -139,10 +144,10 @@ def amazon_reviews(rating="pos") -> pd.DataFrame:
         return CausalityDataset(df, "treatment", ["y_factual"])
     else:
         print(
-            f"""The Amazon dataset is hosted on google drive. As it's quite large, the gdown package is required to download
-            the package automatically. The package can be installed via 'pip install gdown'.
-            Alternatively, you can download it from the following link and store it in the datasets folder:
-            {url}"""
+            f"""The Amazon dataset is hosted on google drive. As it's quite large,
+            the gdown package is required to download the package automatically.
+            The package can be installed via 'pip install gdown'. Alternatively, you can
+            download it from the following link and store it in the datasets folder:{url}"""
         )
         return None
 
@@ -242,3 +247,46 @@ def synth_acic(condition=1) -> pd.DataFrame:
     data.rename(columns={"z": "treatment"}, inplace=True)
 
     return CausalityDataset(data, "treatment", ["y_factual"])
+
+
+def iv_dgp_econml(n=5000, p=10, true_effect=10):
+    """Generates synthetic IV data for binary treatment and instruments.
+    Source: https://github.com/microsoft/EconML/tree/main/notebooks/
+    Eg: OrthoIV and DRIV Examples.ipynb
+
+    Args:
+        n: number of data instances
+        p: number of observed features
+        true_effect: known effect (function or value) to observe
+
+    Returns:
+        CausalityDataset: Data class containing (1) pd.DataFrame with columns "treatment", "y"
+                            and covariates from "x_0" to "x_{p}", and labels for treatment,
+                            outcome and instrument variables and
+
+    """
+    X = np.random.normal(0, 1, size=(n, p))
+    Z = np.random.binomial(1, 0.5, size=(n,))
+    nu = np.random.uniform(0, 5, size=(n,))
+    coef_Z = 0.8
+    C = np.random.binomial(
+        1, coef_Z * special.expit(0.4 * X[:, 0] + nu)
+    )  # Compliers when recomended
+    C0 = np.random.binomial(
+        1, 0.006 * np.ones(X.shape[0])
+    )  # Non-compliers when not recommended
+    T = C * Z + C0 * (1 - Z)
+    y = (
+        true_effect * T
+        + 2 * nu
+        + 5 * (X[:, 3] > 0)
+        + 0.1 * np.random.uniform(0, 1, size=(n,))
+    )
+    cov = [f"x{i}" for i in range(1, X.shape[1] + 1)]
+    df = pd.DataFrame(X, columns=cov)
+
+    df["y"] = y
+    df["treatment"] = T
+    df["Z"] = Z
+
+    return CausalityDataset(df, "treatment", ["y"], ["Z"])

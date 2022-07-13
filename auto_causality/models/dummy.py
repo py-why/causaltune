@@ -9,7 +9,9 @@ from dowhy.causal_estimators.propensity_score_weighting_estimator import (
 )
 
 from auto_causality.models.wrapper import DoWhyMethods, DoWhyWrapper
-from auto_causality.scoring import ate
+from auto_causality.scoring import Scorer
+
+# from auto_causality.scoring import ate
 
 
 # Let's engage in a bit of monkey patching as we wait for this to be merged into DoWhy
@@ -124,7 +126,7 @@ class DummyModel(DoWhyMethods):
         pass
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        mean_, _, _ = ate(X[self.treatment], X[self.outcome])
+        mean_, _, _ = Scorer.ate(X[self.treatment], X[self.outcome])
         return np.ones(len(X)) * mean_ * (1 + 0.01 * np.random.normal(size=(len(X),)))
 
 

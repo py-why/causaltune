@@ -1,13 +1,12 @@
 import warnings
 from copy import deepcopy
 from typing import List, Optional, Union
-import traceback
 from collections import defaultdict
 
+import traceback
 import pandas as pd
 import numpy as np
-
-
+from sklearn.linear_model import _base
 from flaml import tune
 from flaml import AutoML as FLAMLAutoML
 from sklearn.dummy import DummyClassifier
@@ -17,9 +16,37 @@ from dowhy.causal_identifier import IdentifiedEstimand
 from joblib import Parallel, delayed
 
 from auto_causality.params import SimpleParamService
-from auto_causality.scoring import make_scores, best_score_by_estimator
+from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
+
+
+# Patched from sklearn.linear_model._base to adjust rtol and atol values
+def _check_precomputed_gram_matrix(
+    X, precompute, X_offset, X_scale, rtol=1e-4, atol=1e-2
+):
+    n_features = X.shape[1]
+    f1 = n_features // 2
+    f2 = min(f1 + 1, n_features - 1)
+
+    v1 = (X[:, f1] - X_offset[f1]) * X_scale[f1]
+    v2 = (X[:, f2] - X_offset[f2]) * X_scale[f2]
+
+    expected = np.dot(v1, v2)
+    actual = precompute[f1, f2]
+
+    if not np.isclose(expected, actual, rtol=rtol, atol=atol):
+        raise ValueError(
+            "Gram matrix passed in via 'precompute' parameter "
+            "did not pass validation when a single element was "
+            "checked - please check that it was computed "
+            f"properly. For element ({f1},{f2}) we computed "
+            f"{expected} but the user-supplied value was "
+            f"{actual}."
+        )
+
+
+_base._check_precomputed_gram_matrix = _check_precomputed_gram_matrix
 
 
 # this is needed for smooth calculation of Shapley values in DomainAdaptationLearner
@@ -74,9 +101,11 @@ class AutoCausality:
 
         Args:
             data_df (pandas.DataFrame): dataset to perform causal inference on
-            metric (str): metric to optimise. Defaults to "erupt".
+            metric (str): metric to optimise.
+                Defaults to "erupt" for CATE, "energy_distance" for IV
             metrics_to_report (list). additional metrics to compute and report.
-             Defaults to ["qini","auc","ate","r_score"]
+                Defaults to ["qini","auc","ate","erupt", "norm_erupt"] for CATE
+                or ["energy_distance"] for IV
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
             num_samples (int): max number of iterations.
             verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
@@ -116,31 +145,14 @@ class AutoCausality:
 
         self._settings["try_init_configs"] = try_init_configs
 
+        if metric is not None:
+            Scorer.validate_implemented_metrics(metric)
         self.metric = metric
-        if metric not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score"]:
-            raise ValueError(
-                f'Metric, {metric}, must be\
-                 one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
-            )
-        self.metrics_to_report = (
-            metrics_to_report
-            if metrics_to_report is not None
-            else [
-                "qini",
-                "auc",
-                "ate",
-                "erupt",
-                "norm_erupt",
-            ]  # not "r_score" by default
-        )
-        if self.metric not in self.metrics_to_report:
-            self.metrics_to_report.append(self.metric)
-        for i in self.metrics_to_report:
-            if i not in ["erupt", "norm_erupt", "qini", "auc", "ate", "r_score"]:
-                raise ValueError(
-                    f'Metric for report, {i}, must be\
-                     one of "erupt","norm_erupt","qini","auc","ate" or "r_score"'
-                )
+
+        if metrics_to_report is not None:
+            for m in metrics_to_report:
+                Scorer.validate_implemented_metrics(m)
+        self.metrics_to_report = metrics_to_report
 
         # params for FLAML on component models:
         # self._settings["use_dummyclassifier"] = use_dummyclassifier
@@ -188,10 +200,10 @@ class AutoCausality:
         self._best_estimators = defaultdict(lambda: (float("-inf"), None))
 
         self.original_estimator_list = estimator_list
-
         self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
+        self.problem = None
         # properties that are used to resume fits (warm start)
         self.resume_scores = []
         self.resume_cfg = []
@@ -251,14 +263,19 @@ class AutoCausality:
             instruments=instruments,
         )
 
-        self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
-            proceed_when_unidentifiable=True
+        self.identified_estimand: IdentifiedEstimand = (
+            self.causal_model.identify_effect(proceed_when_unidentifiable=True)
         )
 
         if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
-            problem = "iv"
+            self.problem = "iv"
         elif bool(self.identified_estimand.estimands["backdoor"]):
-            problem = "backdoor"
+            self.problem = "backdoor"
+
+        self.metric = Scorer.resolve_metric(self.metric, self.problem)
+        self.metrics_to_report = Scorer.resolve_reported_metrics(
+            self.metrics_to_report, self.metric, self.problem
+        )
 
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
@@ -268,7 +285,7 @@ class AutoCausality:
         )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
-            problem, used_estimator_list, len(data_df)
+            self.problem, used_estimator_list, len(data_df)
         )
 
         if not self.estimator_list:
@@ -344,7 +361,7 @@ class AutoCausality:
             evaluated_rewards=[]
             if len(self.resume_scores) == 0
             else self.resume_scores,
-            mode="max",
+            mode="max" if self.metric == "energy_distance" else "min",
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
@@ -357,7 +374,7 @@ class AutoCausality:
         self.update_summary_scores()
 
     def update_summary_scores(self):
-        self.scores = best_score_by_estimator(self.results.results, self.metric)
+        self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
         # now inject the separately saved model objects
         for est_name in self.scores:
             assert (
@@ -377,8 +394,6 @@ class AutoCausality:
             dict: values of metrics after optimisation
         """
         # estimate effect with current config
-
-        print(config["estimator"])
 
         # if using FLAML < 1.0.7 need to set n_jobs = 2 here
         # to spawn a separate process to prevent cross-talk between tuner and automl on component models:
@@ -405,8 +420,8 @@ class AutoCausality:
 
         # add params that are tuned by flaml:
         config = clean_config(config)
-        print(f"config: {config}")
         self.estimator_name = config.pop("estimator_name")
+        print("(Estimate Effect) for = ", self.estimator_name)
         # params_to_tune = {
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
@@ -436,7 +451,6 @@ class AutoCausality:
             }
         except Exception as e:
             print("Evaluation failed!\n", config)
-            print(e)
             return {
                 self.metric: -np.inf,
                 "exception": e,
@@ -446,16 +460,20 @@ class AutoCausality:
     def _compute_metrics(self, estimator) -> dict:
         scores = {
             "estimator_name": self.estimator_name,
-            "train": make_scores(
+            "train": Scorer.make_scores(
                 estimator,
                 self.train_df,
                 self.propensity_model,
+                self.problem,
+                self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.train,
             ),
-            "validation": make_scores(
+            "validation": Scorer.make_scores(
                 estimator,
                 self.test_df,
                 self.propensity_model,
+                self.problem,
+                self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.test,
             ),
         }

@@ -1,6 +1,6 @@
 import pytest
-import subprocess
 import sys
+import subprocess
 import auto_causality.data_utils
 import auto_causality.utils
 from auto_causality import datasets
@@ -61,7 +61,6 @@ class TestDatasets:
         check_preprocessor(data)
 
     def test_acic(self):
-        # test defaults:
         # check if dataset can be imported:
         data = datasets.synth_acic()
         # check if header variables follow naming convention
@@ -80,6 +79,15 @@ class TestDatasets:
         # check if dataset can be imported:
         data = datasets.synth_acic(condition=12)
         assert data is None
+
+    def test_iv_dgp_econml(self):
+        # check if dataset can be imported:
+        data = datasets.iv_dgp_econml()
+        # check if header variables follow naming convention
+        check_header(data, n_covariates=10)
+        # verify that preprocessing works
+        check_preprocessor(data)
+        assert data.instruments is not None
 
     @pytest.mark.skip(
         reason="""this test occassionally fails to download the dataset from google drive,

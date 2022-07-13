@@ -4,12 +4,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.dummy import DummyClassifier
 from auto_causality.datasets import synth_ihdp
 from auto_causality.data_utils import preprocess_dataset
-from auto_causality.scoring import (
-    auc_make_score,
-    r_make_score,
-    make_scores,
-    qini_make_score,
-)
+from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
 from dowhy import CausalModel
 from econml.cate_interpreter import SingleTreeCateInterpreter
@@ -68,12 +63,14 @@ def simple_model_run(rscorer=False):
 class TestMetrics:
     def test_auc_score(self):
         """Tests AUC Score is within exceptable range for the test example"""
-        assert auc_make_score(*simple_model_run()) == pytest.approx(0.6, 0.05)
+        assert Scorer.auc_make_score(*simple_model_run()) == pytest.approx(0.6, 0.05)
 
+    # TODO: Debug wrong values: 1) QINI
     def test_qini_make_score(self):
         """Tests Qini score is within exceptable range for the test example"""
-        assert qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
+        assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
 
+    # TODO: Debug wrong values: 2) R-scorer
     def test_r_make_score(self):
         """Tests RScorer output value is within exceptable range for the test
         example"""
@@ -82,7 +79,7 @@ class TestMetrics:
             DummyClassifier(strategy="prior"),
             *simple_model_run(rscorer=True)
         )
-        assert r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(
+        assert Scorer.r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(
             0.05, 0.1
         )
 
@@ -94,9 +91,6 @@ class TestMetrics:
             DummyClassifier(strategy="prior"),
             *simple_model_run(rscorer=True)
         )
-        scores = make_scores(
-            *(simple_model_run()[:2]), DummyClassifier(strategy="prior"), rscorer.train
-        )
         true_keys = [
             "erupt",
             "norm_erupt",
@@ -107,8 +101,14 @@ class TestMetrics:
             "intrp",
             "values",
         ]
+        scores = Scorer.make_scores(
+            *(simple_model_run()[:2]),
+            DummyClassifier(strategy="prior"),
+            "backdoor",
+            true_keys[:-2],  # Exclude non-metrics
+            rscorer.train
+        )
         for i in scores.keys():
-            print(i)
             assert i in true_keys
             if i == "intrp":
                 assert isinstance(scores[i], SingleTreeCateInterpreter)
@@ -119,8 +119,11 @@ class TestMetrics:
 
     def test_make_scores_without_rscorer(self):
         """Tests make_scores (without rscorer) returns 0 for 'r_score' key"""
-        scores = make_scores(
-            *(simple_model_run()[:2]), DummyClassifier(strategy="prior")
+        scores = Scorer.make_scores(
+            *(simple_model_run()[:2]),
+            DummyClassifier(strategy="prior"),
+            "backdoor",
+            ["ate"]
         )
         assert scores.get("r_score", 0) == 0
 

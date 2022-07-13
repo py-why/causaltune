@@ -38,7 +38,7 @@ class SimpleParamService:
         self,
         problem: str,
         patterns: Union[Sequence, str],
-        data_rows: Optional[int] = None
+        data_rows: Optional[int] = None,
     ):
         def problem_match(est_name: str, problem: str) -> bool:
             return est_name.split(".")[0] == problem
@@ -71,8 +71,9 @@ class SimpleParamService:
                 return self.estimator_names_from_patterns(
                     problem,
                     [
-                        "OrthoIV",
                         "DMLIV",
+                        "LinearDRIV",
+                        "OrthoIV",
                     ],
                 )
         else:
@@ -158,7 +159,7 @@ class SimpleParamService:
         else:
             final_model = deepcopy(self.final_model)
 
-        configs: dict[str: dict[str:EstimatorConfig]] = {
+        configs: dict[str:EstimatorConfig] = {
             "backdoor.auto_causality.models.Dummy": EstimatorConfig(),
             "backdoor.auto_causality.models.NewDummy": EstimatorConfig(
                 init_params={"propensity_score_model": propensity_model},
@@ -176,7 +177,7 @@ class SimpleParamService:
                 # else {"inference": bootstrap},
             ),
             "backdoor.econml.metalearners.TLearner": EstimatorConfig(
-                init_params={"overall_model": outcome_model},
+                init_params={"models": outcome_model},
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -455,27 +456,37 @@ class SimpleParamService:
                     "lambda_reg": 0.01,
                 },
             ),
+            "iv.econml.iv.dr.LinearDRIV": EstimatorConfig(
+                init_params={
+                    "model_y_xw": outcome_model,
+                    "model_t_xw": propensity_model,
+                },
+                search_space={
+                    "projection": tune.choice([0, 1]),
+                },
+                defaults={"projection": True},
+            ),
             "iv.econml.iv.dml.OrthoIV": EstimatorConfig(
                 init_params={
                     "model_y_xw": outcome_model,
                     "model_t_xw": propensity_model,
-                    "model_z_xw": deepcopy(propensity_model),
-                }
+                },
+                search_space={
+                    "mc_agg": tune.choice(["mean", "median"]),
+                },
+                defaults={
+                    "mc_agg": "mean",
+                },
             ),
             "iv.econml.iv.dml.DMLIV": EstimatorConfig(
                 init_params={
                     "model_y_xw": outcome_model,
                     "model_t_xw": propensity_model,
-                    "model_t_xwz": deepcopy(propensity_model),
-                    "model_final": final_model,
-                    "discrete_treatment": False,
                 },
                 search_space={
-                    "fit_cate_intercept": tune.choice([0, 1]),
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
                 defaults={
-                    "fit_cate_intercept": True,
                     "mc_agg": "mean",
                 },
             ),
