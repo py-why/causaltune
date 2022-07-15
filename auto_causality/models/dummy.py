@@ -31,7 +31,6 @@ def effect(self, df: pd.DataFrame, **kwargs) -> np.ndarray:
     return np.ones(len(df)) * scalar_effect.value
 
 
-
 class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
     """
     A flavor of PSWEstimator that doesn't refit the propensity function
