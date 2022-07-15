@@ -251,8 +251,13 @@ class AutoCausality:
             len(data_df[treatment].unique()) > 1
         ), "Treatment must take at least 2 values, eg 0 and 1!"
 
+        # TODO: allow specifying an exclusion list, too
+        used_estimator_list = (
+            self.original_estimator_list if estimator_list is None else estimator_list
+        )
+
         assert (
-            isinstance(estimator_list, str) or len(estimator_list) > 0
+            isinstance(used_estimator_list, str) or len(used_estimator_list) > 0
         ), "estimator_list must either be a str or an iterable of str"
 
         self.data_df = data_df
@@ -277,13 +282,14 @@ class AutoCausality:
             self.problem = "iv"
         elif bool(self.identified_estimand.estimands["backdoor"]):
             self.problem = "backdoor"
-            # we'll use this one for scoring
-            self.initialize_psw_estimator()
         else:
             raise ValueError(
                 "Couldn't identify the kind of problem from "
                 + str(self.identified_estimand.estimands)
             )
+
+        # This must be stateful because we need to train the treatment propensity function
+        self.scorer = Scorer(self.causal_model, self.propensity_model)
 
         self.metric = Scorer.resolve_metric(self.metric, self.problem)
         self.metrics_to_report = Scorer.resolve_reported_metrics(
@@ -292,10 +298,6 @@ class AutoCausality:
 
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
-        # TODO: allow specifying an exclusion list, too
-        used_estimator_list = (
-            self.original_estimator_list if estimator_list is None else estimator_list
-        )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
             self.problem, used_estimator_list, len(data_df)
@@ -386,21 +388,6 @@ class AutoCausality:
 
         self.update_summary_scores()
 
-    def initialize_psw_estimator(self):
-        print("Fitting a PSW estimator to be used in scoring tasks")
-        self.psw_estimator = self.causal_model.estimate_effect(
-            self.identified_estimand,
-            method_name="backdoor.auto_causality.models.OutOfSamplePSWEstimator",
-            control_value=0,
-            treatment_value=1,
-            target_units="ate",  # condition used for CATE
-            confidence_intervals=False,
-            method_params={
-                "init_params": {"propensity_score_model": self.propensity_model},
-                "fit_params": {},
-            },
-        )
-
     def update_summary_scores(self):
         self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
         # now inject the separately saved model objects
@@ -488,18 +475,16 @@ class AutoCausality:
     def _compute_metrics(self, estimator) -> dict:
         scores = {
             "estimator_name": self.estimator_name,
-            "train": Scorer.make_scores(
+            "train": self.scorer.make_scores(
                 estimator,
                 self.train_df,
-                self.propensity_model,
                 self.problem,
                 self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.train,
             ),
-            "validation": Scorer.make_scores(
+            "validation": self.scorer.make_scores(
                 estimator,
                 self.test_df,
-                self.propensity_model,
                 self.problem,
                 self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.test,

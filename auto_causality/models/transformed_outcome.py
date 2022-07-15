@@ -34,7 +34,7 @@ class TransformedOutcomeFitter(DoWhyMethods):
         self,
         df: pd.DataFrame,
     ):
-        self.propensity_model.fit(X=df[self.propensity_modifiers], y=df[self.treatment])
+        self.propensity_model.fit(df[self.propensity_modifiers], df[self.treatment])
         p = self.propensity_model.predict_proba(df[self.propensity_modifiers])[:, 1]
         ystar = transformed_outcome(
             df[self.treatment].values, df[self.outcome].values, p
