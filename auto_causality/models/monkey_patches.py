@@ -90,8 +90,6 @@ def _estimate_effect(self):
         / (1 - self._data[self.propensity_score_column])
     )
     num_units = len(self._data[self._treatment_name[0]])
-    num_treatment_units = sum(self._data[self._treatment_name[0]])
-    num_control_units = num_units - num_treatment_units
 
     # Vanilla IPS estimator
     self._data["ips_weight"] = self._data[self._treatment_name[0]] / self._data[
