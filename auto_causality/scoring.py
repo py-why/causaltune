@@ -78,8 +78,6 @@ class Scorer:
             X_names=est._effect_modifier_names + est._observed_common_causes_names,
         )
 
-        estimate = self.ate(self.causal_model._data)
-
     def ate(self, df: pd.DataFrame):
         estimate = self.causal_model.estimate_effect(
             self.identified_estimand,
