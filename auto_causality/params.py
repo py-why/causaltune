@@ -43,9 +43,6 @@ class SimpleParamService:
         def problem_match(est_name: str, problem: str) -> bool:
             return est_name.split(".")[0] == problem
 
-        if isinstance(patterns, str):
-            patterns = [patterns]
-
         if patterns == "all":
             if data_rows <= 1000:
                 return [e for e in self.estimator_names if problem_match(e, problem)]

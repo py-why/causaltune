@@ -72,7 +72,7 @@ class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
 class NewDummy(OutOfSamplePSWEstimator):
     """
     Apply a small random disturbance so the effect values are slightly different
-    across
+    across units
     """
 
     def effect(self, df: pd.DataFrame, **kwargs):
@@ -100,7 +100,7 @@ class DummyModel(DoWhyMethods):
         pass
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        mean_, _, _ = Scorer.ate(X[self.treatment], X[self.outcome])
+        mean_, _, _ = Scorer.naive_ate(X[self.treatment], X[self.outcome])
         return np.ones(len(X)) * mean_ * (1 + 0.01 * np.random.normal(size=(len(X),)))
 
 

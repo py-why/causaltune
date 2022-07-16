@@ -89,7 +89,12 @@ class Scorer:
             # TODO: remove this once the DoWhy PR #??? is in
             method_name="backdoor.auto_causality.models.OutOfSamplePSWEstimator",
         )
-        return estimate.value, None, None
+
+        # for now, let's cheat on the std estimation, take that from the naive ate
+        treatment_name = self.causal_model._treatment[0]
+        outcome_name = self.causal_model._outcome[0]
+        naive_est = Scorer.naive_ate(df[treatment_name], df[outcome_name])
+        return estimate.value, naive_est[1], naive_est[2]
 
     @staticmethod
     def resolve_metric(metric, problem):
@@ -208,26 +213,26 @@ class Scorer:
         # TODO
         return r_scorer.score(cate_estimate)
 
-    # @staticmethod
-    # def ate(
-    #     treatment,
-    #     outcome,
-    # ):
-    #     treated = (treatment == 1).sum()
-    #
-    #     mean_ = outcome[treatment == 1].mean() - outcome[treatment == 0].mean()
-    #     std1 = outcome[treatment == 1].std() / (math.sqrt(treated) + 1e-3)
-    #     std2 = outcome[treatment == 0].std() / (
-    #         math.sqrt(len(outcome) - treated) + 1e-3
-    #     )
-    #     std_ = math.sqrt(std1 * std1 + std2 * std2)
-    #     return (mean_, std_, len(treatment))
+    @staticmethod
+    def naive_ate(
+        treatment,
+        outcome,
+    ):
+        treated = (treatment == 1).sum()
+
+        mean_ = outcome[treatment == 1].mean() - outcome[treatment == 0].mean()
+        std1 = outcome[treatment == 1].std() / (math.sqrt(treated) + 1e-3)
+        std2 = outcome[treatment == 0].std() / (
+            math.sqrt(len(outcome) - treated) + 1e-3
+        )
+        std_ = math.sqrt(std1 * std1 + std2 * std2)
+        return (mean_, std_, len(treatment))
 
     def group_ate(self, df, policy: Union[pd.DataFrame, np.ndarray]):
 
         tmp = {"all": self.ate(df)}
         for p in sorted(list(policy.unique())):
-            tmp[p] = Scorer.ate(df[policy == p])
+            tmp[p] = self.ate(df[policy == p])
 
         tmp2 = [
             {"policy": str(p), "mean": m, "std": s, "count": c}
@@ -273,7 +278,7 @@ class Scorer:
             values["weights"] = self.erupt.weights(df, lambda x: cate_estimate > 0)
 
             if "ate" in metrics_to_report:
-                out["ate"] = np.float64(simple_ate)
+                out["ate"] = cate_estimate.mean()
 
             if "erupt" in metrics_to_report:
                 erupt_score = self.erupt.score(df, df[outcome_name], cate_estimate > 0)

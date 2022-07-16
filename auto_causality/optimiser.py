@@ -468,6 +468,7 @@ class AutoCausality:
             print("Evaluation failed!\n", config)
             return {
                 self.metric: -np.inf,
+                "estimator_name": self.estimator_name,
                 "exception": e,
                 "traceback": traceback.format_exc(),
             }
