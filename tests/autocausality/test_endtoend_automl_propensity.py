@@ -41,7 +41,7 @@ class TestEndToEndAutoMLPropensity(object):
             "SLearner",
             "XLearner",
             "TLearner",
-            "Ortho",
+            # "Ortho",
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(

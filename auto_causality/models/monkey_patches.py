@@ -83,10 +83,14 @@ class AutoML(FLAMLAutoML):
     def fit(self, *args, **kwargs):
         args = list(args)
         X_train = (
-            args.pop(0) if len(args) > 0 else kwargs.pop("X_train", kwargs.pop("X"))
+            args.pop(0)
+            if len(args) > 0
+            else (kwargs.pop("X_train") if "X_train" in kwargs else kwargs.pop("X"))
         )
         y_train = (
-            args.pop(0) if len(args) > 0 else kwargs.pop("y_train", kwargs.pop("y"))
+            args.pop(0)
+            if len(args) > 0
+            else (kwargs.pop("y_train") if "y_train" in kwargs else kwargs.pop("y"))
         )
 
         super().fit(X_train, self._preprocess_y(y_train), *args, **kwargs)

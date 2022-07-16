@@ -1,3 +1,4 @@
+import copy
 import math
 from typing import Optional, Dict, Union, Any
 
@@ -41,21 +42,23 @@ class Scorer:
 
     def __init__(self, causal_model: CausalModel, propensity_model: Any):
 
+        self.causal_model = copy.deepcopy(causal_model)
         self.propensity_model = propensity_model
         print(
             "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"
         )
 
-        identified_estimand = causal_model.identify_effect(
+        self.identified_estimand = causal_model.identify_effect(
             proceed_when_unidentifiable=True
         )
 
         # this will also fit self.propensity model, which we'll also use in self.erupt
-        self.psw_estimator = causal_model.estimate_effect(
-            identified_estimand,
+        self.psw_estimator = self.causal_model.estimate_effect(
+            self.identified_estimand,
+            # TODO: can we replace this with good old PSW?
             method_name="backdoor.auto_causality.models.OutOfSamplePSWEstimator",
             control_value=0,
-            treatment_value=1,
+            treatment_value=1,  # TODO: adjust for multiple categorical treatments
             target_units="ate",  # condition used for CATE
             confidence_intervals=False,
             method_params={
@@ -68,13 +71,25 @@ class Scorer:
         if not isinstance(treatment_name, str):
             treatment_name = treatment_name[0]
 
+        # No need to call self.erupt.fit() as propensity model is already fitted
         self.erupt = ERUPT(
             treatment_name=treatment_name,
             propensity_model=propensity_model,
             X_names=est._effect_modifier_names + est._observed_common_causes_names,
         )
-        # No need to call self.erupt.fit() as propensity model is already fitted
-        # TODO: adjust for multiple categorical treatments
+
+        estimate = self.ate(self.causal_model._data)
+
+    def ate(self, df: pd.DataFrame):
+        estimate = self.causal_model.estimate_effect(
+            self.identified_estimand,
+            target_units=df,
+            fit_estimator=False,
+            confidence_intervals=True,
+            # TODO: remove this once the DoWhy PR #??? is in
+            method_name="backdoor.auto_causality.models.OutOfSamplePSWEstimator",
+        )
+        return estimate.value, None, None
 
     @staticmethod
     def resolve_metric(metric, problem):
@@ -193,30 +208,26 @@ class Scorer:
         # TODO
         return r_scorer.score(cate_estimate)
 
-    @staticmethod
-    def ate(
-        treatment,
-        outcome,
-    ):
-        treated = (treatment == 1).sum()
+    # @staticmethod
+    # def ate(
+    #     treatment,
+    #     outcome,
+    # ):
+    #     treated = (treatment == 1).sum()
+    #
+    #     mean_ = outcome[treatment == 1].mean() - outcome[treatment == 0].mean()
+    #     std1 = outcome[treatment == 1].std() / (math.sqrt(treated) + 1e-3)
+    #     std2 = outcome[treatment == 0].std() / (
+    #         math.sqrt(len(outcome) - treated) + 1e-3
+    #     )
+    #     std_ = math.sqrt(std1 * std1 + std2 * std2)
+    #     return (mean_, std_, len(treatment))
 
-        mean_ = outcome[treatment == 1].mean() - outcome[treatment == 0].mean()
-        std1 = outcome[treatment == 1].std() / (math.sqrt(treated) + 1e-3)
-        std2 = outcome[treatment == 0].std() / (
-            math.sqrt(len(outcome) - treated) + 1e-3
-        )
-        std_ = math.sqrt(std1 * std1 + std2 * std2)
-        return (mean_, std_, len(treatment))
+    def group_ate(self, df, policy: Union[pd.DataFrame, np.ndarray]):
 
-    @staticmethod
-    def group_ate(treatment, outcome, policy: Union[pd.DataFrame, np.ndarray]):
-
-        tmp = {"all": Scorer.ate(treatment, outcome)}
+        tmp = {"all": self.ate(df)}
         for p in sorted(list(policy.unique())):
-            tmp[p] = Scorer.ate(
-                treatment[policy == p],
-                outcome[policy == p],
-            )
+            tmp[p] = Scorer.ate(df[policy == p])
 
         tmp2 = [
             {"policy": str(p), "mean": m, "std": s, "count": c}
@@ -254,7 +265,7 @@ class Scorer:
             intrp.feature_names = est._effect_modifier_names
             out["intrp"] = intrp
 
-            simple_ate = Scorer.ate(df[treatment_name], df[outcome_name])[0]
+            simple_ate = self.ate(df)[0]
             values = df[[treatment_name, outcome_name]]  # .reset_index(drop=True)
             values["p"] = self.propensity_model.predict_proba(df)[:, 1]
             values["policy"] = cate_estimate > 0
