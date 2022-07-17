@@ -134,3 +134,4 @@ class TestMetrics:
 
 if __name__ == "__main__":
     pytest.main([__file__])
+    # TestMetrics().test_make_scores_without_rscorer()

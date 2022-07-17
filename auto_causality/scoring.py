@@ -43,7 +43,6 @@ class Scorer:
     def __init__(self, causal_model: CausalModel, propensity_model: Any):
 
         self.causal_model = copy.deepcopy(causal_model)
-        self.propensity_model = propensity_model
         print(
             "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"
         )
@@ -56,14 +55,13 @@ class Scorer:
         self.psw_estimator = self.causal_model.estimate_effect(
             self.identified_estimand,
             # TODO: can we replace this with good old PSW?
-            method_name="backdoor.auto_causality.models.OutOfSamplePSWEstimator",
+            method_name="backdoor.auto_causality.models.PropensityScoreWeightingEstimator",
             control_value=0,
             treatment_value=1,  # TODO: adjust for multiple categorical treatments
             target_units="ate",  # condition used for CATE
             confidence_intervals=False,
             method_params={
-                "init_params": {"propensity_score_model": self.propensity_model},
-                "fit_params": {},
+                "propensity_score_model": propensity_model,
             },
         )
         est = self.psw_estimator.estimator
@@ -72,11 +70,14 @@ class Scorer:
             treatment_name = treatment_name[0]
 
         # No need to call self.erupt.fit() as propensity model is already fitted
+        self.propensity_model = est.propensity_score_model
         self.erupt = ERUPT(
             treatment_name=treatment_name,
-            propensity_model=propensity_model,
+            propensity_model=self.propensity_model,
             X_names=est._effect_modifier_names + est._observed_common_causes_names,
         )
+
+        self.ate(self.causal_model._data)
 
     def ate(self, df: pd.DataFrame):
         estimate = self.causal_model.estimate_effect(
