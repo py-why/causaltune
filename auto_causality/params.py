@@ -74,6 +74,8 @@ class SimpleParamService:
                         "DMLIV",
                         "LinearDRIV",
                         "OrthoIV",
+                        "SparseLinearDRIV",
+                        "LinearIntentToTreatDRIV"
                     ],
                 )
         else:
