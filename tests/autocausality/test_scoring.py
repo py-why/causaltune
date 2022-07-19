@@ -105,6 +105,7 @@ class TestMetrics:
             "auc",
             "r_score",
             "ate",
+            "ate_std",
             "intrp",
             "values",
         ]
