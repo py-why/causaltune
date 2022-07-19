@@ -69,7 +69,7 @@ class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
         return super()._estimate_effect()
 
 
-class NewDummy(OutOfSamplePSWEstimator):
+class NewDummy(PropensityScoreWeightingEstimator):
     """
     Apply a small random disturbance so the effect values are slightly different
     across units
