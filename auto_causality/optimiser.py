@@ -277,6 +277,9 @@ class AutoCausality:
             self.metrics_to_report, self.metric, self.problem
         )
 
+        if self.metric == "energy_distance":
+            self._best_estimators = defaultdict(lambda: (float("inf"), None))
+
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
         # TODO: allow specifying an exclusion list, too
@@ -361,7 +364,7 @@ class AutoCausality:
             evaluated_rewards=[]
             if len(self.resume_scores) == 0
             else self.resume_scores,
-            mode="max" if self.metric == "energy_distance" else "min",
+            mode="min" if self.metric == "energy_distance" else "max",
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
@@ -377,6 +380,7 @@ class AutoCausality:
         self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
         # now inject the separately saved model objects
         for est_name in self.scores:
+            # Todo: Check approximate scores for OrthoIV (possibly other IV estimators)
             assert (
                 self._best_estimators[est_name][0] == self.scores[est_name][self.metric]
             ), "Can't match best model to score"
@@ -403,11 +407,15 @@ class AutoCausality:
         )[0]
 
         # pop and cache separately the fitted model object, so we only store the best ones per estimator
-        if (
-            "exception" not in estimates
-            and self._best_estimators[estimates["estimator_name"]][0]
+        best_estimator_cond = (
+            self._best_estimators[estimates["estimator_name"]][0]
+            > estimates[self.metric]
+            if self.metric == "energy_distance"
+            else self._best_estimators[estimates["estimator_name"]][0]
             < estimates[self.metric]
-        ):
+        )
+
+        if "exception" not in estimates and best_estimator_cond:
             self._best_estimators[estimates["estimator_name"]] = (
                 estimates[self.metric],
                 estimates.pop("estimator"),
@@ -421,7 +429,6 @@ class AutoCausality:
         # add params that are tuned by flaml:
         config = clean_config(config)
         self.estimator_name = config.pop("estimator_name")
-        print("(Estimate Effect) for = ", self.estimator_name)
         # params_to_tune = {
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
