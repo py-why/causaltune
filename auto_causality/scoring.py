@@ -233,6 +233,7 @@ class Scorer:
 
             if "ate" in metrics_to_report:
                 out["ate"] = cate_estimate.mean()
+                out["ate_std"] = cate_estimate.std()
 
             if "erupt" in metrics_to_report:
                 erupt_score = erupt.score(df, df[outcome_name], cate_estimate > 0)

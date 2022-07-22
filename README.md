@@ -35,10 +35,9 @@ By enriching the results of a regular A/B/N test with customer features, and run
 resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
 impact in the next iteration.
 
-**Currently tested and used**: **binary treatment, strictly random assignment**.
+**Currently tested and used: binary treatment, strictly random assignment**.
 
-**In development** (expected within a month, if someone raises an issue requesting this,
-guarantee implementation within 2 weeks): **Multiple (categorical) treatments**
+**In development: Multiple (categorical) treatments** This will require extra work as the EconML CATE models appear to support it (according to their docs), but the DoWhy wrapper for them doesn't seem to. Expected by end of September 2022
 
 ### 2. Continuous testing combined with exploitation
 The per-customer impact estimates from the previous section, even if noisy, can be used to implement
@@ -50,7 +49,7 @@ Thus, there is no need to either wait for the test to gather enough data for sig
 test, before using its results to assign the most impactful treatment to each customer.
 
 **In development** (expected within a month, if someone raises an issue requesting this,
-guarantee implementation within 2 weeks): **Taking propensity to treat from a column in the supplied dataset**.
+will try to implement within 2 weeks): **Taking propensity to treat from a column in the supplied dataset**.
 
 ### 3. Observational inference
 The traditional application of causal inference. For example, estimating the impact on
@@ -60,8 +59,9 @@ who have support queries is most likely not randomly sampled, confounding correc
 As with other usecases, the advanced causal inference models allow impact estimation as a function
 of customer features, rather than just averages.
 
-**In development** (expected within a month, if someone raises an issue requesting this,
-guarantee implementation within 2 weeks): **Using FLAML classifier as the propensity function**.
+**[PR complete and passes tests](https://github.com/transferwise/auto-causality/pull/162), now under review** Use of user-supplied propensity function. Just set 
+`propensity_model` to an instance of the desired classifier when instantiating `AutoCausality`, or to '"auto"' 
+if you want to use the FLAML classifier. 
 
 
 ### 4. Impact of customer choosing to use a feature (IV models)
@@ -74,7 +74,7 @@ impact of the customer choosing to use it. To compare IV models, we use what app
 [here](https://github.com/transferwise/auto-causality/blob/main/docs/Comparing_IV_models.pdf),
 publication is in the works)
 
-**In development** (an intern is working full-time on this, delivery expected by end of September 2022)
+**First cut merged, now under internal testing**
 
 ## Installation
 To install from source, see [For Developers](#for-developers) section below.
