@@ -288,13 +288,15 @@ class Scorer:
         )
         best = {}
         for name in estimator_names:
-            best[name] = max(
-                [
-                    v
-                    for v in scores.values()
-                    if "estimator_name" in v and v["estimator_name"] == name
-                ],
-                key=lambda x: x[metric],
+            est_scores = [
+                v
+                for v in scores.values()
+                if "estimator_name" in v and v["estimator_name"] == name
+            ]
+            best[name] = (
+                min(est_scores, key=lambda x: x[metric])
+                if metric == "energy_distance"
+                else max(est_scores, key=lambda x: x[metric])
             )
 
         return best
