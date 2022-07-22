@@ -75,7 +75,7 @@ class SimpleParamService:
                         "LinearDRIV",
                         "OrthoIV",
                         "SparseLinearDRIV",
-                        "LinearIntentToTreatDRIV"
+                        "LinearIntentToTreatDRIV",
                     ],
                 )
         else:
@@ -492,7 +492,6 @@ class SimpleParamService:
                     "mc_agg": "mean",
                 },
             ),
-            # "iv.instrumental_variable": EstimatorConfig(init_params={}),
             "iv.econml.iv.dr.SparseLinearDRIV": EstimatorConfig(
                 init_params={
                     "model_y_xw": outcome_model,
@@ -503,18 +502,24 @@ class SimpleParamService:
                     "opt_reweighted": tune.choice([0, 1]),
                     "cov_clip": tune.quniform(0.08, 0.2, 0.01),
                 },
-                defaults={"cov_clip": 0.1},
+                defaults={
+                    "projection": 0,
+                    "opt_reweighted": 0,
+                    "cov_clip": 0.1,
+                },
             ),
             "iv.econml.iv.dr.LinearIntentToTreatDRIV": EstimatorConfig(
                 init_params={
                     "model_y_xw": outcome_model,
-                    # "model_t_xwz": deepcopy(propensity_model),
                 },
                 search_space={
                     "cov_clip": tune.quniform(0.08, 0.2, 0.01),
                     "opt_reweighted": tune.choice([0, 1]),
                 },
-                defaults={"cov_clip": 0.1},
+                defaults={
+                    "cov_clip": 0.1,
+                    "opt_reweighted": 1,
+                },
             ),
         }
         return configs
