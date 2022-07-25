@@ -407,19 +407,17 @@ class AutoCausality:
         )[0]
 
         # pop and cache separately the fitted model object, so we only store the best ones per estimator
-        best_estimator_cond = (
-            self._best_estimators[estimates["estimator_name"]][0]
-            > estimates[self.metric]
-            if self.metric == "energy_distance"
-            else self._best_estimators[estimates["estimator_name"]][0]
-            < estimates[self.metric]
-        )
-
-        if "exception" not in estimates and best_estimator_cond:
-            self._best_estimators[estimates["estimator_name"]] = (
-                estimates[self.metric],
-                estimates.pop("estimator"),
-            )
+        if "exception" not in estimates:
+            est_name = estimates["estimator_name"]
+            if (
+                self._best_estimators[est_name][0] > estimates[self.metric]
+                if self.metric == "energy_distance"
+                else self._best_estimators[est_name][0] < estimates[self.metric]
+            ):
+                self._best_estimators[est_name] = (
+                    estimates[self.metric],
+                    estimates.pop("estimator"),
+                )
 
         return estimates
 
