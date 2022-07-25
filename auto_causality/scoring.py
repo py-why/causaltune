@@ -200,22 +200,23 @@ class Scorer:
         out = dict()
         df = df.copy().reset_index()
 
-        if problem == "backdoor":
-            est = estimate.estimator
-            treatment_name = est._treatment_name
-            if not isinstance(treatment_name, str):
-                treatment_name = treatment_name[0]
-            outcome_name = est._outcome_name
-            cate_estimate = est.effect(df)
+        est = estimate.estimator
+        treatment_name = est._treatment_name
+        if not isinstance(treatment_name, str):
+            treatment_name = treatment_name[0]
+        outcome_name = est._outcome_name
+        covariates = est._effect_modifier_names
+        cate_estimate = est.effect(df)
 
-            intrp = SingleTreeCateInterpreter(
-                include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
-            )
-            intrp.interpret(
-                DummyEstimator(cate_estimate), df[est._effect_modifier_names]
-            )
-            intrp.feature_names = est._effect_modifier_names
-            out["intrp"] = intrp
+        # Include CATE Interpereter for both IV and CATE models
+        intrp = SingleTreeCateInterpreter(
+            include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
+        )
+        intrp.interpret(DummyEstimator(cate_estimate), df[covariates])
+        intrp.feature_names = covariates
+        out["intrp"] = intrp
+
+        if problem == "backdoor":
 
             erupt = ERUPT(
                 treatment_name=treatment_name,
