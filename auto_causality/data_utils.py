@@ -114,6 +114,7 @@ def preprocess_dataset(
     features = [c for c in data.columns if c not in cols_to_exclude]
 
     data[treatment] = data[treatment].astype(int)
+    data[instruments] = data[instruments].astype(int)
 
     # this is a trick to bypass some DoWhy/EconML bugs
     data["random"] = np.random.randint(0, 2, size=len(data))
