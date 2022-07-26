@@ -1,6 +1,7 @@
 htmlcov/
 venv/
 env
+notebooks/scratch/
 .ropeproject/
 .DS_Store
 .vscode
