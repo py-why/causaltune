@@ -2,12 +2,8 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-from sklearn import linear_model
 
-from dowhy.causal_estimators.propensity_score_weighting_estimator import (
-    PropensityScoreWeightingEstimator,
-)
-
+from auto_causality.models.monkey_patches import PropensityScoreWeightingEstimator
 from auto_causality.models.wrapper import DoWhyMethods, DoWhyWrapper
 from auto_causality.scoring import Scorer
 
@@ -35,44 +31,12 @@ def effect(self, df: pd.DataFrame, **kwargs) -> np.ndarray:
     return np.ones(len(df)) * scalar_effect.value
 
 
-# TODO: delete this once PR #486 is merged in dowhy
-def _refresh_propensity_score(self):
-    if self.recalculate_propensity_score is True:
-        if self.propensity_score_model is None:
-            self.propensity_score_model = linear_model.LogisticRegression()
-        self.propensity_score_model.fit(self._observed_common_causes, self._treatment)
-        self._data[
-            self.propensity_score_column
-        ] = self.propensity_score_model.predict_proba(self._observed_common_causes)[
-            :, 1
-        ]
-    else:
-        # check if user provides the propensity score column
-        if self.propensity_score_column not in self._data.columns:
-            if self.propensity_score_model is None:
-                raise ValueError(
-                    f"""Propensity score column {self.propensity_score_column} does not exist, nor does a propensity_model.
-                Please specify the column name that has your pre-computed propensity score, or a model to compute it."""
-                )
-            else:
-                self._data[
-                    self.propensity_score_column
-                ] = self.propensity_score_model.predict_proba(
-                    self._observed_common_causes
-                )[
-                    :, 1
-                ]
-        else:
-            self.logger.info(
-                f"INFO: Using pre-computed propensity score in column {self.propensity_score_column}"
-            )
+class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
+    """
+    A flavor of PSWEstimator that doesn't refit the propensity function
+    when doing out-of-sample evaluation
+    """
 
-
-PropensityScoreWeightingEstimator.effect = effect
-PropensityScoreWeightingEstimator._refresh_propensity_score = _refresh_propensity_score
-
-
-class NewDummy(PropensityScoreWeightingEstimator):
     def __init__(self, *args, recalculate_propensity_score=False, **kwargs):
         # for the case when this is not invoked via Econml wrapper,
         # need to merge init_args in
@@ -90,20 +54,30 @@ class NewDummy(PropensityScoreWeightingEstimator):
         self.recalculate_propensity_score = recalculate_propensity_score
 
     def effect(self, df: pd.DataFrame, **kwargs):
-        # In the spirit of out-of-sample evaluation, don't want to refit the
-        # propensity score function when evaluating on other datasets
+
         effect = super().effect(
             df,
             propensity_score_model=self.propensity_score_model,
             **kwargs,
         )
 
-        return effect * (1 + 0.01 * np.random.normal(size=effect.shape))
+        return effect
 
     # TODO: delete this once PR #486 is merged in dowhy
     def _estimate_effect(self):
         self._refresh_propensity_score()
         return super()._estimate_effect()
+
+
+class NewDummy(PropensityScoreWeightingEstimator):
+    """
+    Apply a small random disturbance so the effect values are slightly different
+    across units
+    """
+
+    def effect(self, df: pd.DataFrame, **kwargs):
+        effect = super(NewDummy, self).effect(df, **kwargs)
+        return effect * (1 + 0.01 * np.random.normal(size=effect.shape))
 
 
 class DummyModel(DoWhyMethods):
@@ -126,7 +100,7 @@ class DummyModel(DoWhyMethods):
         pass
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        mean_, _, _ = Scorer.ate(X[self.treatment], X[self.outcome])
+        mean_, _, _ = Scorer.naive_ate(X[self.treatment], X[self.outcome])
         return np.ones(len(X)) * mean_ * (1 + 0.01 * np.random.normal(size=(len(X),)))
 
 

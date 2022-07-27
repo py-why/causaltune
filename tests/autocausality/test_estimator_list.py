@@ -15,7 +15,7 @@ class TestEstimatorListGenerator:
         auto_estimators_backdoor = cfg.estimator_names_from_patterns("backdoor", "auto")
         # verify that returned estimator list includes all available estimators
         # for backdoor or iv problem(s)
-        assert len(auto_estimators_backdoor) == 6
+        assert len(auto_estimators_backdoor) == 7
         assert len(auto_estimators_iv) == 5
 
     # def test_all_list(self):
@@ -90,15 +90,17 @@ class TestEstimatorListGenerator:
             cfg.estimator_names_from_patterns("backdoor", 5)
 
     def test_invalid_choice_fitter(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             """tests if empty list is correctly handled"""
             ac = AutoCausality(components_time_budget=10)
             ac.fit(
-                pd.DataFrame({"treatment": [0, 1]}),
-                "treatment",
-                "outcome",
-                [],
-                [],
+                pd.DataFrame(
+                    {"treatment": [0, 1], "outcome": [0.5, 1.5], "dummy": [0.1, 0.2]}
+                ),
+                treatment="treatment",
+                outcome="outcome",
+                common_causes=["dummy"],
+                effect_modifiers=[],
                 estimator_list=[],
             )
 

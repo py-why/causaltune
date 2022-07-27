@@ -53,9 +53,14 @@ def simple_model_run(rscorer=False):
             "fit_params": {},
         },
     )
+
+    scorer = Scorer(causal_model, DummyClassifier(strategy="prior"))
+
+    # TODO: can we use scorer.psw_estimator instead of the estimator here?
+
     te_train = estimate.cate_estimates
     if rscorer:
-        return train_df, test_df, outcome, treatment, features_W, features_X
+        return train_df, test_df, outcome, treatment, features_W, features_X, scorer
     else:
         return estimate, train_df, te_train
 
@@ -74,10 +79,11 @@ class TestMetrics:
     def test_r_make_score(self):
         """Tests RScorer output value is within exceptable range for the test
         example"""
+
         rscorer = RScoreWrapper(
             DecisionTreeRegressor(random_state=123),
             DummyClassifier(strategy="prior"),
-            *simple_model_run(rscorer=True)
+            *simple_model_run(rscorer=True)[:-1]
         )
         assert Scorer.r_make_score(*simple_model_run(), rscorer.train) == pytest.approx(
             0.05, 0.1
@@ -86,10 +92,11 @@ class TestMetrics:
     def test_make_scores_with_rscorer(self):
         """Tests make_scores (with rscorer) produces a dictionary of the right
         structure and composition"""
+        smr = simple_model_run(rscorer=True)
+        scorer = smr[-1]
+
         rscorer = RScoreWrapper(
-            DecisionTreeRegressor(random_state=123),
-            DummyClassifier(strategy="prior"),
-            *simple_model_run(rscorer=True)
+            DecisionTreeRegressor(random_state=123), scorer.propensity_model, *smr[:-1]
         )
         true_keys = [
             "erupt",
@@ -102,9 +109,9 @@ class TestMetrics:
             "intrp",
             "values",
         ]
-        scores = Scorer.make_scores(
+
+        scores = scorer.make_scores(
             *(simple_model_run()[:2]),
-            DummyClassifier(strategy="prior"),
             "backdoor",
             true_keys[:-2],  # Exclude non-metrics
             rscorer.train
@@ -120,14 +127,12 @@ class TestMetrics:
 
     def test_make_scores_without_rscorer(self):
         """Tests make_scores (without rscorer) returns 0 for 'r_score' key"""
-        scores = Scorer.make_scores(
-            *(simple_model_run()[:2]),
-            DummyClassifier(strategy="prior"),
-            "backdoor",
-            ["ate"]
-        )
+        scorer = simple_model_run(rscorer=True)[-1]
+
+        scores = scorer.make_scores(*(simple_model_run()[:2]), "backdoor", ["ate"])
         assert scores.get("r_score", 0) == 0
 
 
 if __name__ == "__main__":
     pytest.main([__file__])
+    # TestMetrics().test_make_scores_without_rscorer()

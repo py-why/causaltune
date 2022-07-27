@@ -1,11 +1,13 @@
+import copy
 import math
+from typing import Optional, Dict, Union, Any
+
 import numpy as np
 import pandas as pd
 
-from typing import Optional, Dict, Union
-
 from econml.cate_interpreter import SingleTreeCateInterpreter
 from dowhy.causal_estimator import CausalEstimate
+from dowhy import CausalModel
 
 from auto_causality.thirdparty.causalml import metrics
 from auto_causality.erupt import ERUPT
@@ -38,13 +40,68 @@ class Scorer:
         ],
     }
 
+    def __init__(self, causal_model: CausalModel, propensity_model: Any):
+
+        self.causal_model = copy.deepcopy(causal_model)
+        print(
+            "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"
+        )
+
+        self.identified_estimand = causal_model.identify_effect(
+            proceed_when_unidentifiable=True
+        )
+
+        # this will also fit self.propensity model, which we'll also use in self.erupt
+        self.psw_estimator = self.causal_model.estimate_effect(
+            self.identified_estimand,
+            # TODO: can we replace this with good old PSW?
+            method_name="backdoor.auto_causality.models.PropensityScoreWeightingEstimator",
+            control_value=0,
+            treatment_value=1,  # TODO: adjust for multiple categorical treatments
+            target_units="ate",  # condition used for CATE
+            confidence_intervals=False,
+            method_params={
+                "propensity_score_model": propensity_model,
+            },
+        )
+        est = self.psw_estimator.estimator
+        treatment_name = est._treatment_name
+        if not isinstance(treatment_name, str):
+            treatment_name = treatment_name[0]
+
+        # No need to call self.erupt.fit() as propensity model is already fitted
+        self.propensity_model = est.propensity_score_model
+        self.erupt = ERUPT(
+            treatment_name=treatment_name,
+            propensity_model=self.propensity_model,
+            X_names=est._effect_modifier_names + est._observed_common_causes_names,
+        )
+
+        self.ate(self.causal_model._data)
+
+    def ate(self, df: pd.DataFrame):
+        estimate = self.causal_model.estimate_effect(
+            self.identified_estimand,
+            target_units=df,
+            fit_estimator=False,
+            confidence_intervals=True,
+            # TODO: remove this once the DoWhy PR #??? is in
+            method_name="backdoor.auto_causality.models.OutOfSamplePSWEstimator",
+        )
+
+        # for now, let's cheat on the std estimation, take that from the naive ate
+        treatment_name = self.causal_model._treatment[0]
+        outcome_name = self.causal_model._outcome[0]
+        naive_est = Scorer.naive_ate(df[treatment_name], df[outcome_name])
+        return estimate.value, naive_est[1], naive_est[2]
+
     @staticmethod
     def resolve_metric(metric, problem):
         if metric not in Scorer.all_metrics[problem]:
             if problem == "iv":
                 return "energy_distance"
             elif problem == "backdoor":
-                return "erupt"
+                return "norm_erupt"
         return metric
 
     @staticmethod
@@ -156,7 +213,7 @@ class Scorer:
         return r_scorer.score(cate_estimate)
 
     @staticmethod
-    def ate(
+    def naive_ate(
         treatment,
         outcome,
     ):
@@ -170,15 +227,11 @@ class Scorer:
         std_ = math.sqrt(std1 * std1 + std2 * std2)
         return (mean_, std_, len(treatment))
 
-    @staticmethod
-    def group_ate(treatment, outcome, policy: Union[pd.DataFrame, np.ndarray]):
+    def group_ate(self, df, policy: Union[pd.DataFrame, np.ndarray]):
 
-        tmp = {"all": Scorer.ate(treatment, outcome)}
+        tmp = {"all": self.ate(df)}
         for p in sorted(list(policy.unique())):
-            tmp[p] = Scorer.ate(
-                treatment[policy == p],
-                outcome[policy == p],
-            )
+            tmp[p] = self.ate(df[policy == p])
 
         tmp2 = [
             {"policy": str(p), "mean": m, "std": s, "count": c}
@@ -187,11 +240,10 @@ class Scorer:
 
         return pd.DataFrame(tmp2)
 
-    @staticmethod
     def make_scores(
+        self,
         estimate: CausalEstimate,
         df: pd.DataFrame,
-        propensity_model,
         problem,
         metrics_to_report,
         r_scorer=None,
@@ -218,31 +270,24 @@ class Scorer:
 
         if problem == "backdoor":
 
-            erupt = ERUPT(
-                treatment_name=treatment_name,
-                propensity_model=propensity_model,
-                X_names=est._effect_modifier_names,
-            )
-            # TODO: adjust for multiple categorical treatments
-            erupt.fit(df)
-            simple_ate = Scorer.ate(df[treatment_name], df[outcome_name])[0]
+            simple_ate = self.ate(df)[0]
             values = df[[treatment_name, outcome_name]]  # .reset_index(drop=True)
-            values["p"] = erupt.propensity_model.predict_proba(df)[:, 1]
+            values["p"] = self.propensity_model.predict_proba(df)[:, 1]
             values["policy"] = cate_estimate > 0
             values["norm_policy"] = cate_estimate > simple_ate
-            values["weights"] = erupt.weights(df, lambda x: cate_estimate > 0)
+            values["weights"] = self.erupt.weights(df, lambda x: cate_estimate > 0)
 
             if "ate" in metrics_to_report:
                 out["ate"] = cate_estimate.mean()
                 out["ate_std"] = cate_estimate.std()
 
             if "erupt" in metrics_to_report:
-                erupt_score = erupt.score(df, df[outcome_name], cate_estimate > 0)
+                erupt_score = self.erupt.score(df, df[outcome_name], cate_estimate > 0)
                 out["erupt"] = erupt_score
 
             if "norm_erupt" in metrics_to_report:
                 norm_erupt_score = (
-                    erupt.score(df, df[outcome_name], cate_estimate > simple_ate)
+                    self.erupt.score(df, df[outcome_name], cate_estimate > simple_ate)
                     - simple_ate * values["norm_policy"].mean()
                 )
                 out["norm_erupt"] = norm_erupt_score
@@ -275,7 +320,9 @@ class Scorer:
     ) -> Dict[str, dict]:
         for k, v in scores.items():
             if "estimator_name" not in v:
-                print("*****WEIRDNESS*****", k, v)
+                raise ValueError(
+                    f"Malformed scores dict, 'estimator_name' field missing in {k}, {v}"
+                )
 
         estimator_names = sorted(
             list(

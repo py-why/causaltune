@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import _base
 from flaml import tune
-from flaml import AutoML as FLAMLAutoML
+
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
 from dowhy import CausalModel
@@ -19,6 +19,7 @@ from auto_causality.params import SimpleParamService
 from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config
+from auto_causality.models.monkey_patches import AutoML
 
 
 # Patched from sklearn.linear_model._base to adjust rtol and atol values
@@ -47,12 +48,6 @@ def _check_precomputed_gram_matrix(
 
 
 _base._check_precomputed_gram_matrix = _check_precomputed_gram_matrix
-
-
-# this is needed for smooth calculation of Shapley values in DomainAdaptationLearner
-class AutoML(FLAMLAutoML):
-    def __call__(self, *args, **kwargs):
-        return self.predict(*args, **kwargs)
 
 
 class AutoCausality:
@@ -115,7 +110,8 @@ class AutoCausality:
                e.g. ```['dml', 'CausalForest']```
             train_size (float): Fraction of data used for training set. Defaults to 0.5.
             test_size (float): Optional size of test dataset. Defaults to None.
-            use_dummyclassifier (bool): use dummy classifier for propensity model or not. Defaults to True.
+            propensity_model (Union[str, Any]): 'dummy' for dummy classifier, 'auto' for AutoML, or an
+                sklearn-style classifier
             components_task (str): task for component models. Defaults to "regression".
             components_verbose (int): verbosity of component model HPO. range (0,3). Defaults to 0.
             components_pred_time_limit (float): prediction time limit for component models
@@ -176,7 +172,9 @@ class AutoCausality:
         if propensity_model == "dummy":
             self.propensity_model = DummyClassifier(strategy="prior")
         elif propensity_model == "auto":
-            self.propensity_model = AutoML(**self._settings["component_models"])
+            self.propensity_model = AutoML(
+                **{**self._settings["component_models"], "task": "classification"}
+            )
         elif hasattr(self.propensity_model, "fit") and hasattr(
             self.propensity_model, "predict_proba"
         ):
@@ -245,9 +243,22 @@ class AutoCausality:
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
         """
 
+        assert isinstance(
+            treatment, str
+        ), "Only a single treatment supported at the moment"
+
         assert (
             len(data_df[treatment].unique()) > 1
         ), "Treatment must take at least 2 values, eg 0 and 1!"
+
+        # TODO: allow specifying an exclusion list, too
+        used_estimator_list = (
+            self.original_estimator_list if estimator_list is None else estimator_list
+        )
+
+        assert (
+            isinstance(used_estimator_list, str) or len(used_estimator_list) > 0
+        ), "estimator_list must either be a str or an iterable of str"
 
         self.data_df = data_df
         self.train_df, self.test_df = train_test_split(
@@ -271,6 +282,14 @@ class AutoCausality:
             self.problem = "iv"
         elif bool(self.identified_estimand.estimands["backdoor"]):
             self.problem = "backdoor"
+        else:
+            raise ValueError(
+                "Couldn't identify the kind of problem from "
+                + str(self.identified_estimand.estimands)
+            )
+
+        # This must be stateful because we need to train the treatment propensity function
+        self.scorer = Scorer(self.causal_model, self.propensity_model)
 
         self.metric = Scorer.resolve_metric(self.metric, self.problem)
         self.metrics_to_report = Scorer.resolve_reported_metrics(
@@ -282,10 +301,6 @@ class AutoCausality:
 
         if time_budget:
             self._settings["tuner"]["time_budget_s"] = time_budget
-        # TODO: allow specifying an exclusion list, too
-        used_estimator_list = (
-            self.original_estimator_list if estimator_list is None else estimator_list
-        )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
             self.problem, used_estimator_list, len(data_df)
@@ -458,6 +473,7 @@ class AutoCausality:
             print("Evaluation failed!\n", config)
             return {
                 self.metric: -np.inf,
+                "estimator_name": self.estimator_name,
                 "exception": e,
                 "traceback": traceback.format_exc(),
             }
@@ -465,18 +481,16 @@ class AutoCausality:
     def _compute_metrics(self, estimator) -> dict:
         scores = {
             "estimator_name": self.estimator_name,
-            "train": Scorer.make_scores(
+            "train": self.scorer.make_scores(
                 estimator,
                 self.train_df,
-                self.propensity_model,
                 self.problem,
                 self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.train,
             ),
-            "validation": Scorer.make_scores(
+            "validation": self.scorer.make_scores(
                 estimator,
                 self.test_df,
-                self.propensity_model,
                 self.problem,
                 self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.test,
