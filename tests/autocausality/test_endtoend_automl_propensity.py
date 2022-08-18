@@ -45,7 +45,7 @@ class TestEndToEndAutoMLPropensity(object):
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=600,
+            time_budget=60,
             components_time_budget=10,
             estimator_list=estimator_list,  # "all",  #
             use_ray=False,

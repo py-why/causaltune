@@ -94,7 +94,7 @@ class TestEndToEnd(object):
         )
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=1000,
+            time_budget=60,
             components_time_budget=10,
             propensity_model="auto",
             resources_per_trial={"cpu": 0.5},
