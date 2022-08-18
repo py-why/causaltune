@@ -36,8 +36,15 @@ def effect(
     self,
     df: pd.DataFrame,
 ):
-    self.causal_estimator.update_input(self._treatment_value, self._control_value, df)
-    return np.ones(len(df)) * self.estimate_effect().value()
+    print()
+    print()
+    print("Effect Self: ", type(self))
+    print("ES methods: ", self.__dict__)
+    print()
+    print()
+    self.update_input(self._treatment_value, self._control_value, df)
+    # self.causal_estimator.update_input(self._treatment_value, self._control_value, df)
+    return np.ones(len(df)) * self.estimate_effect().value
 
 
 # TODO: delete this once PR #486 is merged in dowhy

@@ -7,6 +7,10 @@ from auto_causality.models.monkey_patches import PropensityScoreWeightingEstimat
 from auto_causality.models.wrapper import DoWhyMethods, DoWhyWrapper
 from auto_causality.scoring import Scorer
 
+from dowhy.causal_estimators.instrumental_variable_estimator import (
+    InstrumentalVariableEstimator,
+)
+
 # from auto_causality.scoring import ate
 
 
@@ -67,6 +71,17 @@ class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
     def _estimate_effect(self):
         self._refresh_propensity_score()
         return super()._estimate_effect()
+
+
+class SimpleIV(InstrumentalVariableEstimator):
+    """
+    Based on Wald & 2SlS Estimator from dowhy's IV estimator
+    """
+
+    def effect(self, df: pd.DataFrame, **kwargs):
+        scalar_effect = self.estimate_effect().value
+        # Or randomized: (1 + 0.01 * np.random.normal(size=effect.shape))
+        return np.ones(len(df)) * scalar_effect
 
 
 class NewDummy(PropensityScoreWeightingEstimator):
