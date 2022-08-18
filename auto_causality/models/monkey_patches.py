@@ -64,8 +64,8 @@ def _refresh_propensity_score(self):
         if self.propensity_score_column not in self._data.columns:
             if self.propensity_score_model is None:
                 raise ValueError(
-                    f"""Propensity score column {self.propensity_score_column} does not exist, 
-                    nor does a propensity_model. Please specify the column name that has your 
+                    f"""Propensity score column {self.propensity_score_column} does not exist,
+                    nor does a propensity_model. Please specify the column name that has your
                     pre-computed propensity score, or a model to compute it."""
                 )
             else:
