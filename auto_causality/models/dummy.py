@@ -78,6 +78,8 @@ class SimpleIV(InstrumentalVariableEstimator):
     Based on Wald & 2SlS Estimator from dowhy's IV estimator
     """
 
+    identifier_method = "iv"
+
     def effect(self, df: pd.DataFrame, **kwargs):
         scalar_effect = self.estimate_effect().value
         # Or randomized: (1 + 0.01 * np.random.normal(size=effect.shape))
