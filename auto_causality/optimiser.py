@@ -80,8 +80,8 @@ class AutoCausality:
         use_ray=False,
         estimator_list="auto",
         train_size=0.8,
-        num_samples=-1,
         test_size=None,
+        num_samples=-1,
         propensity_model="dummy",
         components_task="regression",
         components_verbose=0,
@@ -109,7 +109,7 @@ class AutoCausality:
              or "auto" for a recommended subset, "all" for all, or a list of substrings of estimator names
                e.g. ```['dml', 'CausalForest']```
             train_size (float): Fraction of data used for training set. Defaults to 0.5.
-            test_size (float): Optional size of test dataset. Defaults to None.
+            test_fraction (float): Optional size of test dataset. Defaults to None.
             propensity_model (Union[str, Any]): 'dummy' for dummy classifier, 'auto' for AutoML, or an
                 sklearn-style classifier
             components_task (str): task for component models. Defaults to "regression".
@@ -151,7 +151,6 @@ class AutoCausality:
         self.metrics_to_report = metrics_to_report
 
         # params for FLAML on component models:
-        # self._settings["use_dummyclassifier"] = use_dummyclassifier
         self._settings["component_models"] = {}
         self._settings["component_models"]["task"] = components_task
         self._settings["component_models"]["verbose"] = components_verbose
@@ -160,11 +159,14 @@ class AutoCausality:
         ] = components_pred_time_limit
         self._settings["component_models"]["n_jobs"] = components_njobs
         self._settings["component_models"]["time_budget"] = components_time_budget
-        # (
-        #     components_time_budget
-        #     if components_time_budget < time_budget
-        #     else (time_budget // 2) + 1
-        # )
+        self._settings["component_models"]["eval_method"] = "holdout"
+
+        if 0 < train_size < 1:
+            component_test_size = 1 - train_size
+        else:
+            # TODO: convert train_size to fraction based on data size, in fit()
+            component_test_size = 0.2
+        self._settings["component_models"]["split_ratio"] = component_test_size
         self._settings["train_size"] = train_size
         self._settings["test_size"] = test_size
 
@@ -260,9 +262,10 @@ class AutoCausality:
             isinstance(used_estimator_list, str) or len(used_estimator_list) > 0
         ), "estimator_list must either be a str or an iterable of str"
 
-        self.data_df = data_df
+        self.data_df = data_df.sample(frac=1)
+        # To be used for component model training/selection
         self.train_df, self.test_df = train_test_split(
-            data_df, train_size=self._settings["train_size"]
+            self.data_df, train_size=self._settings["train_size"]
         )
 
         self.causal_model = CausalModel(
@@ -349,9 +352,6 @@ class AutoCausality:
                 effect_modifiers,
             )
         )
-        # self.tune_results = (
-        #     {}
-        # )  # We need to keep track of the tune results to access the best config
 
         search_space = self.cfg.search_space(self.estimator_list)
         init_cfg = (
