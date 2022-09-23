@@ -91,6 +91,7 @@ class AutoCausality:
         try_init_configs=True,
         resources_per_trial=None,
         include_experimental_estimators=False,
+        store_all_estimators: Optional[bool] = False,
     ):
         """constructor.
 
@@ -122,6 +123,7 @@ class AutoCausality:
             try_init_configs (bool): try list of good performing estimators before continuing with HPO.
                 Defaults to False.
             blacklisted_estimators (list): [optional] list of estimators not to include in fitting
+            store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False
         """
         assert (
             time_budget is not None or components_time_budget is not None
@@ -167,6 +169,7 @@ class AutoCausality:
         # )
         self._settings["train_size"] = train_size
         self._settings["test_size"] = test_size
+        self._settings["store_all"] = store_all_estimators
 
         # user can choose between flaml and dummy for propensity model.
         if propensity_model == "dummy":
@@ -226,6 +229,7 @@ class AutoCausality:
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
+        
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -241,6 +245,7 @@ class AutoCausality:
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
+            
         """
 
         assert isinstance(
@@ -429,10 +434,16 @@ class AutoCausality:
                 if self.metric == "energy_distance"
                 else self._best_estimators[est_name][0] < estimates[self.metric]
             ):
-                self._best_estimators[est_name] = (
-                    estimates[self.metric],
-                    estimates.pop("estimator"),
-                )
+                if self._settings["store_all"]:
+                    self._best_estimators[est_name] = (
+                        estimates[self.metric],
+                        estimates.estimator,
+                    )
+                else:
+                    self._best_estimators[est_name] = (
+                        estimates[self.metric],
+                        estimates.pop("estimator"),
+                    )
 
         return estimates
 
