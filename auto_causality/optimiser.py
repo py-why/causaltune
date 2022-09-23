@@ -437,7 +437,7 @@ class AutoCausality:
                 if self._settings["store_all"]:
                     self._best_estimators[est_name] = (
                         estimates[self.metric],
-                        estimates.estimator,
+                        estimates["estimator"],
                     )
                 else:
                     self._best_estimators[est_name] = (
