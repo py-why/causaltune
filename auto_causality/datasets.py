@@ -3,7 +3,9 @@ import numpy as np
 from scipy import special
 from dataclasses import dataclass
 
-from typing import List
+from typing import List, Union
+
+from auto_causality.utils import generate_psdmat
 
 
 @dataclass
@@ -232,8 +234,7 @@ def synth_acic(condition=1) -> pd.DataFrame:
     )
     cols = covariates.columns
     covariates.rename(
-        columns={c: c.replace("_", "") for c in cols},
-        inplace=True,
+        columns={c: c.replace("_", "") for c in cols}, inplace=True,
     )
     url = (
         "https://raw.githubusercontent.com/IBM/causallib/master/causallib/"
@@ -290,3 +291,83 @@ def iv_dgp_econml(n=5000, p=10, true_effect=10):
     df["Z"] = Z
 
     return CausalityDataset(df, "treatment", ["y"], ["Z"])
+
+
+def generate_synthetic_data(
+    n_samples: int = 100,
+    n_covariates: int = 5,
+    covariance: Union[str, np.ndarray] = "isotropic",
+    confounding: bool = True,
+    noisy_outcomes: bool = False,
+    effect_size: Union[int, None] = None,
+    add_instrument: bool = False,
+) -> CausalityDataset:
+    """generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.
+    Supports RCT (unconfounded) and observational (confounded) data.
+
+    Args:
+        n_samples (int, optional): number of independent samples. Defaults to 100.
+        n_covariates (int, optional): number of covariates. Defaults to 5.
+        covariance (Union[str, np.ndarray], optional): covariance matrix of covariates. can be "isotropic",
+         "anisotropic" or user-supplied. Defaults to "isotropic".
+        confounding (bool, optional): whether or not values of covariates affect treatment effect. Defaults to True.
+        noisy_outcomes (bool, optional): additive noise in the outcomes. Defaults to False.
+        add_instrument (bool, optional): include instrumental variable (yes/no). Defaults to False
+        effect_size (Union[int, None]): if provided, constant effect size (ATE). if None, generate CATE.
+            Defaults to None.
+
+
+    Returns:
+        CausalityDataset: columns for covariates, treatment assignment, outcome and true treatment effect
+    """
+
+    if covariance == "isotropic":
+        sigma = np.random.randn(1)
+        covmat = np.eye(n_covariates) * sigma ** 2
+    elif covariance == "anisotropic":
+        covmat = generate_psdmat(n_covariates)
+
+    X = np.random.multivariate_normal(
+        mean=[0] * n_covariates, cov=covmat, size=n_samples
+    )
+
+    if confounding:
+        C = 1 / (1 + np.exp(X[:, 0] * X[:, 1] + X[:, 2] * 3)) > np.random.rand(
+            n_samples
+        )
+    else:
+        C = np.random.binomial(n=1, p=0.5, size=n_samples)
+
+    if add_instrument:
+        Z = np.random.binomial(n=1, p=0.5, size=n_samples)
+        C0 = np.random.binomial(n=1, p=0.006, size=n_samples)
+        T = C * Z + C0 * (1 - Z)
+    else:
+        T = C
+
+    # fixed effect size:
+    if effect_size is not None:
+        tau = [effect_size] * n_samples
+    else:
+        # heterogeneity in effect size:
+        weights = np.random.uniform(low=0.4, high=0.7, size=n_covariates)
+        e = np.random.randn(n_samples) * 0.01
+        tau = X @ weights.T + e
+
+    err = np.random.randn(n_samples) * 0.05 if noisy_outcomes else 0
+
+    # nonlinear dependence of Y on X:
+    mu = lambda X: X[:, 0] * X[:, 1] + X[:, 2] + X[:, 3] * X[:, 4] # noqa E731
+
+    Y = tau * T + mu(X) + err
+
+    df = pd.DataFrame(
+        np.array([*X.T, T, Y, tau]).T,
+        columns=[f"X{i}" for i in range(1, n_covariates + 1)]
+        + ["treatment", "outcome", "true_effect"],
+    )
+    data = CausalityDataset(data=df, treatment="treatment", outcomes=["outcome"])
+    if add_instrument:
+        df["instrument"] = Z
+        data.instruments = ["instrument"]
+    return data
