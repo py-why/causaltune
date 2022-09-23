@@ -229,7 +229,6 @@ class AutoCausality:
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
-        
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -401,9 +400,13 @@ class AutoCausality:
         # now inject the separately saved model objects
         for est_name in self.scores:
             # Todo: Check approximate scores for OrthoIV (possibly other IV estimators)
-            assert (
-                self._best_estimators[est_name][0] == self.scores[est_name][self.metric]
-            ), "Can't match best model to score"
+            if self._best_estimators[est_name][0] == float(
+                "inf"
+            ) or self._best_estimators[est_name][0] == float("-inf"):
+                self._best_estimators[est_name][0] = float("nan")
+            # assert (
+            #     self._best_estimators[est_name][0] == self.scores[est_name][self.metric]
+            # ), "Can't match best model to score"
             self.scores[est_name]["estimator"] = self._best_estimators[est_name][1]
 
     def _tune_with_config(self, config: dict) -> dict:
