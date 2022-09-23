@@ -400,10 +400,6 @@ class AutoCausality:
         # now inject the separately saved model objects
         for est_name in self.scores:
             # Todo: Check approximate scores for OrthoIV (possibly other IV estimators)
-            if self._best_estimators[est_name][0] == float(
-                "inf"
-            ) or self._best_estimators[est_name][0] == float("-inf"):
-                self._best_estimators[est_name][0] = float("nan")
             # assert (
             #     self._best_estimators[est_name][0] == self.scores[est_name][self.metric]
             # ), "Can't match best model to score"
