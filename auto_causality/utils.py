@@ -1,5 +1,5 @@
 import math
-
+import numpy as np
 import pandas as pd
 
 from auto_causality.memoizer import MemoizingWrapper
@@ -75,3 +75,18 @@ def policy_from_estimator(est, df: pd.DataFrame):
     # must be done just like this so it also works for metalearners
     X_test = df[est.estimator._effect_modifier_names]
     return est.estimator.estimator.effect(X_test) > 0
+
+
+def generate_psdmat(n_dims: int = 10) -> np.ndarray:
+    """generates a symmetric, positive semidefinite matrix
+
+    Args:
+        n_dims (int, optional): number of dimensions. Defaults to 10.
+
+    Returns:
+        np.ndarray: psd matrix
+    """
+    A = np.random.rand(n_dims, n_dims)
+    A = A @ A.T
+
+    return A

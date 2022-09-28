@@ -1,0 +1,19 @@
+// A simple causal graph with confounders
+digraph "causal-graph" {
+	edge [arrowsize=1]
+	rank=same
+	subgraph cluster_0 {
+		color=white
+		X [label=Covariates]
+	}
+	Y [label=Outcome]
+	X -> Y
+	subgraph cluster_1 {
+		color=white
+		T [label=Treatment]
+	}
+	T -> Y
+	X -> T
+	I [label=Instrument]
+	I -> T
+}
