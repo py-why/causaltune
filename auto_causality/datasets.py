@@ -298,6 +298,7 @@ def generate_synthetic_data(
     n_covariates: int = 5,
     covariance: Union[str, np.ndarray] = "isotropic",
     confounding: bool = True,
+    linear_confounder: bool = False,
     noisy_outcomes: bool = False,
     effect_size: Union[int, None] = None,
     add_instrument: bool = False,
@@ -332,9 +333,14 @@ def generate_synthetic_data(
     )
 
     if confounding:
-        C = 1 / (1 + np.exp(X[:, 0] * X[:, 1] + X[:, 2] * 3)) > np.random.rand(
-            n_samples
-        )
+        if linear_confounder:
+            C = 1 / (1 + np.exp(X[:, 0] * 2 + X[:, 1]*4 )) > np.random.rand(
+                n_samples
+            )
+        else:
+            C = 1 / (1 + np.exp(X[:, 0] * X[:, 1] + X[:, 2] * 3)) > np.random.rand(
+                n_samples
+            )
     else:
         C = np.random.binomial(n=1, p=0.5, size=n_samples)
 
@@ -352,7 +358,7 @@ def generate_synthetic_data(
         # heterogeneity in effect size:
         weights = np.random.uniform(low=0.4, high=0.7, size=n_covariates)
         e = np.random.randn(n_samples) * 0.01
-        tau = X @ weights.T + e
+        tau = X @ weights.T + e + 0.1
 
     err = np.random.randn(n_samples) * 0.05 if noisy_outcomes else 0
 
