@@ -234,7 +234,8 @@ def synth_acic(condition=1) -> pd.DataFrame:
     )
     cols = covariates.columns
     covariates.rename(
-        columns={c: c.replace("_", "") for c in cols}, inplace=True,
+        columns={c: c.replace("_", "") for c in cols},
+        inplace=True,
     )
     url = (
         "https://raw.githubusercontent.com/IBM/causallib/master/causallib/"
@@ -324,7 +325,7 @@ def generate_synthetic_data(
 
     if covariance == "isotropic":
         sigma = np.random.randn(1)
-        covmat = np.eye(n_covariates) * sigma ** 2
+        covmat = np.eye(n_covariates) * sigma**2
     elif covariance == "anisotropic":
         covmat = generate_psdmat(n_covariates)
 
@@ -334,13 +335,13 @@ def generate_synthetic_data(
 
     if confounding:
         if linear_confounder:
-            C = 1 / (1 + np.exp(X[:, 0] * 2 + X[:, 1]*4 )) > np.random.rand(
-                n_samples
-            )
+            p = 1 / (1 + np.exp(X[:, 0] * 2 + X[:, 1] * 4))
         else:
-            C = 1 / (1 + np.exp(X[:, 0] * X[:, 1] + X[:, 2] * 3)) > np.random.rand(
-                n_samples
-            )
+            p = 1 / (1 + np.exp(X[:, 0] * X[:, 1] + X[:, 2] * 3))
+        p = np.clip(p, 0.1, 0.9)
+        C = p > np.random.rand(n_samples)
+        print(min(p), max(p))
+
     else:
         C = np.random.binomial(n=1, p=0.5, size=n_samples)
 
@@ -363,7 +364,7 @@ def generate_synthetic_data(
     err = np.random.randn(n_samples) * 0.05 if noisy_outcomes else 0
 
     # nonlinear dependence of Y on X:
-    mu = lambda X: X[:, 0] * X[:, 1] + X[:, 2] + X[:, 3] * X[:, 4] # noqa E731
+    mu = lambda X: X[:, 0] * X[:, 1] + X[:, 2] + X[:, 3] * X[:, 4]  # noqa E731
 
     Y = tau * T + mu(X) + err
 
