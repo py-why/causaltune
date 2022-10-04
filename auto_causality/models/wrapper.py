@@ -41,6 +41,9 @@ class DoWhyWrapper(CausalEstimator):
         self._treatment_name = remove_list(treatment)
         self._outcome_name = remove_list(outcome)
         self._effect_modifier_names = effect_modifiers
+        self._observed_common_causes_names = (
+            identified_estimand.get_backdoor_variables().copy()
+        )
 
         params = {} if params is None else params
         # this is a hack to accomodate different DoWhy versions
@@ -49,9 +52,10 @@ class DoWhyWrapper(CausalEstimator):
         self.estimator = inner_class(
             treatment=self._treatment_name,
             outcome=self._outcome_name,
-            propensity_modifiers=effect_modifiers,
-            outcome_modifiers=effect_modifiers,
-            **params.get("init_params", {})
+            propensity_modifiers=effect_modifiers + self._observed_common_causes_names,
+            outcome_modifiers=effect_modifiers + self._observed_common_causes_names,
+            effect_modifiers=effect_modifiers,
+            **params.get("init_params", {}),
         )
 
         self._data = data

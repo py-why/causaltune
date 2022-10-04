@@ -20,6 +20,7 @@ class TransformedOutcomeFitter(DoWhyMethods):
         outcome_model,
         propensity_modifiers: List[str],
         outcome_modifiers: List[str],
+        effect_modifiers: List[str],
         treatment: str,
         outcome: str,
     ):
@@ -27,6 +28,7 @@ class TransformedOutcomeFitter(DoWhyMethods):
         self.outcome_model = outcome_model
         self.propensity_modifiers = propensity_modifiers
         self.outcome_modifiers = outcome_modifiers
+        self.effect_modifiers = effect_modifiers
         self.treatment = treatment
         self.outcome = outcome
 
@@ -53,3 +55,4 @@ class TransformedOutcomeFitter(DoWhyMethods):
 class TransformedOutcome(DoWhyWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, inner_class=TransformedOutcomeFitter, **kwargs)
+        self.identifier_method = "backdoor"
