@@ -87,6 +87,7 @@ def preprocess_dataset(
     treatment: str,
     targets: Union[str, List[str]],
     instruments: List[str] = [],
+    propensity_to_treat: str = None,
     drop_first: bool = False,
     scale_floats: bool = False,
     prune_min_categories: int = 50,
@@ -117,7 +118,8 @@ def preprocess_dataset(
     data[instruments] = data[instruments].astype(int)
 
     # this is a trick to bypass some DoWhy/EconML bugs
-    data["random"] = np.random.randint(0, 2, size=len(data))
+    if "random" not in data.columns:
+        data["random"] = np.random.randint(0, 2, size=len(data))
 
     used_df = featurize(
         data,

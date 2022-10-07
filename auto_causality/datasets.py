@@ -3,7 +3,7 @@ import numpy as np
 from scipy import special
 from dataclasses import dataclass
 
-from typing import List, Union
+from typing import List, Union, Optional
 
 from auto_causality.utils import generate_psdmat
 
@@ -13,7 +13,8 @@ class CausalityDataset:
     data: pd.DataFrame
     treatment: str
     outcomes: List[str]
-    instruments: List[str] = None
+    instruments: Optional[List[str]] = None
+    propensity_to_treat: Optional[str] = None
 
 
 def nhefs() -> pd.DataFrame:
@@ -343,6 +344,7 @@ def generate_synthetic_data(
         print(min(p), max(p))
 
     else:
+        p = 0.5 * np.ones(size=n_samples)
         C = np.random.binomial(n=1, p=0.5, size=n_samples)
 
     if add_instrument:
@@ -369,9 +371,9 @@ def generate_synthetic_data(
     Y = tau * T + mu(X) + err
 
     df = pd.DataFrame(
-        np.array([*X.T, T, Y, tau]).T,
+        np.array([*X.T, T, Y, tau, p]).T,
         columns=[f"X{i}" for i in range(1, n_covariates + 1)]
-        + ["treatment", "outcome", "true_effect"],
+        + ["treatment", "outcome", "true_effect", "random"],
     )
     data = CausalityDataset(data=df, treatment="treatment", outcomes=["outcome"])
     if add_instrument:

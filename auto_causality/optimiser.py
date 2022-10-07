@@ -1,3 +1,4 @@
+import copy
 import warnings
 from copy import deepcopy
 from typing import List, Optional, Union
@@ -180,8 +181,8 @@ class AutoCausality:
             self.propensity_model = AutoML(
                 **{**self._settings["component_models"], "task": "classification"}
             )
-        elif hasattr(self.propensity_model, "fit") and hasattr(
-            self.propensity_model, "predict_proba"
+        elif hasattr(propensity_model, "fit") and hasattr(
+            propensity_model, "predict_proba"
         ):
             self.propensity_model = propensity_model
         else:
@@ -246,7 +247,7 @@ class AutoCausality:
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
-            
+
         """
 
         assert isinstance(
@@ -324,7 +325,10 @@ class AutoCausality:
                 "time_budget_s"
             ] / (2.5 * len(self.estimator_list))
 
-        if self._settings["tuner"]["time_budget_s"] is None:
+        if (
+            self._settings["tuner"]["time_budget_s"] is None
+            and self._settings["tuner"]["num_samples"] == -1
+        ):
             self._settings["tuner"]["time_budget_s"] = (
                 2.5
                 * len(self.estimator_list)
@@ -421,7 +425,7 @@ class AutoCausality:
         # if using FLAML < 1.0.7 need to set n_jobs = 2 here
         # to spawn a separate process to prevent cross-talk between tuner and automl on component models:
 
-        estimates = Parallel(n_jobs=2)(
+        estimates = Parallel(n_jobs=1, backend="threading")(
             delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
 
@@ -450,7 +454,7 @@ class AutoCausality:
         """estimates effect with chosen estimator"""
 
         # add params that are tuned by flaml:
-        config = clean_config(config)
+        config = clean_config(copy.copy(config))
         self.estimator_name = config.pop("estimator_name")
         # params_to_tune = {
         #     k: v for k, v in config.items() if (not k == "estimator_name")
@@ -480,7 +484,7 @@ class AutoCausality:
                 "config": config,
             }
         except Exception as e:
-            print("Evaluation failed!\n", config)
+            print("Evaluation failed!\n", config, traceback.format_exc())
             return {
                 self.metric: -np.inf,
                 "estimator_name": self.estimator_name,

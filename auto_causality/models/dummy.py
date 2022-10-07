@@ -63,13 +63,14 @@ class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
 
         return effect
 
-    # TODO: delete this once PR #486 is merged in dowhy
-    def _estimate_effect(self):
-        self._refresh_propensity_score()
-        return super()._estimate_effect()
+    # # TODO: delete this once PR #486 is merged in dowhy
+    # def _estimate_effect(self):
+    #     self._refresh_propensity_score()
+    #     return super()._estimate_effect()
 
 
-class NewDummy(PropensityScoreWeightingEstimator):
+class NewDummy(PropensityScoreWeightingEstimator):  # OutOfSamplePSWEstimator):  #
+    identifier_method = "backdoor"
     """
     Apply a small random disturbance so the effect values are slightly different
     across units
@@ -85,11 +86,13 @@ class DummyModel(DoWhyMethods):
         self,
         propensity_modifiers: List[str],
         outcome_modifiers: List[str],
+        effect_modifiers: List[str],
         treatment: str,
         outcome: str,
     ):
         self.propensity_modifiers = propensity_modifiers
         self.outcome_modifiers = outcome_modifiers
+        self.effect_modifiers = effect_modifiers
         self.treatment = treatment
         self.outcome = outcome
 
@@ -107,3 +110,4 @@ class DummyModel(DoWhyMethods):
 class Dummy(DoWhyWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, inner_class=DummyModel, **kwargs)
+        self.identifier_method = "backdoor"

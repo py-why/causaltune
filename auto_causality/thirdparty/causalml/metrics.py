@@ -220,8 +220,26 @@ def get_qini(
     qini[RANDOM_COL] = qini[random_cols].mean(axis=1)
     qini.drop(random_cols, axis=1, inplace=True)
 
+    # this is just here to set a conditional breakpoint
+    out = (qini.sum(axis=0) - qini[RANDOM_COL].sum()) / qini.shape[0]
+
+    # what is the biggest theoretical value that the qini above can reach?
+    trt = (
+        df[df[treatment_col] == 1][outcome_col]
+        .sort_values(ascending=False)
+        .cumsum()
+        .mean()
+    )
+    non_trt = (
+        df[df[treatment_col] == 0][outcome_col]
+        .sort_values(ascending=True)
+        .cumsum()
+        .mean()
+    )
+
     if normalize:
-        qini = qini.div(np.abs(qini.iloc[-1, :]), axis=1)
+        # qini = qini.div(np.abs(qini.iloc[-1, :]), axis=1)
+        qini = qini / (trt - non_trt)
 
     return qini
 
@@ -260,7 +278,7 @@ def qini_score(
     outcome_col="y",
     treatment_col="w",
     treatment_effect_col="tau",
-    normalize=True,
+    normalize=False,
     *args,
     **kwarg
 ):
@@ -282,7 +300,8 @@ def qini_score(
 
     qini = get_qini(df, outcome_col, treatment_col, treatment_effect_col, normalize)
 
-    return (qini.sum(axis=0) - qini[RANDOM_COL].sum()) / qini.shape[0]
+    out = (qini.sum(axis=0) - qini[RANDOM_COL].sum()) / qini.shape[0]
+    return out
 
 
 def get_simple_iptw(W, propensity_score):

@@ -1,4 +1,4 @@
-git+https://github.com/microsoft/dowhy@52dd55f#egg=dowhy
+dowhy==0.8
 econml==0.12.0
 FLAML==1.0.7
 numpy~=1.21.0
@@ -7,3 +7,4 @@ pytest
 scikit_learn==1.0.2
 matplotlib~=3.5
 dcor
+holidays

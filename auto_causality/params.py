@@ -448,7 +448,7 @@ class SimpleParamService:
                     # "n_trees": self.n_estimators,
                     # "min_leaf_size": self.min_leaf_size,
                     # Loky was running out of disk space for some reason
-                    "backend": "loky",
+                    "backend": "threading",
                 },
                 search_space={
                     "n_trees": tune.randint(2, 750),

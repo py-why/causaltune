@@ -38,14 +38,16 @@ class TransformedOutcomeFitter(DoWhyMethods):
     ):
         self.propensity_model.fit(df[self.propensity_modifiers], df[self.treatment])
         p = self.propensity_model.predict_proba(df[self.propensity_modifiers])[:, 1]
+        p = np.clip(p, 0.05, 0.95)
         ystar = transformed_outcome(
             df[self.treatment].values, df[self.outcome].values, p
         )
-        self.outcome_model.fit(X_train=df[self.outcome_modifiers].values, y_train=ystar)
+        # The causal graph assumption is that only effect_modifiers can affect the effect :)
+        self.outcome_model.fit(X_train=df[self.effect_modifiers].values, y_train=ystar)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         if isinstance(X, pd.DataFrame):
-            X = X[self.outcome_modifiers].values
+            X = X[self.effect_modifiers].values
         return self.outcome_model.predict(X)
 
     def shap_values(self, df: pd.DataFrame):

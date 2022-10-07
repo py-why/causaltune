@@ -78,6 +78,7 @@ class Scorer:
         )
 
         self.ate(self.causal_model._data)
+        self.causal_model.causal_estimator.recalculate_propensity_score = False
 
     def ate(self, df: pd.DataFrame):
         estimate = self.causal_model.estimate_effect(
@@ -110,7 +111,14 @@ class Scorer:
             if problem == "iv":
                 return [used_metric]
             elif problem == "backdoor":
-                metrics_to_report = ["qini", "auc", "ate", "erupt", "norm_erupt"]
+                metrics_to_report = [
+                    "qini",
+                    "auc",
+                    "ate",
+                    "erupt",
+                    "norm_erupt",
+                    "energy_distance",
+                ]
         else:
             for m in metrics_to_report:
                 if m not in Scorer.all_metrics[problem]:
@@ -136,16 +144,20 @@ class Scorer:
         df: pd.DataFrame,
     ) -> float:
         est = estimate.estimator
-        assert est.identifier_method in ["iv", "backdoor"]
-
+        # assert est.identifier_method in ["iv", "backdoor"]
+        treatment_name = (
+            est._treatment_name
+            if isinstance(est._treatment_name, str)
+            else est._treatment_name[0]
+        )
         df["dy"] = estimate.estimator.effect(df)
-        df.loc[df[est._treatment_name[0]] == 0, "dy"] = 0
+        df.loc[df[treatment_name] == 0, "dy"] = 0
         df["yhat"] = df[est._outcome_name] - df["dy"]
 
         split_test_by = (
             est.estimating_instrument_names[0]
             if est.identifier_method == "iv"
-            else est._treatment_name[0]
+            else treatment_name
         )
         X1 = df[df[split_test_by] == 1]
         X0 = df[df[split_test_by] == 0]
@@ -168,9 +180,9 @@ class Scorer:
         new_df["w"] = df[treatment_name]
         new_df["model"] = cate_estimate
 
-        qini_score = metrics.qini_score(new_df)
+        qini_score = metrics.qini_score(new_df)["model"]
 
-        return qini_score["model"]
+        return qini_score
 
     @staticmethod
     def auc_make_score(

@@ -31,16 +31,16 @@ class TestEndToEndAutoMLPropensity(object):
         )
 
         estimator_list = [
-            "NewDummy",
-            "SparseLinearDML",
-            "ForestDRLearner",
+            # "NewDummy",
+            # "SparseLinearDML",
+            # "ForestDRLearner",
             "TransformedOutcome",
-            "CausalForestDML",
-            ".LinearDML",
-            "DomainAdaptationLearner",
-            "SLearner",
-            "XLearner",
-            "TLearner",
+            # "CausalForestDML",
+            # ".LinearDML",
+            # "DomainAdaptationLearner",
+            # "SLearner",
+            # "XLearner",
+            # "TLearner",
             # "Ortho",
         ]
         outcome = targets[0]

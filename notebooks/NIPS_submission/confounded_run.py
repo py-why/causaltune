@@ -20,8 +20,8 @@ from auto_causality.models.passthrough import Passthrough
 metrics = ["norm_erupt", "qini", "energy_distance"]
 n_samples = 30000
 test_size = 0.33  # equal train,val,test
-components_time_budget = 60 * 20  # 60 * 20
-estimator_list = "all"  # ["Dummy"]  #
+components_time_budget = 20  # 60 * 20
+estimator_list = ["Dummy", "NewDummy"]  # "all"  #
 # [
 #     "Dummy",
 #     "SLearner",
@@ -59,7 +59,7 @@ ac = AutoCausality(
     verbose=2,
     components_verbose=2,
     components_time_budget=components_time_budget,
-    num_samples=12,
+    # num_samples=12,
     estimator_list=estimator_list,
     store_all_estimators=False,
     propensity_model=Passthrough("random"),
@@ -211,7 +211,7 @@ for row, base_fn in enumerate(filenames_out):
         for (est_name, scr), col in zip(
             results["scores_per_estimator"].items(), colors
         ):
-            if "Dummy" not in est_name:
+            if "aDummy" not in est_name:
                 if len(scr):
                     # also plot intermediate runs:
                     #                 if len(scr) > 1:
