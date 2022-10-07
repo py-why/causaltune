@@ -14,16 +14,29 @@ from sklearn.model_selection import train_test_split
 from auto_causality import AutoCausality
 from auto_causality.data_utils import preprocess_dataset
 from auto_causality.datasets import generate_synthetic_data
+from auto_causality.models.passthrough import Passthrough
 
 # set a few params
 metrics = ["norm_erupt", "qini", "energy_distance"]
-n_samples = 1000
+n_samples = 30000
 test_size = 0.33  # equal train,val,test
-components_time_budget = 120
-estimator_list = "auto"
+components_time_budget = 60 * 20  # 60 * 20
+estimator_list = "all"  # ["Dummy"]  #
+# [
+#     "Dummy",
+#     "SLearner",
+#     "TLearner",
+#     "XLearner",
+#     "DomainAdaptationLearner",
+#     "ForestDRLearner",
+#     ".LinearDRLearner",
+#     "TransformedOutcome",
+#     ".LinearDML",
+#     "CasualForestDML",
+# ]
 n_runs = 1
 out_dir = os.path.realpath(".")
-filename_out = "synthetic_observational_cate_positivity"
+filename_out = "synthetic_observational_passthrough"
 
 dataset = generate_synthetic_data(
     n_samples=n_samples, confounding=True, linear_confounder=False, noisy_outcomes=True
@@ -43,12 +56,13 @@ train_df, test_df = train_test_split(data_df, test_size=test_size)
 test_df = test_df.reset_index(drop=True)
 ac = AutoCausality(
     metric="norm_erupt",
-    verbose=1,
-    components_verbose=1,
+    verbose=2,
+    components_verbose=2,
     components_time_budget=components_time_budget,
-    estimator_list="estimator_list",
-    store_all_estimators=True,
-    propensity_model="auto",
+    num_samples=12,
+    estimator_list=estimator_list,
+    store_all_estimators=False,
+    propensity_model=Passthrough("random"),
 )
 
 ac.fit(
@@ -58,6 +72,7 @@ ac.fit(
     common_causes=features_W,
     effect_modifiers=features_X,
 )
+
 
 for i_run in range(1, n_runs + 1):
     estimator_scores = defaultdict(list)
@@ -76,7 +91,7 @@ for i_run in range(1, n_runs + 1):
             for trial in ac.results.trials:
                 # estimator name:
                 estimator_name = trial.last_result["estimator_name"]
-                if trial.last_result["estimator"]:
+                if trial.last_result.get("estimator", False):
                     estimator = trial.last_result["estimator"]
                     scores = {}
                     for ds_name, df in datasets.items():
@@ -196,7 +211,7 @@ for row, base_fn in enumerate(filenames_out):
         for (est_name, scr), col in zip(
             results["scores_per_estimator"].items(), colors
         ):
-            if "None" not in est_name:
+            if "Dummy" not in est_name:
                 if len(scr):
                     # also plot intermediate runs:
                     #                 if len(scr) > 1:
