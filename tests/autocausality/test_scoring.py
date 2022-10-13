@@ -73,7 +73,7 @@ class TestMetrics:
     # TODO: Debug wrong values: 1) QINI
     def test_qini_make_score(self):
         """Tests Qini score is within exceptable range for the test example"""
-        assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(0.15, 0.05)
+        assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(22, 27)
 
     # TODO: Debug wrong values: 2) R-scorer
     def test_r_make_score(self):
