@@ -30,25 +30,13 @@ class TestEndToEndAutoMLPropensity(object):
             data.outcomes,
         )
 
-        estimator_list = [
-            "NewDummy",
-            "SparseLinearDML",
-            "ForestDRLearner",
-            "TransformedOutcome",
-            "CausalForestDML",
-            ".LinearDML",
-            "DomainAdaptationLearner",
-            "SLearner",
-            "XLearner",
-            "TLearner",
-            "Ortho",
-        ]
+        estimator_list = "all"
+
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=600,
             components_time_budget=10,
             estimator_list=estimator_list,
-            num_samples=len(estimator_list),  # "all",  #
+            num_samples=13,
             use_ray=False,
             verbose=4,
             components_verbose=2,

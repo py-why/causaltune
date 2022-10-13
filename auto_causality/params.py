@@ -435,6 +435,7 @@ class SimpleParamService:
                     "subsample_ratio": 0.7,
                     "lambda_reg": 0.01,
                 },
+                experimental=True,  # OrthoForest estimators are notoriously slow
             ),
             "backdoor.econml.orf.DMLOrthoForest": EstimatorConfig(
                 init_params={
@@ -466,6 +467,7 @@ class SimpleParamService:
                     # "bootstrap": tune.choice([0, 1]),
                     "lambda_reg": 0.01,
                 },
+                experimental=True,  # OrthoForest estimators are notoriously slow
             ),
             "iv.econml.iv.dr.LinearDRIV": EstimatorConfig(
                 init_params={
