@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Any
 
 import pandas as pd
 import numpy as np
@@ -6,7 +6,7 @@ import numpy as np
 from .wrapper import DoWhyMethods, DoWhyWrapper
 from auto_causality.shap import shap_with_automl
 
-
+# TODO: generalize to multi-value discrete treatment
 def transformed_outcome(
     treatment: np.ndarray, outcome: np.ndarray, p: np.ndarray
 ) -> np.ndarray:
@@ -23,6 +23,7 @@ class TransformedOutcomeFitter(DoWhyMethods):
         effect_modifiers: List[str],
         treatment: str,
         outcome: str,
+        control_value: Any = 0,
     ):
         self.propensity_model = propensity_model
         self.outcome_model = outcome_model

@@ -254,9 +254,14 @@ class AutoCausality:
             treatment, str
         ), "Only a single treatment supported at the moment"
 
+        treatment_values = np.sort(data_df[treatment].unique())
+
         assert (
-            len(data_df[treatment].unique()) > 1
+            len(treatment_values) > 1
         ), "Treatment must take at least 2 values, eg 0 and 1!"
+
+        self._control_value = treatment_values[0]
+        self._treatment_values = list(treatment_values[1:])
 
         # TODO: allow specifying an exclusion list, too
         used_estimator_list = (
@@ -267,6 +272,7 @@ class AutoCausality:
             isinstance(used_estimator_list, str) or len(used_estimator_list) > 0
         ), "estimator_list must either be a str or an iterable of str"
 
+        # shuffle the data
         self.data_df = data_df.sample(frac=1)
         # To be used for component model training/selection
         self.train_df, self.test_df = train_test_split(
@@ -461,12 +467,12 @@ class AutoCausality:
         # }
         cfg = self.cfg.method_params(self.estimator_name)
 
-        try:
+        if True:  # try:
             estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,
                 method_name=self.estimator_name,
-                control_value=0,
-                treatment_value=1,
+                control_value=self._control_value,
+                treatment_value=self._treatment_values,
                 target_units="ate",  # condition used for CATE
                 confidence_intervals=False,
                 method_params={
@@ -483,14 +489,14 @@ class AutoCausality:
                 "scores": scores,
                 "config": config,
             }
-        except Exception as e:
-            print("Evaluation failed!\n", config, traceback.format_exc())
-            return {
-                self.metric: -np.inf,
-                "estimator_name": self.estimator_name,
-                "exception": e,
-                "traceback": traceback.format_exc(),
-            }
+        # except Exception as e:
+        #     print("Evaluation failed!\n", config, traceback.format_exc())
+        #     return {
+        #         self.metric: -np.inf,
+        #         "estimator_name": self.estimator_name,
+        #         "exception": e,
+        #         "traceback": traceback.format_exc(),
+        #     }
 
     def _compute_metrics(self, estimator) -> dict:
         scores = {

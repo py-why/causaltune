@@ -96,7 +96,9 @@ class TestMetrics:
         scorer = smr[-1]
 
         rscorer = RScoreWrapper(
-            DecisionTreeRegressor(random_state=123), scorer.propensity_model, *smr[:-1]
+            DecisionTreeRegressor(random_state=123),
+            scorer.psw_estimator.estimator.propensity_function,
+            *smr[:-1]
         )
         true_keys = [
             "erupt",

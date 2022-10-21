@@ -3,7 +3,8 @@ from typing import List, Any, Union, Callable
 import pandas as pd
 import numpy as np
 
-from dowhy.causal_estimator import CausalEstimator, CausalEstimate
+from dowhy.causal_estimator import CausalEstimate
+from auto_causality.models.monkey_patches import CausalEstimator
 
 
 def remove_list(x: Any):
@@ -55,6 +56,7 @@ class DoWhyWrapper(CausalEstimator):
             propensity_modifiers=effect_modifiers + self._observed_common_causes_names,
             outcome_modifiers=effect_modifiers + self._observed_common_causes_names,
             effect_modifiers=effect_modifiers,
+            control_value=control_value,
             **params.get("init_params", {}),
         )
 
@@ -78,7 +80,7 @@ class DoWhyWrapper(CausalEstimator):
         est = self.estimator.predict(self._data)
 
         estimate = CausalEstimate(
-            estimate=np.mean(est),
+            estimate=np.mean(est, axis=0),
             control_value=self._control_value,
             treatment_value=self._treatment_value,
             target_estimand=self._target_estimand,

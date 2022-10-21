@@ -5,11 +5,28 @@ import pandas as pd
 from sklearn import linear_model
 from flaml import AutoML as FLAMLAutoML
 
-from dowhy.causal_estimator import CausalEstimate
+from dowhy.causal_estimator import CausalEstimator
 from dowhy.causal_estimators.propensity_score_weighting_estimator import (
     PropensityScoreWeightingEstimator,
 )
 
+
+def effect_from_actual_treatment(self, df: pd.DataFrame, *args, **kwargs):
+    treatment_name = (
+        self._treatment_name
+        if isinstance(self._treatment_name, str)
+        else self._treatment_name[0]
+    )
+    eff = self.effect(df, *args, **kwargs).reshape(
+        (len(df), len(self._treatment_value))
+    )
+    out = np.zeros(len(df))
+    for c, col in enumerate(self._treatment_value):
+        out[df[treatment_name] == col] = eff[df[treatment_name] == col, c]
+    return pd.Series(data=out, index=df.index)
+
+
+CausalEstimator.effect_from_actual_treatment = effect_from_actual_treatment
 
 # # Let's engage in a bit of monkey patching as we wait for this to be merged into DoWhy
 # # #TODO: delete this as soon as PR #485 is merged into dowhy

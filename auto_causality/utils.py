@@ -1,4 +1,6 @@
+from typing import Any
 import math
+
 import numpy as np
 import pandas as pd
 
@@ -14,6 +16,10 @@ def clean_config(params: dict):
     if "min_samples_split" in params and params["min_samples_split"] > 1.5:
         params["min_samples_split"] = int(params["min_samples_split"])
     return params
+
+
+def treatment_values(treatment: pd.Series, control_value: Any):
+    return sorted([t for t in treatment.unique() if t != control_value])
 
 
 #
