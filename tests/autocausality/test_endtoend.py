@@ -1,7 +1,10 @@
 import pytest
 import warnings
+
+from sklearn.model_selection import train_test_split
+
 from auto_causality import AutoCausality
-from auto_causality.datasets import synth_ihdp, iv_dgp_econml
+from auto_causality.datasets import synth_ihdp, linear
 from auto_causality.data_utils import preprocess_dataset
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
@@ -61,7 +64,7 @@ class TestEndToEnd(object):
         ]
         outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=60,
+            num_samples=len(estimator_list),
             components_time_budget=10,
             estimator_list=estimator_list,  # "all",  #
             use_ray=False,
@@ -83,32 +86,24 @@ class TestEndToEnd(object):
 
         print(f"Best estimator: {auto_causality.best_estimator}")
 
-    def test_endtoend_iv(self):
+    def test_endtoend_multivalue(self):
+        data = linear(10000)
+        train_data, test_data = train_test_split(data.data, train_size=0.9)
 
-        data = iv_dgp_econml()
-        treatment = data.treatment
-        targets = data.outcomes
-        instruments = data.instruments
-        data_df, features_X, features_W = preprocess_dataset(
-            data.data, treatment, targets, instruments
-        )
-        outcome = targets[0]
-        auto_causality = AutoCausality(
-            time_budget=1000,
+        ac = AutoCausality(
             components_time_budget=10,
-            propensity_model="auto",
-            resources_per_trial={"cpu": 0.5},
-            use_ray=False,
-            verbose=3,
-            components_verbose=2,
+            estimator_list=[".LinearDML"],
+            metric="energy_distance",
+            metrics_to_report=["energy_distance"],
         )
-
-        auto_causality.fit(
-            data_df, treatment, outcome, features_W, features_X, instruments
+        ac.fit(
+            train_data,
+            data.treatment,
+            data.outcomes[0],
+            data.common_causes,
+            data.effect_modifiers,
         )
-
-        for est_name, scores in auto_causality.scores.items():
-            assert est_name in auto_causality.estimator_list
+        # TODO add an effect() call and an effect_tt call
 
 
 if __name__ == "__main__":

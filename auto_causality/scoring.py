@@ -152,7 +152,7 @@ class Scorer:
             if isinstance(est._treatment_name, str)
             else est._treatment_name[0]
         )
-        df["dy"] = estimate.estimator.effect_from_actual_treatment(df)
+        df["dy"] = estimate.estimator.effect_tt(df)
         df["yhat"] = df[est._outcome_name] - df["dy"]
 
         split_test_by = (
@@ -273,6 +273,10 @@ class Scorer:
         outcome_name = est._outcome_name
         covariates = est._effect_modifier_names
         cate_estimate = est.effect(df)
+
+        # TODO: fix this hack with proper treatment of multivalues
+        if len(cate_estimate.shape) > 1 and cate_estimate.shape[1] == 1:
+            cate_estimate = cate_estimate.reshape(-1)
 
         # Include CATE Interpereter for both IV and CATE models
         intrp = SingleTreeCateInterpreter(

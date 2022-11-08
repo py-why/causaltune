@@ -3,6 +3,8 @@ import urllib.request
 import numpy as np
 import pandas as pd
 from auto_causality import AutoCausality
+from sklearn.model_selection import train_test_split
+
 
 # Generic ML imports
 from sklearn.preprocessing import PolynomialFeatures
@@ -15,38 +17,45 @@ from econml.cate_interpreter import (
     SingleTreePolicyInterpreter,
 )
 
+from auto_causality.datasets import linear
+
 import matplotlib.pyplot as plt
 
-n_points = 10000
-imp = {0: 0.0, 1: 2.0, 2: 1.0}
+# n_points = 10000
+# imp = {0: 0.0, 1: 2.0, 2: 1.0}
+#
+# df = pd.DataFrame(
+#     {
+#         "X": np.random.normal(size=n_points),
+#         "W": np.random.normal(size=n_points),
+#         "T": np.random.choice(np.array(list(imp.keys())), size=n_points),
+#     }
+# )
+# df["Y"] = df["X"] + df["T"].apply(lambda x: imp[x])
+# df.head()
 
-df = pd.DataFrame(
-    {
-        "X": np.random.normal(size=n_points),
-        "W": np.random.normal(size=n_points),
-        "T": np.random.choice(np.array(list(imp.keys())), size=n_points),
-    }
-)
-df["Y"] = df["X"] + df["T"].apply(lambda x: imp[x])
-df.head()
-
-from sklearn.model_selection import train_test_split
+data = linear(10000)
 
 # Data sample
-train_data, test_data = train_test_split(df, train_size=0.9)
+train_data, test_data = train_test_split(data.data, train_size=0.9)
 X_test = test_data[["X"]]
-treatment = "T"
-outcome = "Y"
-common_causes = ["W"]
-effect_modifiers = ["X"]
+# treatment = "T"
+# outcome = "Y"
+# common_causes = ["W"]
+# effect_modifiers = ["X"]
 # Define estimator inputs
-Y = train_data[outcome]  # outcome of interest
-T = train_data[treatment]  # intervention, or treatment
-X = train_data[effect_modifiers]  # features
-W = train_data[common_causes]
+# Y = train_data[outcome]  # outcome of interest
+# T = train_data[treatment]  # intervention, or treatment
+# X = train_data[effect_modifiers]  # features
+# W = train_data[common_causes]
 
 est = LinearDML(discrete_treatment=True)
-est.fit(Y, T, X=X, W=W)
+est.fit(
+    train_data[data.outcomes[0]],
+    train_data[data.treatment],
+    X=train_data[data.effect_modifiers],
+    W=train_data[data.common_causes],
+)
 # Get treatment effect and its confidence interval
 test_data["est_effect"] = est.effect(X_test, T1=1)
 # test_data['effect'] =  df['T'].apply(lambda x: imp[x])
@@ -56,10 +65,10 @@ from dowhy import CausalModel
 
 causal_model = CausalModel(
     data=train_data,
-    treatment=treatment,
-    outcome=outcome,
-    common_causes=common_causes,
-    effect_modifiers=effect_modifiers,
+    treatment=data.treatment,
+    outcome=data.outcomes[0],
+    common_causes=data.common_causes,
+    effect_modifiers=data.effect_modifiers,
 )
 identified_estimand = causal_model.identify_effect(proceed_when_unidentifiable=True)
 
@@ -97,6 +106,12 @@ ac = AutoCausality(
     metric="energy_distance",
     metrics_to_report=["energy_distance"],
 )
-ac.fit(train_data, treatment, outcome, common_causes, effect_modifiers)
+ac.fit(
+    train_data,
+    data.treatment,
+    data.outcomes[0],
+    data.common_causes,
+    data.effect_modifiers,
+)
 
 print("Yay!")

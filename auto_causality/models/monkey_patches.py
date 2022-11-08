@@ -1,6 +1,8 @@
 from typing import Union
 
 import numpy as np
+from numpy.distutils.misc_util import is_sequence
+
 import pandas as pd
 from sklearn import linear_model
 from flaml import AutoML as FLAMLAutoML
@@ -11,22 +13,35 @@ from dowhy.causal_estimators.propensity_score_weighting_estimator import (
 )
 
 
-def effect_from_actual_treatment(self, df: pd.DataFrame, *args, **kwargs):
-    treatment_name = (
-        self._treatment_name
-        if isinstance(self._treatment_name, str)
-        else self._treatment_name[0]
-    )
-    eff = self.effect(df, *args, **kwargs).reshape(
-        (len(df), len(self._treatment_value))
-    )
-    out = np.zeros(len(df))
-    for c, col in enumerate(self._treatment_value):
-        out[df[treatment_name] == col] = eff[df[treatment_name] == col, c]
-    return pd.Series(data=out, index=df.index)
-
-
-CausalEstimator.effect_from_actual_treatment = effect_from_actual_treatment
+# def effect_tt(self, df: pd.DataFrame, *args, **kwargs):
+#     """
+#     Effect of treatment on the treated
+#     @param df: unit features and treatment values
+#     @param args: passed through to effect estimator
+#     @param kwargs: passed through to effect estimator
+#     @return: np.array of len(df) with effects of the actual treatment applied
+#     """
+#
+#     eff = self.effect(df, *args, **kwargs).reshape((len(df), len(self._treatment_value)))
+#
+#     out = np.zeros(len(df))
+#     if is_sequence(self._treatment_value) and not isinstance(self._treatment_value, str):
+#         treatment_value = self._treatment_value
+#     else:
+#         treatment_value = [self._treatment_value]
+#
+#     if is_sequence(self._treatment_name) and not isinstance(self._treatment_name, str):
+#         treatment_name = self._treatment_name[0]
+#     else:
+#         treatment_name = self._treatment_name
+#
+#     eff = np.reshape(eff, (len(df), len(treatment_value)))
+#
+#     for c, col in enumerate(treatment_value):
+#         out[df[treatment_name] == col] = eff[df[treatment_name] == col, c]
+#     return pd.Series(data=out, index=df.index)
+# s
+# CausalEstimator.effect_tt = effect_tt
 
 # # Let's engage in a bit of monkey patching as we wait for this to be merged into DoWhy
 # # #TODO: delete this as soon as PR #485 is merged into dowhy

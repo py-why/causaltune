@@ -72,6 +72,7 @@ def frequent_values(x: pd.Series, thresh: float = 0.99) -> set:
 def otherize_tail(
     x: pd.Series, new_val: Any, thresh: float = 0.99, min_categories: int = 20
 ):
+
     uniques = x.unique()
     if len(uniques) < min_categories:
         return x

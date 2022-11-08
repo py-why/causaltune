@@ -14,10 +14,31 @@ class CausalityDataset:
     treatment: str
     outcomes: List[str]
     instruments: Optional[List[str]] = None
+    common_causes: Optional[List[str]] = None
+    effect_modifiers: Optional[List[str]] = None
     propensity_to_treat: Optional[str] = None
 
 
-def nhefs() -> pd.DataFrame:
+def linear(n_points=10000) -> CausalityDataset:
+    imp = {0: 0.0, 1: 2.0, 2: 1.0}
+    df = pd.DataFrame(
+        {
+            "X": np.random.normal(size=n_points),
+            "W": np.random.normal(size=n_points),
+            "T": np.random.choice(np.array(list(imp.keys())), size=n_points),
+        }
+    )
+    df["Y"] = df["X"] + df["T"].apply(lambda x: imp[x])
+    return CausalityDataset(
+        data=df,
+        treatment="T",
+        outcomes=["Y"],
+        common_causes=["W"],
+        effect_modifiers=["X"],
+    )
+
+
+def nhefs() -> CausalityDataset:
     """loads the NHEFS dataset
     The dataset describes the impact of quitting smoke on weight gain over a period of 11 years
     The data consists of the treatment (quit smoking yes no), the outcome (change in weight) and
@@ -57,7 +78,7 @@ def nhefs() -> pd.DataFrame:
     return CausalityDataset(df, treatment="qsmk", outcomes=["wt82_71"])
 
 
-def lalonde_nsw() -> pd.DataFrame:
+def lalonde_nsw() -> CausalityDataset:
     """loads the Lalonde NSW dataset
     The dataset described the impact of a job training programme on the real earnings
     of individuals several years later.
@@ -93,7 +114,7 @@ def lalonde_nsw() -> pd.DataFrame:
     return CausalityDataset(df, "treatment", ["y_factual"])
 
 
-def amazon_reviews(rating="pos") -> pd.DataFrame:
+def amazon_reviews(rating="pos") -> CausalityDataset:
     """loads amazon reviews dataset
     The dataset describes the impact of positive (or negative) reviews for products on Amazon on sales.
     The authors distinguish between items with more than three reviews (treated) and less than three
@@ -155,7 +176,7 @@ def amazon_reviews(rating="pos") -> pd.DataFrame:
         return None
 
 
-def synth_ihdp() -> pd.DataFrame:
+def synth_ihdp() -> CausalityDataset:
     """loads IHDP dataset
     The Infant Health and Development Program (IHDP) dataset contains data on the impact of visits by specialists
     on the cognitive development of children. The dataset consists of 25 covariates describing various features
@@ -198,7 +219,7 @@ def synth_ihdp() -> pd.DataFrame:
     return CausalityDataset(data, "treatment", ["y_factual"])
 
 
-def synth_acic(condition=1) -> pd.DataFrame:
+def synth_acic(condition=1) -> CausalityDataset:
     """loads data from ACIC Causal Inference Challenge 2016
     The dataset consists of 58 covariates, a binary treatment and a continuous response.
     There are 10 simulated pairs of treatment and response, which can be selected
