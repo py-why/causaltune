@@ -93,8 +93,6 @@ class TestEndToEnd(object):
         ac = AutoCausality(
             components_time_budget=10,
             estimator_list=[".LinearDML"],
-            metric="energy_distance",
-            metrics_to_report=["energy_distance"],
         )
         ac.fit(
             train_data,

@@ -1,6 +1,7 @@
 import copy
+import logging
 import math
-from typing import Optional, Dict, Union, Any
+from typing import Optional, Dict, Union, Any, List
 
 import numpy as np
 import pandas as pd
@@ -27,21 +28,39 @@ class DummyEstimator:
         return self.cate_estimate
 
 
-class Scorer:
-    all_metrics = {
-        "iv": ["energy_distance"],
-        "backdoor": [
-            "erupt",
-            "norm_erupt",
-            "qini",
-            "auc",
-            "ate",
-            "r_scorer",
-            "energy_distance",
-        ],
-    }
+def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List[str]:
+    if problem == "iv":
+        return ["energy_distance"]
+    elif problem == "backdoor":
+        if multivalue:
+            # TODO: support other metrics for the multivalue case
+            return ["energy_distance"]
+        else:
+            metrics = [
+                "erupt",
+                "norm_erupt",
+                "qini",
+                "auc",
+                # "r_scorer",
+                "energy_distance",
+            ]
+            if not scores_only:
+                metrics.append("ate")
+            return metrics
 
-    def __init__(self, causal_model: CausalModel, propensity_model: Any):
+
+class Scorer:
+    def __init__(self, causal_model: CausalModel, propensity_model: Any, problem: str):
+
+        if (
+            isinstance(causal_model._treatment, str)
+            or len(causal_model._treatment) == 1
+        ):
+            self.multivalue = False
+        else:
+            self.multivalue = True
+
+        self.problem = problem
 
         self.causal_model = copy.deepcopy(causal_model)
         print(
@@ -98,47 +117,34 @@ class Scorer:
         else:
             return estimate, None, None
 
-    @staticmethod
-    def resolve_metric(metric, problem):
-        if metric not in Scorer.all_metrics[problem]:
-            if problem == "iv":
-                return "energy_distance"
-            elif problem == "backdoor":
-                return "norm_erupt"
-        return metric
+    def resolve_metric(self, metric: str) -> str:
+        metrics = supported_metrics(self.problem, self.multivalue, scores_only=True)
 
-    @staticmethod
-    def resolve_reported_metrics(metrics_to_report, used_metric, problem):
-        if metrics_to_report is None:
-            if problem == "iv":
-                return [used_metric]
-            elif problem == "backdoor":
-                metrics_to_report = [
-                    "qini",
-                    "auc",
-                    "ate",
-                    "erupt",
-                    "norm_erupt",
-                    "energy_distance",
-                ]
-        else:
-            for m in metrics_to_report:
-                if m not in Scorer.all_metrics[problem]:
-                    raise ValueError(
-                        f"Metric to report, {m}, for problem: {problem} \
-                        must be one of {Scorer.all_metrics[problem]}"
-                    )
-        if used_metric not in metrics_to_report:
-            metrics_to_report.append(used_metric)
-        return metrics_to_report
-
-    @staticmethod
-    def validate_implemented_metrics(metric):
-        if metric not in Scorer.all_metrics["backdoor"]:
-            raise ValueError(
-                f"Metric, {metric}, must be\
-                 one of {Scorer.all_metrics.values()}"
+        if metric not in metrics:
+            logging.warning(
+                f"Using energy_distance metric as {metric} is not in the list of supported metrics for this usecase ({str(metrics)})"
             )
+            return "energy_distance"
+        else:
+            return metric
+
+    def resolve_reported_metrics(
+        self, metrics_to_report: Union[List[str], None], scoring_metric: str
+    ):
+
+        metrics = supported_metrics(self.problem, self.multivalue, scores_only=False)
+        if metrics_to_report is None:
+            return metrics
+        else:
+            metrics_to_report = sorted(list(set(metrics_to_report + [scoring_metric])))
+            for m in metrics_to_report.copy():
+                if m not in metrics:
+                    logging.warning(
+                        f"Dropping the metric {m} for problem: {self.problem} \
+                        : must be one of {metrics}"
+                    )
+                    metrics_to_report.remove(m)
+        return metrics_to_report
 
     @staticmethod
     def energy_distance_score(
@@ -376,26 +382,3 @@ class Scorer:
             )
 
         return best
-
-
-# def erupt_make_scores(
-#     estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
-# ) -> float:
-#     est = estimate.estimator
-#     treatment_name = est._treatment_name
-#     if not isinstance(treatment_name, str):
-#         treatment_name = treatment_name[0]
-#
-#     # prepare the ERUPT scorer
-#     erupt = ERUPT(
-#         treatment_name=treatment_name,
-#         propensity_model=DummyClassifier(strategy="prior"),
-#         X_names=est._effect_modifier_names,
-#     )
-#     erupt.fit(df)
-#     erupt_score = erupt.score(
-#         df,
-#         df[est._outcome_name],
-#         cate_estimate > 0,
-#     )
-#     return erupt_score

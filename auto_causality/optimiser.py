@@ -74,7 +74,7 @@ class AutoCausality:
     def __init__(
         self,
         data_df=None,
-        metric="erupt",
+        metric="energy_distance",
         metrics_to_report=None,
         time_budget=None,
         verbose=3,
@@ -141,17 +141,7 @@ class AutoCausality:
         self._settings["tuner"]["resources_per_trial"] = (
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
-
         self._settings["try_init_configs"] = try_init_configs
-
-        if metric is not None:
-            Scorer.validate_implemented_metrics(metric)
-        self.metric = metric
-
-        if metrics_to_report is not None:
-            for m in metrics_to_report:
-                Scorer.validate_implemented_metrics(m)
-        self.metrics_to_report = metrics_to_report
 
         # params for FLAML on component models:
         self._settings["component_models"] = {}
@@ -173,6 +163,10 @@ class AutoCausality:
         self._settings["train_size"] = train_size
         self._settings["test_size"] = test_size
         self._settings["store_all"] = store_all_estimators
+        self._settings["metric"] = metric
+        self._settings["metrics_to_report"] = (
+            [] if metrics_to_report is None else metrics_to_report
+        )
 
         # user can choose between flaml and dummy for propensity model.
         if propensity_model == "dummy":
@@ -303,11 +297,11 @@ class AutoCausality:
             )
 
         # This must be stateful because we need to train the treatment propensity function
-        self.scorer = Scorer(self.causal_model, self.propensity_model)
+        self.scorer = Scorer(self.causal_model, self.propensity_model, self.problem)
 
-        self.metric = Scorer.resolve_metric(self.metric, self.problem)
-        self.metrics_to_report = Scorer.resolve_reported_metrics(
-            self.metrics_to_report, self.metric, self.problem
+        self.metric = self.scorer.resolve_metric(self._settings["metric"])
+        self.metrics_to_report = self.scorer.resolve_reported_metrics(
+            self._settings["metrics_to_report"], self.metric
         )
 
         if self.metric == "energy_distance":
