@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from auto_causality import AutoCausality
 from auto_causality.datasets import synth_ihdp, linear
 from auto_causality.data_utils import preprocess_dataset
+from auto_causality.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
@@ -47,21 +48,14 @@ class TestEndToEnd(object):
             data.treatment,
             data.outcomes,
         )
-
-        estimator_list = [
-            "Dummy",
-            "NewDummy",
-            "SparseLinearDML",
-            "ForestDRLearner",
-            "TransformedOutcome",
-            "CausalForestDML",
-            ".LinearDML",
-            "DomainAdaptationLearner",
-            "SLearner",
-            "XLearner",
-            "TLearner",
-            "Ortho",
-        ]
+        cfg = SimpleParamService(
+            propensity_model=None,
+            outcome_model=None,
+            n_jobs=-1,
+            include_experimental=False,
+            multivalue=False,
+        )
+        estimator_list = cfg.estimator_names_from_patterns("backdoor", "all", 1)
         outcome = targets[0]
         auto_causality = AutoCausality(
             num_samples=len(estimator_list),
@@ -89,10 +83,18 @@ class TestEndToEnd(object):
     def test_endtoend_multivalue(self):
         data = linear(10000)
         train_data, test_data = train_test_split(data.data, train_size=0.9)
+        cfg = SimpleParamService(
+            propensity_model=None,
+            outcome_model=None,
+            n_jobs=-1,
+            include_experimental=False,
+            multivalue=True,
+        )
+        estimator_list = cfg.estimator_names_from_patterns("backdoor", "all", 1)
 
         ac = AutoCausality(
+            num_samples=len(estimator_list),
             components_time_budget=10,
-            estimator_list=[".LinearDML"],
         )
         ac.fit(
             train_data,

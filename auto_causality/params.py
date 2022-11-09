@@ -1,6 +1,6 @@
 from flaml import tune
 from copy import deepcopy
-from typing import Optional, Sequence, Union, Iterable
+from typing import Optional, Sequence, Union, Iterable, Any, Dict
 from dataclasses import dataclass, field
 
 import warnings
@@ -14,6 +14,7 @@ class EstimatorConfig:
     fit_params: dict = field(default_factory=dict)
     search_space: dict = field(default_factory=dict)
     defaults: dict = field(default_factory=dict)
+    supports_multivalue: bool = False
     experimental: bool = False
 
 
@@ -22,6 +23,7 @@ class SimpleParamService:
         self,
         propensity_model,
         outcome_model,
+        multivalue: bool,
         final_model=None,
         n_bootstrap_samples: Optional[int] = None,
         n_jobs: Optional[int] = None,
@@ -33,6 +35,7 @@ class SimpleParamService:
         self.n_jobs = n_jobs
         self.include_experimental = include_experimental
         self.n_bootstrap_samples = n_bootstrap_samples
+        self.multivalue = multivalue
 
     def estimator_names_from_patterns(
         self,
@@ -58,11 +61,12 @@ class SimpleParamService:
 
         elif patterns == "auto":
             if problem == "backdoor":
-                # These are the ones we've seen best results from, empirically,
-                # plus dummy for baseline, and SLearner as that's the simplest possible
-                return self.estimator_names_from_patterns(
-                    problem,
-                    [
+                if self.multivalue:
+                    patterns = ["LinearDML"]
+                else:
+                    # These are the ones we've seen best results from, empirically,
+                    # plus dummy for baseline, and SLearner as that's the simplest possible
+                    patterns = [
                         "Dummy",
                         "NewDummy",
                         "SLearner",
@@ -70,19 +74,17 @@ class SimpleParamService:
                         "TransformedOutcome",
                         "CausalForestDML",
                         "ForestDRLearner",
-                    ],
-                )
+                    ]
+
             elif problem == "iv":
-                return self.estimator_names_from_patterns(
-                    problem,
-                    [
-                        "DMLIV",
-                        "LinearDRIV",
-                        "OrthoIV",
-                        "SparseLinearDRIV",
-                        "LinearIntentToTreatDRIV",
-                    ],
-                )
+                patterns = [
+                    "DMLIV",
+                    "LinearDRIV",
+                    "OrthoIV",
+                    "SparseLinearDRIV",
+                    "LinearIntentToTreatDRIV",
+                ]
+            return self.estimator_names_from_patterns(problem, patterns)
         else:
             try:
                 for p in patterns:
@@ -102,10 +104,14 @@ class SimpleParamService:
 
     @property
     def estimator_names(self):
+        cfgs = self._configs()
+        if self.multivalue:
+            cfgs = {k: v for k, v in cfgs.items() if v.supports_multivalue}
+
         if self.include_experimental:
-            return list(self._configs().keys())
+            return list(cfgs.keys())
         else:
-            return [est for est, cfg in self._configs().items() if not cfg.experimental]
+            return [est for est, cfg in cfgs.items() if not cfg.experimental]
 
     def search_space(self, estimator_list: Iterable[str]):
         """constructs search space with estimators and their respective configs
@@ -150,7 +156,7 @@ class SimpleParamService:
     ):
         return self._configs()[estimator]
 
-    def _configs(self):
+    def _configs(self) -> Dict[str, EstimatorConfig]:
         propensity_model = deepcopy(self.propensity_model)
         outcome_model = deepcopy(self.outcome_model)
         if self.n_bootstrap_samples is not None:
@@ -312,6 +318,7 @@ class SimpleParamService:
                     "fit_cate_intercept": True,
                     "mc_agg": "mean",
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dml.SparseLinearDML": EstimatorConfig(
                 init_params={

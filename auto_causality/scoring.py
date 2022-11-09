@@ -12,7 +12,7 @@ from dowhy import CausalModel
 
 from auto_causality.thirdparty.causalml import metrics
 from auto_causality.erupt import ERUPT
-from auto_causality.utils import treatment_values
+from auto_causality.utils import treatment_values, treatment_is_multivalue
 
 import dcor
 
@@ -51,17 +51,8 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
 
 class Scorer:
     def __init__(self, causal_model: CausalModel, propensity_model: Any, problem: str):
-
-        if (
-            isinstance(causal_model._treatment, str)
-            or len(causal_model._treatment) == 1
-        ):
-            self.multivalue = False
-        else:
-            self.multivalue = True
-
         self.problem = problem
-
+        self.multivalue = treatment_is_multivalue(causal_model._treatment)
         self.causal_model = copy.deepcopy(causal_model)
         print(
             "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"

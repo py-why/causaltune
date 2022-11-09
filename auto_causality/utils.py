@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union, Sequence
 import math
 
 import numpy as np
@@ -20,6 +20,13 @@ def clean_config(params: dict):
 
 def treatment_values(treatment: pd.Series, control_value: Any):
     return sorted([t for t in treatment.unique() if t != control_value])
+
+
+def treatment_is_multivalue(treatment: Union[int, str, Sequence]) -> bool:
+    if isinstance(treatment, str) or len(treatment) == 1:
+        return False
+    else:
+        return True
 
 
 #

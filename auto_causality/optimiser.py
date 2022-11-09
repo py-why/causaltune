@@ -19,7 +19,7 @@ from joblib import Parallel, delayed
 from auto_causality.params import SimpleParamService
 from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
-from auto_causality.utils import clean_config
+from auto_causality.utils import clean_config, treatment_is_multivalue
 from auto_causality.models.monkey_patches import AutoML
 
 
@@ -142,6 +142,9 @@ class AutoCausality:
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
         self._settings["try_init_configs"] = try_init_configs
+        self._settings[
+            "include_experimental_estimators"
+        ] = include_experimental_estimators
 
         # params for FLAML on component models:
         self._settings["component_models"] = {}
@@ -185,14 +188,6 @@ class AutoCausality:
             )
 
         self.outcome_model = AutoML(**self._settings["component_models"])
-
-        # config with method-specific params
-        self.cfg = SimpleParamService(
-            self.propensity_model,
-            self.outcome_model,
-            n_jobs=components_njobs,
-            include_experimental=include_experimental_estimators,
-        )
 
         self.results = None
         self._best_estimators = defaultdict(lambda: (float("-inf"), None))
@@ -257,15 +252,6 @@ class AutoCausality:
         self._control_value = treatment_values[0]
         self._treatment_values = list(treatment_values[1:])
 
-        # TODO: allow specifying an exclusion list, too
-        used_estimator_list = (
-            self.original_estimator_list if estimator_list is None else estimator_list
-        )
-
-        assert (
-            isinstance(used_estimator_list, str) or len(used_estimator_list) > 0
-        ), "estimator_list must either be a str or an iterable of str"
-
         # shuffle the data
         self.data_df = data_df.sample(frac=1)
         # To be used for component model training/selection
@@ -307,11 +293,28 @@ class AutoCausality:
         if self.metric == "energy_distance":
             self._best_estimators = defaultdict(lambda: (float("inf"), None))
 
-        if time_budget:
-            self._settings["tuner"]["time_budget_s"] = time_budget
+        # TODO: allow specifying an exclusion list, too
+        used_estimator_list = (
+            self.original_estimator_list if estimator_list is None else estimator_list
+        )
+
+        assert (
+            isinstance(used_estimator_list, str) or len(used_estimator_list) > 0
+        ), "estimator_list must either be a str or an iterable of str"
+
+        # config with method-specific params
+        self.cfg = SimpleParamService(
+            self.propensity_model,
+            self.outcome_model,
+            n_jobs=self._settings["component_models"]["n_jobs"],
+            include_experimental=self._settings["include_experimental_estimators"],
+            multivalue=treatment_is_multivalue(self._treatment_values),
+        )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
-            self.problem, used_estimator_list, len(data_df)
+            self.problem,
+            used_estimator_list,
+            len(data_df),
         )
 
         if not self.estimator_list:
@@ -319,6 +322,9 @@ class AutoCausality:
                 f"No valid estimators in {str(used_estimator_list)}, "
                 f"available estimators: {str(self.cfg.estimator_names)}"
             )
+
+        if time_budget:
+            self._settings["tuner"]["time_budget_s"] = time_budget
 
         if self._settings["component_models"]["time_budget"] is None:
             self._settings["component_models"]["time_budget"] = self._settings["tuner"][
