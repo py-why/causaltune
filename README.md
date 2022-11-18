@@ -37,7 +37,8 @@ impact in the next iteration.
 
 **Currently tested and used: binary treatment, strictly random assignment**.
 
-**In development: Multiple (categorical) treatments** This will require extra work as the EconML CATE models appear to support it (according to their docs), but the DoWhy wrapper for them doesn't seem to. Expected by end of September 2022
+**In testing: Multiple (categorical) treatments** Currently at PR stage, expected to merge within days
+
 
 ### 2. Continuous testing combined with exploitation
 The per-customer impact estimates from the previous section, even if noisy, can be used to implement
@@ -48,8 +49,7 @@ applied to keep refining our impact estimates.
 Thus, there is no need to either wait for the test to gather enough data for significance, nor to ever end the
 test, before using its results to assign the most impactful treatment to each customer.
 
-**In development** (expected within a month, if someone raises an issue requesting this,
-will try to implement within 2 weeks): **Taking propensity to treat from a column in the supplied dataset**.
+**In development** (expected within a week): **Taking propensity to treat from a column in the supplied dataset**.
 
 ### 3. Observational inference
 The traditional application of causal inference. For example, estimating the impact on
@@ -59,9 +59,9 @@ who have support queries is most likely not randomly sampled, confounding correc
 As with other usecases, the advanced causal inference models allow impact estimation as a function
 of customer features, rather than just averages.
 
-**[PR complete and passes tests](https://github.com/transferwise/auto-causality/pull/162), now under review** Use of user-supplied propensity function. Just set 
-`propensity_model` to an instance of the desired classifier when instantiating `AutoCausality`, or to '"auto"' 
-if you want to use the FLAML classifier. 
+**Ready to use** Use of user-supplied propensity function. Just set
+`propensity_model` to an instance of the desired classifier when instantiating `AutoCausality`, or to `"auto"`
+if you want to use the FLAML classifier.
 
 
 ### 4. Impact of customer choosing to use a feature (IV models)
@@ -74,7 +74,8 @@ impact of the customer choosing to use it. To compare IV models, we use what app
 [here](https://github.com/transferwise/auto-causality/blob/main/docs/Comparing_IV_models.pdf),
 publication is in the works)
 
-**First cut merged, now under internal testing**
+**Available, hasn't been extensively used yet** No known issues, but please be aware we haven't yet
+extensively used this internally, so if you run into any issues, please report them!
 
 ## Installation
 To install from source, see [For Developers](#for-developers) section below.
