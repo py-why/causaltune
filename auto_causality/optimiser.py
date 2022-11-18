@@ -434,7 +434,7 @@ class AutoCausality:
         # if using FLAML < 1.0.7 need to set n_jobs = 2 here
         # to spawn a separate process to prevent cross-talk between tuner and automl on component models:
 
-        estimates = Parallel(n_jobs=1, backend="threading")(
+        estimates = Parallel(n_jobs=2, backend="threading")(
             delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
 
@@ -470,7 +470,7 @@ class AutoCausality:
         # }
         cfg = self.cfg.method_params(self.estimator_name)
 
-        if True:  # try:
+        try:  # if True:  #
             estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,
                 method_name=self.estimator_name,
@@ -492,14 +492,14 @@ class AutoCausality:
                 "scores": scores,
                 "config": config,
             }
-        # except Exception as e:
-        #     print("Evaluation failed!\n", config, traceback.format_exc())
-        #     return {
-        #         self.metric: -np.inf,
-        #         "estimator_name": self.estimator_name,
-        #         "exception": e,
-        #         "traceback": traceback.format_exc(),
-        #     }
+        except Exception as e:
+            print("Evaluation failed!\n", config, traceback.format_exc())
+            return {
+                self.metric: -np.inf,
+                "estimator_name": self.estimator_name,
+                "exception": e,
+                "traceback": traceback.format_exc(),
+            }
 
     def _compute_metrics(self, estimator) -> dict:
         scores = {
