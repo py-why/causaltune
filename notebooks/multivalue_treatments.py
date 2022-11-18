@@ -17,7 +17,7 @@ from econml.cate_interpreter import (
     SingleTreePolicyInterpreter,
 )
 
-from auto_causality.datasets import linear
+from auto_causality.datasets import linear_multi_dataset
 
 import matplotlib.pyplot as plt
 
@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 # df["Y"] = df["X"] + df["T"].apply(lambda x: imp[x])
 # df.head()
 
-data = linear(10000)
+data = linear_multi_dataset(10000)
 
 # Data sample
 train_data, test_data = train_test_split(data.data, train_size=0.9)

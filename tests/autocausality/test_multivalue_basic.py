@@ -2,12 +2,12 @@ from sklearn.model_selection import train_test_split
 from econml.dml import LinearDML
 from dowhy import CausalModel
 
-from auto_causality.datasets import linear
+from auto_causality.datasets import linear_multi_dataset
 
 
 class TestMultivalueBasic(object):
     def test_econml(self):
-        data = linear(10000)
+        data = linear_multi_dataset(10000)
         train_data, test_data = train_test_split(data.data, train_size=0.9)
         X_test = test_data[data.effect_modifiers]
         est = LinearDML(discrete_treatment=True)
@@ -22,7 +22,7 @@ class TestMultivalueBasic(object):
         assert abs(test_data["est_effect"].mean() - 2.0) < 0.01
 
     def test_wrapper(self):
-        data = linear(10000)
+        data = linear_multi_dataset(10000)
         train_data, test_data = train_test_split(data.data, train_size=0.9)
         X_test = test_data[data.effect_modifiers]
 

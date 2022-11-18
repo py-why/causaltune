@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy import special
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from typing import List, Union, Optional
 
@@ -13,22 +13,23 @@ class CausalityDataset:
     data: pd.DataFrame
     treatment: str
     outcomes: List[str]
-    instruments: Optional[List[str]] = None
+    instruments: List[str] = field(default_factory=list)
     common_causes: Optional[List[str]] = None
     effect_modifiers: Optional[List[str]] = None
-    propensity_to_treat: Optional[str] = None
+    propensity_modifiers: List[str] = field(default_factory=list)
 
 
-def linear(n_points=10000) -> CausalityDataset:
-    imp = {0: 0.0, 1: 2.0, 2: 1.0}
+def linear_multi_dataset(n_points=10000, impact=None) -> CausalityDataset:
+    if impact is None:
+        impact = {0: 0.0, 1: 2.0, 2: 1.0}
     df = pd.DataFrame(
         {
             "X": np.random.normal(size=n_points),
             "W": np.random.normal(size=n_points),
-            "T": np.random.choice(np.array(list(imp.keys())), size=n_points),
+            "T": np.random.choice(np.array(list(impact.keys())), size=n_points),
         }
     )
-    df["Y"] = df["X"] + df["T"].apply(lambda x: imp[x])
+    df["Y"] = df["X"] + df["T"].apply(lambda x: impact[x])
     return CausalityDataset(
         data=df,
         treatment="T",
@@ -365,7 +366,7 @@ def generate_synthetic_data(
         print(min(p), max(p))
 
     else:
-        p = 0.5 * np.ones(size=n_samples)
+        p = 0.5 * np.ones(n_samples)
         C = np.random.binomial(n=1, p=0.5, size=n_samples)
 
     if add_instrument:
@@ -389,14 +390,22 @@ def generate_synthetic_data(
     # nonlinear dependence of Y on X:
     mu = lambda X: X[:, 0] * X[:, 1] + X[:, 2] + X[:, 3] * X[:, 4]  # noqa E731
 
-    Y = tau * T + mu(X) + err
+    Y_base = mu(X) + err
+    Y = tau * T + Y_base
 
+    features = [f"X{i+1}" for i in range(n_covariates)]
     df = pd.DataFrame(
-        np.array([*X.T, T, Y, tau, p]).T,
-        columns=[f"X{i}" for i in range(1, n_covariates + 1)]
-        + ["treatment", "outcome", "true_effect", "random"],
+        np.array([*X.T, T, Y, tau, p, Y_base]).T,
+        columns=features
+        + ["treatment", "outcome", "true_effect", "propensity", "base_outcome"],
     )
-    data = CausalityDataset(data=df, treatment="treatment", outcomes=["outcome"])
+    data = CausalityDataset(
+        data=df,
+        treatment="treatment",
+        outcomes=["outcome"],
+        effect_modifiers=features,
+        propensity_modifiers=["propensity"],
+    )
     if add_instrument:
         df["instrument"] = Z
         data.instruments = ["instrument"]

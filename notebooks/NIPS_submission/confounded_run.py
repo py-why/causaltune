@@ -21,7 +21,8 @@ metrics = ["norm_erupt", "qini", "energy_distance"]
 n_samples = 30000
 test_size = 0.33  # equal train,val,test
 components_time_budget = 20  # 60 * 20
-estimator_list = ["Dummy", "NewDummy"]  # "all"  #
+estimator_list = "all"
+# ["Dummy", "NewDummy"]  #  #
 # [
 #     "Dummy",
 #     "SLearner",
@@ -41,6 +42,7 @@ filename_out = "synthetic_observational_passthrough"
 dataset = generate_synthetic_data(
     n_samples=n_samples, confounding=True, linear_confounder=False, noisy_outcomes=True
 )
+
 data_df, features_X, features_W = preprocess_dataset(
     dataset.data, treatment=dataset.treatment, targets=dataset.outcomes
 )
@@ -59,10 +61,10 @@ ac = AutoCausality(
     verbose=2,
     components_verbose=2,
     components_time_budget=components_time_budget,
-    # num_samples=12,
+    num_samples=12,
     estimator_list=estimator_list,
     store_all_estimators=False,
-    propensity_model=Passthrough("random"),
+    propensity_model=Passthrough("propensity"),
 )
 
 ac.fit(

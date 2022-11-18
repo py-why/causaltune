@@ -50,9 +50,15 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
 
 
 class Scorer:
-    def __init__(self, causal_model: CausalModel, propensity_model: Any, problem: str):
+    def __init__(
+        self,
+        causal_model: CausalModel,
+        propensity_model: Any,
+        problem: str,
+        multivalue: bool,
+    ):
         self.problem = problem
-        self.multivalue = treatment_is_multivalue(causal_model._treatment)
+        self.multivalue = multivalue
         self.causal_model = copy.deepcopy(causal_model)
         print(
             "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"

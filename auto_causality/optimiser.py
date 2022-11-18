@@ -167,9 +167,7 @@ class AutoCausality:
         self._settings["test_size"] = test_size
         self._settings["store_all"] = store_all_estimators
         self._settings["metric"] = metric
-        self._settings["metrics_to_report"] = (
-            [] if metrics_to_report is None else metrics_to_report
-        )
+        self._settings["metrics_to_report"] = metrics_to_report
 
         # user can choose between flaml and dummy for propensity model.
         if propensity_model == "dummy":
@@ -283,7 +281,12 @@ class AutoCausality:
             )
 
         # This must be stateful because we need to train the treatment propensity function
-        self.scorer = Scorer(self.causal_model, self.propensity_model, self.problem)
+        self.scorer = Scorer(
+            self.causal_model,
+            self.propensity_model,
+            self.problem,
+            treatment_is_multivalue(self._treatment_values),
+        )
 
         self.metric = self.scorer.resolve_metric(self._settings["metric"])
         self.metrics_to_report = self.scorer.resolve_reported_metrics(

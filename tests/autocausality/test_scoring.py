@@ -56,7 +56,12 @@ def simple_model_run(rscorer=False):
         },
     )
 
-    scorer = Scorer(causal_model, DummyClassifier(strategy="prior"), problem="backdoor")
+    scorer = Scorer(
+        causal_model,
+        DummyClassifier(strategy="prior"),
+        problem="backdoor",
+        multivalue=False,
+    )
 
     # TODO: can we use scorer.psw_estimator instead of the estimator here?
 

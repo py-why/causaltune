@@ -4,7 +4,7 @@ import warnings
 from sklearn.model_selection import train_test_split
 
 from auto_causality import AutoCausality
-from auto_causality.datasets import synth_ihdp, linear
+from auto_causality.datasets import synth_ihdp, linear_multi_dataset
 from auto_causality.data_utils import preprocess_dataset
 from auto_causality.params import SimpleParamService
 
@@ -81,7 +81,7 @@ class TestEndToEnd(object):
         print(f"Best estimator: {auto_causality.best_estimator}")
 
     def test_endtoend_multivalue(self):
-        data = linear(10000)
+        data = linear_multi_dataset(10000)
         train_data, test_data = train_test_split(data.data, train_size=0.9)
         cfg = SimpleParamService(
             propensity_model=None,

@@ -1,8 +1,10 @@
-from typing import List, Any, Union
+from typing import List, Any, Union, Optional
 
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import RobustScaler
+
+from auto_causality.datasets import CausalityDataset
 
 
 def featurize(
@@ -84,11 +86,10 @@ def otherize_tail(
 
 
 def preprocess_dataset(
-    data: pd.DataFrame,
-    treatment: str,
-    targets: Union[str, List[str]],
-    instruments: List[str] = [],
-    propensity_to_treat: str = None,
+    data: Union[pd.DataFrame, CausalityDataset],
+    treatment: Optional[str] = None,
+    targets: Optional[Union[str, List[str]]] = None,
+    instruments: List[str] = None,
     drop_first: bool = False,
     scale_floats: bool = False,
     prune_min_categories: int = 50,
@@ -106,6 +107,9 @@ def preprocess_dataset(
 
     if isinstance(targets, str):
         targets = [targets]
+
+    if instruments is None:
+        instruments = []
 
     cols_to_exclude = [treatment] + targets + instruments
     for c in cols_to_exclude:
@@ -126,6 +130,71 @@ def preprocess_dataset(
         data,
         features=features,
         exclude_cols=cols_to_exclude,
+        drop_first=drop_first,
+        scale_floats=scale_floats,
+        prune_min_categories=prune_min_categories,
+        prune_thresh=prune_thresh,
+    )
+    used_features = [c for c in used_df.columns if c not in cols_to_exclude]
+
+    # Let's treat all features as effect modifiers
+    features_X = [f for f in used_features if f != "random"]
+    features_W = [f for f in used_features if f not in features_X]
+
+    return used_df, features_X, features_W
+
+
+def preprocess_dataset_new(
+    data: CausalityDataset,
+    drop_first: bool = False,
+    scale_floats: bool = False,
+    prune_min_categories: int = 50,
+    prune_thresh: float = 0.99,
+) -> tuple:
+    """preprocesses dataset for causal inference
+    Args:
+        data (pd.DataFrame): a dataset for causal inference
+        treatment: name of treatment column
+        targets: target column name or list of target column names
+
+    Returns:
+        tuple: dataset, features_x, features_w
+    """
+
+    if not data.common_causes:
+        # this is a trick to bypass a DoWhy bug
+        if "random" not in data.columns:
+            data.data["random"] = np.random.randint(0, 2, size=len(data))
+            data.common_causes = ["random"]
+        else:
+            raise ValueError(
+                "Column name 'random' is not allowed if common_causes field is missing"
+            )
+
+    cols_to_exclude = (
+        [data.treatment]
+        + data.outcomes
+        + data.instruments
+        + data.common_causes
+        + data.propensity_modifiers
+    )
+
+    if not data.effect_modifiers:
+        data.effect_modifiers = [c for c in data.columns if c not in cols_to_exclude]
+
+    data.data[data.treatment] = data.data[data.treatment].astype(int)
+    data.data[data.instruments] = data.data[data.instruments].astype(int)
+
+    features = sorted(
+        list(
+            set(data.common_causes + data.effect_modifiers + data.propensity_modifiers)
+        )
+    )
+
+    data.used_df = featurize(
+        data,
+        features=features,
+        exclude_cols=[data.treatment] + data.outcomes + data.instruments,
         drop_first=drop_first,
         scale_floats=scale_floats,
         prune_min_categories=prune_min_categories,
