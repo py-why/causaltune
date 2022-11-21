@@ -5,7 +5,6 @@ from sklearn.model_selection import train_test_split
 
 from auto_causality import AutoCausality
 from auto_causality.datasets import synth_ihdp, linear_multi_dataset
-from auto_causality.data_utils import preprocess_dataset
 from auto_causality.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
@@ -41,13 +40,8 @@ class TestEndToEnd(object):
         from auto_causality.shap import shap_values  # noqa F401
 
         data = synth_ihdp()
-        treatment = data.treatment
-        targets = data.outcomes
-        data_df, features_X, features_W = preprocess_dataset(
-            data.data,
-            data.treatment,
-            data.outcomes,
-        )
+        data.preprocess_dataset()
+
         cfg = SimpleParamService(
             propensity_model=None,
             outcome_model=None,
@@ -56,7 +50,7 @@ class TestEndToEnd(object):
             multivalue=False,
         )
         estimator_list = cfg.estimator_names_from_patterns("backdoor", "all", 1)
-        outcome = targets[0]
+        # outcome = targets[0]
         auto_causality = AutoCausality(
             num_samples=len(estimator_list),
             components_time_budget=10,
@@ -67,7 +61,7 @@ class TestEndToEnd(object):
             resources_per_trial={"cpu": 0.5},
         )
 
-        auto_causality.fit(data_df, treatment, outcome, features_W, features_X)
+        auto_causality.fit(data)
 
         # now let's test Shapley values calculation
         for est_name, scores in auto_causality.scores.items():
@@ -76,7 +70,7 @@ class TestEndToEnd(object):
             if "Dummy" not in est_name and "Ortho" not in est_name:
 
                 print("Calculating Shapley values for", est_name)
-                shap_values(scores["estimator"], data_df[:10])
+                shap_values(scores["estimator"], data.data[:10])
 
         print(f"Best estimator: {auto_causality.best_estimator}")
 
@@ -96,13 +90,7 @@ class TestEndToEnd(object):
             num_samples=len(estimator_list),
             components_time_budget=10,
         )
-        ac.fit(
-            train_data,
-            data.treatment,
-            data.outcomes[0],
-            data.common_causes,
-            data.effect_modifiers,
-        )
+        ac.fit(data)
         # TODO add an effect() call and an effect_tt call
 
 

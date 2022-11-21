@@ -2,7 +2,6 @@ import pytest
 import warnings
 
 from auto_causality.datasets import synth_ihdp
-from auto_causality.data_utils import preprocess_dataset
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
@@ -21,18 +20,11 @@ class TestEndToEndAutoMLPropensity(object):
         from auto_causality import AutoCausality  # noqa F401
         from auto_causality.shap import shap_values  # noqa F401
 
-        treatment = "treatment"
-        targets = ["y_factual"]
         data = synth_ihdp()
-        data_df, features_X, features_W = preprocess_dataset(
-            data.data,
-            data.treatment,
-            data.outcomes,
-        )
+        data.preprocess_dataset()
 
         estimator_list = "all"
 
-        outcome = targets[0]
         auto_causality = AutoCausality(
             components_time_budget=10,
             estimator_list=estimator_list,
@@ -44,7 +36,7 @@ class TestEndToEndAutoMLPropensity(object):
             resources_per_trial={"cpu": 0.5},
         )
 
-        auto_causality.fit(data_df, treatment, outcome, features_W, features_X)
+        auto_causality.fit(data)
 
         # now let's test Shapley values calculation
         for est_name, scores in auto_causality.scores.items():
@@ -53,7 +45,7 @@ class TestEndToEndAutoMLPropensity(object):
             if "Dummy" not in est_name and "Ortho" not in est_name:
 
                 print("Calculating Shapley values for", est_name)
-                shap_values(scores["estimator"], data_df[:10])
+                shap_values(scores["estimator"], data.data[:10])
 
         print(f"Best estimator: {auto_causality.best_estimator}")
 

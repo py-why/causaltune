@@ -1,22 +1,11 @@
 import pandas as pd
 import numpy as np
 from scipy import special
-from dataclasses import dataclass, field
 
-from typing import List, Union, Optional
+from typing import Union
 
+from auto_causality.data_utils import CausalityDataset
 from auto_causality.utils import generate_psdmat
-
-
-@dataclass
-class CausalityDataset:
-    data: pd.DataFrame
-    treatment: str
-    outcomes: List[str]
-    instruments: List[str] = field(default_factory=list)
-    common_causes: Optional[List[str]] = None
-    effect_modifiers: Optional[List[str]] = None
-    propensity_modifiers: List[str] = field(default_factory=list)
 
 
 def linear_multi_dataset(n_points=10000, impact=None) -> CausalityDataset:

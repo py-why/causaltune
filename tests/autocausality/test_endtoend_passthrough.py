@@ -2,7 +2,6 @@ import pytest
 import warnings
 
 from auto_causality.datasets import generate_synthetic_data
-from auto_causality.data_utils import preprocess_dataset
 from auto_causality.models.passthrough import Passthrough
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
@@ -28,7 +27,7 @@ class TestEndToEndPassthrough(object):
             noisy_outcomes=True,
         )
 
-        data_df, features_X, features_W = preprocess_dataset(data)
+        data.preprocess_dataset()
 
         auto_causality = AutoCausality(
             components_time_budget=10,
@@ -41,9 +40,7 @@ class TestEndToEndPassthrough(object):
             resources_per_trial={"cpu": 0.5},
         )
 
-        auto_causality.fit(
-            data_df, data.treatment, data.outcomes[0], features_W, features_X
-        )
+        auto_causality.fit(data)
 
         print(f"Best estimator: {auto_causality.best_estimator}")
 

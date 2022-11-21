@@ -21,7 +21,7 @@ from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config, treatment_is_multivalue
 from auto_causality.models.monkey_patches import AutoML
-
+from auto_causality.data_utils import CausalityDataset
 
 # Patched from sklearn.linear_model._base to adjust rtol and atol values
 def _check_precomputed_gram_matrix(
@@ -210,12 +210,13 @@ class AutoCausality:
 
     def fit(
         self,
-        data_df: pd.DataFrame,
-        treatment: str,
-        outcome: str,
-        common_causes: List[str],
-        effect_modifiers: List[str],
+        data: Union[pd.DataFrame, CausalityDataset],
+        treatment: str = None,
+        outcome: str = None,
+        common_causes: List[str] = None,
+        effect_modifiers: List[str] = None,
         instruments: List[str] = None,
+        propensity_modifiers: Optional[List[str]] = None,
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
@@ -236,12 +237,20 @@ class AutoCausality:
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
 
         """
+        if not isinstance(data, CausalityDataset):
+            assert isinstance(data, pd.DataFrame)
+            data = CausalityDataset(
+                data,
+                treatment,
+                outcome,
+                common_causes=common_causes,
+                effect_modifiers=effect_modifiers,
+                instruments=instruments,
+                propensity_modifiers=propensity_modifiers,
+            )
 
-        assert isinstance(
-            treatment, str
-        ), "Only a single treatment supported at the moment"
-
-        treatment_values = np.sort(data_df[treatment].unique())
+        self.data = data
+        treatment_values = data.treatment_values
 
         assert (
             len(treatment_values) > 1
@@ -250,20 +259,18 @@ class AutoCausality:
         self._control_value = treatment_values[0]
         self._treatment_values = list(treatment_values[1:])
 
-        # shuffle the data
-        self.data_df = data_df.sample(frac=1)
         # To be used for component model training/selection
         self.train_df, self.test_df = train_test_split(
-            self.data_df, train_size=self._settings["train_size"]
+            self.data.data, train_size=self._settings["train_size"], shuffle=True
         )
 
         self.causal_model = CausalModel(
             data=self.train_df,
-            treatment=treatment,
-            outcome=outcome,
-            common_causes=common_causes,
-            effect_modifiers=effect_modifiers,
-            instruments=instruments,
+            treatment=data.treatment,
+            outcome=data.outcomes[0],
+            common_causes=data.common_causes,
+            effect_modifiers=data.effect_modifiers,
+            instruments=data.instruments,
         )
 
         self.identified_estimand: IdentifiedEstimand = (
@@ -317,7 +324,7 @@ class AutoCausality:
         self.estimator_list = self.cfg.estimator_names_from_patterns(
             self.problem,
             used_estimator_list,
-            len(data_df),
+            len(self.data),
         )
 
         if not self.estimator_list:

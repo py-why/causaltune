@@ -6,9 +6,7 @@ import pandas as pd
 RANDOM_COL = "Random"
 
 
-def get_cumlift(
-    df, outcome_col="y", treatment_col="w", treatment_effect_col="tau", random_seed=42
-):
+def get_cumlift(df, outcome_col="y", treatment_col="w", treatment_effect_col="tau"):
     """Get average uplifts of model estimates in cumulative population.
 
     If the true treatment effect is provided (e.g. in synthetic data), it's calculated
@@ -27,8 +25,6 @@ def get_cumlift(
         outcome_col (str, optional): the column name for the actual outcome
         treatment_col (str, optional): the column name for the treatment indicator (0 or 1)
         treatment_effect_col (str, optional): the column name for the true treatment effect
-        random_seed (int, optional): random seed for numpy.random.rand()
-
     Returns:
         (pandas.DataFrame): average uplifts of model estimates in cumulative population
     """
@@ -40,7 +36,6 @@ def get_cumlift(
     )
 
     df = df.copy()
-    np.random.seed(random_seed)
     random_cols = []
     for i in range(10):
         random_col = "__random_{}__".format(i)
@@ -96,7 +91,6 @@ def get_cumgain(
     treatment_col="w",
     treatment_effect_col="tau",
     normalize=False,
-    random_seed=42,
 ):
     """Get cumulative gains of model estimates in population.
 
@@ -117,15 +111,12 @@ def get_cumgain(
         treatment_col (str, optional): the column name for the treatment indicator (0 or 1)
         treatment_effect_col (str, optional): the column name for the true treatment effect
         normalize (bool, optional): whether to normalize the y-axis to 1 or not
-        random_seed (int, optional): random seed for numpy.random.rand()
 
     Returns:
         (pandas.DataFrame): cumulative gains of model estimates in population
     """
 
-    lift = get_cumlift(
-        df, outcome_col, treatment_col, treatment_effect_col, random_seed
-    )
+    lift = get_cumlift(df, outcome_col, treatment_col, treatment_effect_col)
 
     # cumulative gain = cumulative lift x (# of population)
     gain = lift.mul(lift.index.values, axis=0)
@@ -142,7 +133,6 @@ def get_qini(
     treatment_col="w",
     treatment_effect_col="tau",
     normalize=False,
-    random_seed=42,
 ):
     """Get Qini of model estimates in population.
 
@@ -163,7 +153,6 @@ def get_qini(
         treatment_col (str, optional): the column name for the treatment indicator (0 or 1)
         treatment_effect_col (str, optional): the column name for the true treatment effect
         normalize (bool, optional): whether to normalize the y-axis to 1 or not
-        random_seed (int, optional): random seed for numpy.random.rand()
 
     Returns:
         (pandas.DataFrame): cumulative gains of model estimates in population
@@ -175,7 +164,6 @@ def get_qini(
     )
 
     df = df.copy()
-    np.random.seed(random_seed)
     random_cols = []
     for i in range(10):
         random_col = "__random_{}__".format(i)
