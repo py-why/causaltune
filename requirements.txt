@@ -8,3 +8,4 @@ scikit_learn==1.0.2
 matplotlib~=3.5
 dcor
 holidays
+setuptools==65.5.1
