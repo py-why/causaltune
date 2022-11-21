@@ -6,6 +6,7 @@ import numpy as np
 from .wrapper import DoWhyMethods, DoWhyWrapper
 from auto_causality.shap import shap_with_automl
 
+
 # TODO: generalize to multi-value discrete treatment
 def transformed_outcome(
     treatment: np.ndarray, outcome: np.ndarray, p: np.ndarray

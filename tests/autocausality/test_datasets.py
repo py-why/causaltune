@@ -1,8 +1,6 @@
 import pytest
 import sys
 import subprocess
-import auto_causality.data_utils
-import auto_causality.utils
 from auto_causality import datasets
 from auto_causality.datasets import CausalityDataset
 

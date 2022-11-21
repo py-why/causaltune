@@ -1,6 +1,6 @@
 from flaml import tune
 from copy import deepcopy
-from typing import Optional, Sequence, Union, Iterable, Any, Dict
+from typing import Optional, Sequence, Union, Iterable, Dict
 from dataclasses import dataclass, field
 
 import warnings

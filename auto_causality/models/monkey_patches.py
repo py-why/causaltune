@@ -4,7 +4,6 @@ import numpy as np
 from numpy.distutils.misc_util import is_sequence
 
 import pandas as pd
-from sklearn import linear_model
 from flaml import AutoML as FLAMLAutoML
 
 from dowhy.causal_estimator import CausalEstimator

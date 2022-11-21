@@ -23,6 +23,7 @@ from auto_causality.utils import clean_config, treatment_is_multivalue
 from auto_causality.models.monkey_patches import AutoML
 from auto_causality.data_utils import CausalityDataset
 
+
 # Patched from sklearn.linear_model._base to adjust rtol and atol values
 def _check_precomputed_gram_matrix(
     X, precompute, X_offset, X_scale, rtol=1e-4, atol=1e-2

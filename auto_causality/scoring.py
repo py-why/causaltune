@@ -12,7 +12,7 @@ from dowhy import CausalModel
 
 from auto_causality.thirdparty.causalml import metrics
 from auto_causality.erupt import ERUPT
-from auto_causality.utils import treatment_values, treatment_is_multivalue
+from auto_causality.utils import treatment_values
 
 import dcor
 
@@ -119,7 +119,8 @@ class Scorer:
 
         if metric not in metrics:
             logging.warning(
-                f"Using energy_distance metric as {metric} is not in the list of supported metrics for this usecase ({str(metrics)})"
+                f"Using energy_distance metric as {metric} is not in the list "
+                f"of supported metrics for this usecase ({str(metrics)})"
             )
             return "energy_distance"
         else:

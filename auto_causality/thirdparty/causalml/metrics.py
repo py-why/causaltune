@@ -209,7 +209,7 @@ def get_qini(
     qini.drop(random_cols, axis=1, inplace=True)
 
     # this is just here to set a conditional breakpoint
-    out = (qini.sum(axis=0) - qini[RANDOM_COL].sum()) / qini.shape[0]
+    # out = (qini.sum(axis=0) - qini[RANDOM_COL].sum()) / qini.shape[0]
 
     # what is the biggest theoretical value that the qini above can reach?
     trt = (
