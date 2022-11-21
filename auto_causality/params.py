@@ -188,6 +188,7 @@ class SimpleParamService:
             ),
             "backdoor.econml.metalearners.SLearner": EstimatorConfig(
                 init_params={"overall_model": outcome_model},
+                supports_multivalue=True,
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -195,6 +196,7 @@ class SimpleParamService:
             ),
             "backdoor.econml.metalearners.TLearner": EstimatorConfig(
                 init_params={"models": outcome_model},
+                supports_multivalue=True,
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -205,6 +207,7 @@ class SimpleParamService:
                     "propensity_model": propensity_model,
                     "models": outcome_model,
                 },
+                supports_multivalue=True,
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -216,6 +219,7 @@ class SimpleParamService:
                     "models": outcome_model,
                     "final_models": final_model,
                 },
+                supports_multivalue=True,
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -257,6 +261,7 @@ class SimpleParamService:
                     "honest": True,
                     "subforest_size": 4,
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dr.LinearDRLearner": EstimatorConfig(
                 init_params={
@@ -273,6 +278,7 @@ class SimpleParamService:
                     "fit_cate_intercept": True,
                     "min_propensity": 1e-6,
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dr.SparseLinearDRLearner": EstimatorConfig(
                 init_params={
@@ -299,6 +305,7 @@ class SimpleParamService:
                     "max_iter": 10000,
                     "mc_agg": "mean",
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dml.LinearDML": EstimatorConfig(
                 init_params={
@@ -346,6 +353,7 @@ class SimpleParamService:
                     "max_iter": 10000,
                     "mc_agg": "mean",
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dml.CausalForestDML": EstimatorConfig(
                 init_params={
@@ -396,6 +404,7 @@ class SimpleParamService:
                     "fit_intercept": True,
                     "subforest_size": 4,
                 },
+                supports_multivalue=True,
             ),
             "backdoor.auto_causality.models.TransformedOutcome": EstimatorConfig(
                 init_params={
@@ -443,6 +452,7 @@ class SimpleParamService:
                     "lambda_reg": 0.01,
                 },
                 experimental=True,  # OrthoForest estimators are notoriously slow
+                supports_multivalue=True,
             ),
             "backdoor.econml.orf.DMLOrthoForest": EstimatorConfig(
                 init_params={
@@ -475,6 +485,7 @@ class SimpleParamService:
                     "lambda_reg": 0.01,
                 },
                 experimental=True,  # OrthoForest estimators are notoriously slow
+                supports_multivalue=True,
             ),
             "iv.econml.iv.dr.LinearDRIV": EstimatorConfig(
                 init_params={

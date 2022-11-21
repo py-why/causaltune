@@ -1,7 +1,9 @@
 import pytest
 import warnings
 
-from auto_causality.datasets import synth_ihdp
+from auto_causality import AutoCausality
+from auto_causality.datasets import synth_ihdp, linear_multi_dataset
+from auto_causality.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
@@ -17,7 +19,6 @@ class TestEndToEndAutoMLPropensity(object):
     def test_endtoend(self):
         """tests if model can be instantiated and fit to data"""
 
-        from auto_causality import AutoCausality  # noqa F401
         from auto_causality.shap import shap_values  # noqa F401
 
         data = synth_ihdp()
@@ -48,6 +49,31 @@ class TestEndToEndAutoMLPropensity(object):
                 shap_values(scores["estimator"], data.data[:10])
 
         print(f"Best estimator: {auto_causality.best_estimator}")
+
+    def test_endtoend_multivalue_propensity(self):
+        data = linear_multi_dataset(10000)
+
+        cfg = SimpleParamService(
+            propensity_model=None,
+            outcome_model=None,
+            n_jobs=-1,
+            include_experimental=False,
+            multivalue=True,
+        )
+
+        estimator_list = cfg.estimator_names_from_patterns(
+            "backdoor", "all", data_rows=len(data)
+        )
+
+        ac = AutoCausality(
+            estimator_list="all",
+            propensity_model="auto",
+            num_samples=len(estimator_list),
+            components_time_budget=10,
+        )
+        ac.fit(data)
+        # TODO add an effect() call and an effect_tt call
+        print("yay!")
 
 
 if __name__ == "__main__":

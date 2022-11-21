@@ -1,7 +1,6 @@
 import pytest
 import warnings
 
-from sklearn.model_selection import train_test_split
 
 from auto_causality import AutoCausality
 from auto_causality.datasets import synth_ihdp, linear_multi_dataset
@@ -76,7 +75,6 @@ class TestEndToEnd(object):
 
     def test_endtoend_multivalue(self):
         data = linear_multi_dataset(10000)
-        train_data, test_data = train_test_split(data.data, train_size=0.9)
         cfg = SimpleParamService(
             propensity_model=None,
             outcome_model=None,
@@ -84,14 +82,18 @@ class TestEndToEnd(object):
             include_experimental=False,
             multivalue=True,
         )
-        estimator_list = cfg.estimator_names_from_patterns("backdoor", "all", 1)
+        estimator_list = cfg.estimator_names_from_patterns(
+            "backdoor", "all", data_rows=len(data)
+        )
 
         ac = AutoCausality(
+            estimator_list="all",
             num_samples=len(estimator_list),
             components_time_budget=10,
         )
         ac.fit(data)
         # TODO add an effect() call and an effect_tt call
+        print("yay!")
 
 
 if __name__ == "__main__":
