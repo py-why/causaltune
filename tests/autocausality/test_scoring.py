@@ -4,13 +4,9 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.dummy import DummyClassifier
 
 from dowhy import CausalModel
-from econml.cate_interpreter import SingleTreeCateInterpreter
-import pandas as pd
-import numpy as np
 
 from auto_causality.datasets import synth_ihdp
 from auto_causality.scoring import Scorer, supported_metrics
-from auto_causality.r_score import RScoreWrapper
 
 
 def simple_model_run(rscorer=False):

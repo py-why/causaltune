@@ -50,4 +50,4 @@ class TestMultivalueBasic(object):
             },
         )
 
-        est_test = est_2.estimator.effect(X_test)
+        est_2.estimator.effect(X_test)
