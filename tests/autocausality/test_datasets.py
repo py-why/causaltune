@@ -29,7 +29,7 @@ def check_preprocessor(cd: CausalityDataset):
     Args:
         df (pd.DataFrame): dataset for causal inference, with cols for treatment, outcome and covariates
     """
-    x = cd.preprocess_dataset()
+    cd.preprocess_dataset()
 
 
 class TestDatasets:

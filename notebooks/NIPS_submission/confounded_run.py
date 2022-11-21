@@ -225,7 +225,8 @@
 #                     #                         CATE_est = scr[i_run]["test"]["CATE_estimate"]
 #                     #                         mse=np.mean((CATE_gt-CATE_est)**2)
 #                     #                         score = scr[i_run]["test"][metric]
-#                     #                         plt.scatter(mse,score,color=scale_lightness(col_rgb,lightness[i_run-1]),s=30,linewidths=0.5, label="_nolegend_" )
+#                     #                         plt.scatter(mse,score,color=scale_lightness(col_rgb,
+#                     # lightness[i_run-1]),s=30,linewidths=0.5, label="_nolegend_" )
 #                     # get score for best estimator:
 #                     CATE_gt = scr[0]["test"]["CATE_groundtruth"]
 #                     CATE_est = scr[0]["test"]["CATE_estimate"]
