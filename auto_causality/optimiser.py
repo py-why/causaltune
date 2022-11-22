@@ -265,11 +265,12 @@ class AutoCausality:
             self.data.data, train_size=self._settings["train_size"], shuffle=True
         )
 
+        # smuggle propensity modifiers into common causes, filter later in component models
         self.causal_model = CausalModel(
             data=self.train_df,
             treatment=data.treatment,
             outcome=data.outcomes[0],
-            common_causes=data.common_causes,
+            common_causes=data.common_causes + data.propensity_modifiers,
             effect_modifiers=data.effect_modifiers,
             instruments=data.instruments,
         )

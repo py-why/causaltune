@@ -8,7 +8,9 @@ from auto_causality.data_utils import CausalityDataset
 from auto_causality.utils import generate_psdmat
 
 
-def linear_multi_dataset(n_points=10000, impact=None) -> CausalityDataset:
+def linear_multi_dataset(
+    n_points=10000, impact=None, include_propensity=False, include_control=False
+) -> CausalityDataset:
     if impact is None:
         impact = {0: 0.0, 1: 2.0, 2: 1.0}
     df = pd.DataFrame(
@@ -19,12 +21,24 @@ def linear_multi_dataset(n_points=10000, impact=None) -> CausalityDataset:
         }
     )
     df["Y"] = df["X"] + df["T"].apply(lambda x: impact[x])
+
+    propensity_modifiers = []
+    if include_propensity:
+        skipped_first = False
+        for k in impact.keys():
+            if (not include_control) and (not skipped_first):
+                skipped_first = True
+                continue
+            df[f"propensity_{k}"] = 1.0 / len(impact)
+            propensity_modifiers.append(f"propensity_{k}")
+
     return CausalityDataset(
         data=df,
         treatment="T",
         outcomes=["Y"],
         common_causes=["W"],
         effect_modifiers=["X"],
+        propensity_modifiers=propensity_modifiers,
     )
 
 

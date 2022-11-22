@@ -53,6 +53,7 @@ class DoWhyWrapper(CausalEstimator):
         self.estimator = inner_class(
             treatment=self._treatment_name,
             outcome=self._outcome_name,
+            # TODO: feed through the propensity modifiers where available
             propensity_modifiers=effect_modifiers + self._observed_common_causes_names,
             outcome_modifiers=effect_modifiers + self._observed_common_causes_names,
             effect_modifiers=effect_modifiers,

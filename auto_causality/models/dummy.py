@@ -120,9 +120,14 @@ class PropensityScoreWeighter(DoWhyMethods):
         min_ps_score: float = 0.05,
         control_value: Any = 0,
     ):
-        self.propensity_modifiers = propensity_modifiers
         self.outcome_modifiers = outcome_modifiers
         self.effect_modifiers = effect_modifiers
+        self.propensity_modifiers = (
+            propensity_modifiers
+            if propensity_modifiers
+            else self.effect_modifiers + self.outcome_modifiers
+        )
+
         self.treatment = treatment
         self.outcome = outcome
         self.propensity_function = propensity_function
@@ -133,10 +138,10 @@ class PropensityScoreWeighter(DoWhyMethods):
         self._treatment_value = sorted(
             [v for v in df[self.treatment].unique() if v != self._control_value]
         )
-        self.propensity_function.fit(df[self.effect_modifiers], df[self.treatment])
+        self.propensity_function.fit(df[self.propensity_modifiers], df[self.treatment])
 
     def predict(self, X: pd.DataFrame):
-        p = self.propensity_function.predict_proba(X[self.effect_modifiers])
+        p = self.propensity_function.predict_proba(X[self.propensity_modifiers])
         p = np.clip(p, self.min_ps_score, 1 - self.min_ps_score)
         est = np.ones((len(X), len(self._treatment_value)))
         for i, v in enumerate(self._treatment_value):
