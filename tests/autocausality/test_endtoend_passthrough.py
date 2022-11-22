@@ -2,7 +2,7 @@ import pytest
 import warnings
 
 from auto_causality.datasets import generate_synthetic_data, linear_multi_dataset
-from auto_causality.models.passthrough import Passthrough
+from auto_causality.models.passthrough import passthrough_model
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
@@ -36,7 +36,7 @@ class TestEndToEndPassthrough(object):
             use_ray=False,
             verbose=4,
             components_verbose=2,
-            propensity_model=Passthrough("propensity"),
+            propensity_model=passthrough_model("propensity"),
             resources_per_trial={"cpu": 0.5},
         )
 
@@ -63,7 +63,7 @@ class TestEndToEndPassthrough(object):
                 use_ray=False,
                 verbose=4,
                 components_verbose=2,
-                propensity_model=Passthrough(
+                propensity_model=passthrough_model(
                     data.propensity_modifiers, include_control=include_control
                 ),
                 resources_per_trial={"cpu": 0.5},
@@ -76,4 +76,3 @@ class TestEndToEndPassthrough(object):
 
 if __name__ == "__main__":
     pytest.main([__file__])
-    # TestEndToEndAutoMLPropensity().test_endtoend()

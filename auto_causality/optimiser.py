@@ -200,9 +200,6 @@ class AutoCausality:
         self.resume_scores = []
         self.resume_cfg = []
 
-        # # trained component models for each estimator
-        # self.trained_estimators_dict = {}
-
     def get_params(self, deep=False):
         return self._settings.copy()
 
@@ -232,6 +229,7 @@ class AutoCausality:
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
             effect_modifiers (List[str]): list of names of effect modifiers
+            propensity_modifiers (List[str]): list of names of propensity modifiers
             instruments (List[str]): list of names of instrumental variables
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
