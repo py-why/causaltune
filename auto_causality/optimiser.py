@@ -22,6 +22,7 @@ from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config, treatment_is_multivalue
 from auto_causality.models.monkey_patches import AutoML
 from auto_causality.data_utils import CausalityDataset
+from auto_causality.models.passthrough import feature_filter
 
 
 # Patched from sklearn.linear_model._base to adjust rtol and atol values
@@ -169,24 +170,7 @@ class AutoCausality:
         self._settings["store_all"] = store_all_estimators
         self._settings["metric"] = metric
         self._settings["metrics_to_report"] = metrics_to_report
-
-        # user can choose between flaml and dummy for propensity model.
-        if propensity_model == "dummy":
-            self.propensity_model = DummyClassifier(strategy="prior")
-        elif propensity_model == "auto":
-            self.propensity_model = AutoML(
-                **{**self._settings["component_models"], "task": "classification"}
-            )
-        elif hasattr(propensity_model, "fit") and hasattr(
-            propensity_model, "predict_proba"
-        ):
-            self.propensity_model = propensity_model
-        else:
-            raise ValueError(
-                'propensity_model valid values are "dummy", "auto", or a classifier object'
-            )
-
-        self.outcome_model = AutoML(**self._settings["component_models"])
+        self._settings["propensity_model"] = propensity_model
 
         self.results = None
         self._best_estimators = defaultdict(lambda: (float("-inf"), None))
@@ -205,6 +189,23 @@ class AutoCausality:
 
     def get_estimators(self, deep=False):
         return self.estimator_list.copy()
+
+    def init_propensity_model(self, propensity_model: str):
+        # user can choose between flaml and dummy for propensity model.
+        if propensity_model == "dummy":
+            self.propensity_model = DummyClassifier(strategy="prior")
+        elif propensity_model == "auto":
+            self.propensity_model = AutoML(
+                **{**self._settings["component_models"], "task": "classification"}
+            )
+        elif hasattr(propensity_model, "fit") and hasattr(
+            propensity_model, "predict_proba"
+        ):
+            self.propensity_model = propensity_model
+        else:
+            raise ValueError(
+                'propensity_model valid values are "dummy", "auto", or a classifier object'
+            )
 
     def fit(
         self,
@@ -272,6 +273,26 @@ class AutoCausality:
             effect_modifiers=data.effect_modifiers,
             instruments=data.instruments,
         )
+
+        self.init_propensity_model(self._settings["propensity_model"])
+        # if we are only supplying certain features to the propensity function,
+        # make them invisible to the outcome component model
+        # This is a workaround for the DoWhy/EconML data model which doesn't
+        # support that out of the box
+        propensity_only_cols = [
+            p
+            for p in data.propensity_modifiers
+            if p not in data.common_causes + data.effect_modifiers
+        ]
+
+        if len(propensity_only_cols):
+            outcome_model_class = feature_filter(
+                AutoML, data.effect_modifiers + data.common_causes, first_cols=True
+            )
+        else:
+            outcome_model_class = AutoML
+        # outcome_model_class = AutoML
+        self.outcome_model = outcome_model_class(**self._settings["component_models"])
 
         self.identified_estimand: IdentifiedEstimand = (
             self.causal_model.identify_effect(proceed_when_unidentifiable=True)

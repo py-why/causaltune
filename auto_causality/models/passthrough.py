@@ -1,4 +1,5 @@
-from typing import Union, List, Any
+from typing import Union, List
+import copy
 
 import pandas as pd
 import numpy as np
@@ -17,7 +18,7 @@ def feature_filter(ModelType: type, col_names: List[str], first_cols: bool = Fal
         def __init__(self, *args, **kwargs):
             super(FilterFeatures, self).__init__(*args, **kwargs)
 
-            self.col_names = col_names
+            self.col_names = copy.deepcopy(col_names)
             assert all([isinstance(c, str) for c in self.col_names])
 
             self.first_cols = first_cols
@@ -32,14 +33,17 @@ def feature_filter(ModelType: type, col_names: List[str], first_cols: bool = Fal
                 else:
                     return X[:, -len(self.col_names) :]
 
-        def fit(self, X, *args, **kwargs) -> None:
+        def fit(self, X: Union[pd.DataFrame, np.ndarray], *args, **kwargs) -> None:
             super().fit(self.filter_X(X), *args, **kwargs)
 
         def predict_proba(self, X: Union[pd.DataFrame, np.ndarray], *args, **kwargs):
             return super().predict_proba(self.filter_X(X), *args, **kwargs)
 
-        def predict(self, X: pd.DataFrame, *args, **kwargs):
+        def predict(self, X: Union[pd.DataFrame, np.ndarray], *args, **kwargs):
             return super().predict(self.filter_X(X), *args, **kwargs)
+
+        def score(self, X: Union[pd.DataFrame, np.ndarray], *args, **kwargs):
+            return super().score(self.filter_X(X), *args, **kwargs)
 
     return FilterFeatures
 
@@ -74,6 +78,10 @@ class PassthroughInner:
         assert all(out.sum(axis=1) > 0.999)
 
         return out
+
+    # This is needed for the FilterFeatures wrapper to work
+    def score(self, *args, **kwargs):
+        return 0.0
 
 
 def passthrough_model(col_names: Union[str, List[str]], include_control: bool = False):
