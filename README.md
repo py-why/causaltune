@@ -37,7 +37,7 @@ impact in the next iteration.
 
 **Currently tested and used: binary treatment, strictly random assignment**.
 
-**In testing: Multiple (categorical) treatments** Currently at PR stage, expected to merge within days
+**Freshly merged: Multiple (categorical) treatments** Just merged into main, tests pass but hasn't been tested by extensive usage yet
 
 
 ### 2. Continuous testing combined with exploitation
@@ -49,7 +49,7 @@ applied to keep refining our impact estimates.
 Thus, there is no need to either wait for the test to gather enough data for significance, nor to ever end the
 test, before using its results to assign the most impactful treatment to each customer.
 
-**In development** (expected within a week): **Taking propensity to treat from a column in the supplied dataset**.
+**Freshly merged: Taking propensity to treat from a column in the supplied dataset** Just merged into main, tests pass but hasn't been tested by extensive usage yet
 
 ### 3. Observational inference
 The traditional application of causal inference. For example, estimating the impact on
@@ -101,20 +101,16 @@ The autocausality package can be used like a scikit-style estimator:
 ```Python
 from auto_causality import AutoCausality
 from auto_causality.datasets import synth_ihdp
-from auto_causality.data_utils import preprocess_dataset
 
 # prepare dataset
-data_df = synth_ihdp()
-treatment = 'treatment'
-targets=['y_factual']
-data_df, features_X, features_W = preprocess_dataset(data_df, treatment, targets)
+data = synth_ihdp()
+data.preprocess_dataset()
 
 # init autocausality object with chosen metric to optimise
 ac = AutoCausality(time_budget=10, metric='erupt')
 
 # run autocausality
-myresults = ac.fit(data_df, treatment, targets[0],
-                   features_W, features_X)
+myresults = ac.fit(data)
 
 # return best estimator
 print(f"Best estimator: {ac.best_estimator}")
@@ -143,6 +139,7 @@ The package supports the following causal models:
 
 ## Supported Metrics
 We support a variety of different metrics that quantify the performance of a causal model:
+* Energy distance
 * ERUPT (Expected Response Under Proposed Treatments)
 * Qini coefficient
 * AUC (area under curve)
