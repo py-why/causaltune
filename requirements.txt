@@ -1,4 +1,4 @@
-git+https://github.com/EgorKraevTransferwise/dowhy@696679a#egg=dowhy
+git+https://github.com/py-why/dowhy@9d0d5d8#egg=dowhy
 econml==0.12.0
 FLAML==1.0.7
 numpy~=1.23.1
@@ -9,3 +9,4 @@ matplotlib~=3.5
 dcor
 holidays
 setuptools==65.5.1
+
