@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Callable, Any
 
 import numpy as np
 import pandas as pd
@@ -63,13 +63,14 @@ class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
 
         return effect
 
-    # TODO: delete this once PR #486 is merged in dowhy
-    def _estimate_effect(self):
-        self._refresh_propensity_score()
-        return super()._estimate_effect()
+    # # TODO: delete this once PR #486 is merged in dowhy
+    # def _estimate_effect(self):
+    #     self._refresh_propensity_score()
+    #     return super()._estimate_effect()
 
 
-class NewDummy(PropensityScoreWeightingEstimator):
+class NewDummy(PropensityScoreWeightingEstimator):  # OutOfSamplePSWEstimator):  #
+    identifier_method = "backdoor"
     """
     Apply a small random disturbance so the effect values are slightly different
     across units
@@ -85,11 +86,14 @@ class DummyModel(DoWhyMethods):
         self,
         propensity_modifiers: List[str],
         outcome_modifiers: List[str],
+        effect_modifiers: List[str],
         treatment: str,
         outcome: str,
+        control_value: Any,
     ):
         self.propensity_modifiers = propensity_modifiers
         self.outcome_modifiers = outcome_modifiers
+        self.effect_modifiers = effect_modifiers
         self.treatment = treatment
         self.outcome = outcome
 
@@ -104,6 +108,66 @@ class DummyModel(DoWhyMethods):
         return np.ones(len(X)) * mean_ * (1 + 0.01 * np.random.normal(size=(len(X),)))
 
 
+class PropensityScoreWeighter(DoWhyMethods):
+    def __init__(
+        self,
+        propensity_modifiers: List[str],
+        outcome_modifiers: List[str],
+        effect_modifiers: List[str],
+        treatment: str,
+        outcome: str,
+        propensity_function: Callable,
+        min_ps_score: float = 0.05,
+        control_value: Any = 0,
+    ):
+        self.outcome_modifiers = outcome_modifiers
+        self.effect_modifiers = effect_modifiers
+        self.propensity_modifiers = (
+            propensity_modifiers
+            if propensity_modifiers
+            else self.effect_modifiers + self.outcome_modifiers
+        )
+
+        self.treatment = treatment
+        self.outcome = outcome
+        self.propensity_function = propensity_function
+        self.min_ps_score = min_ps_score
+        self._control_value = control_value
+
+    def fit(self, df: pd.DataFrame):
+        self._treatment_value = sorted(
+            [v for v in df[self.treatment].unique() if v != self._control_value]
+        )
+        self.propensity_function.fit(df[self.propensity_modifiers], df[self.treatment])
+
+    def predict(self, X: pd.DataFrame):
+        p = self.propensity_function.predict_proba(X[self.propensity_modifiers])
+        p = np.clip(p, self.min_ps_score, 1 - self.min_ps_score)
+        est = np.ones((len(X), len(self._treatment_value)))
+        for i, v in enumerate(self._treatment_value):
+            base = X[self.treatment] == self._control_value
+            treat = X[self.treatment] == v
+            base_outcome = weighted_average(
+                X.loc[base, self.outcome].values, 1 / p[base, 0]
+            )
+            treat_outcome = weighted_average(
+                X.loc[treat, self.outcome].values, 1 / p[treat, 0]
+            )
+            est[:, i] *= treat_outcome - base_outcome
+        return est
+
+
+def weighted_average(x, w):
+    return (x * w).sum() / w.sum()
+
+
+class MultivaluePSW(DoWhyWrapper):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, inner_class=PropensityScoreWeighter, **kwargs)
+        self.identifier_method = "backdoor"
+
+
 class Dummy(DoWhyWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, inner_class=DummyModel, **kwargs)
+        self.identifier_method = "backdoor"

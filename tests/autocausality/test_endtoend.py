@@ -1,8 +1,10 @@
 import pytest
 import warnings
+
+
 from auto_causality import AutoCausality
-from auto_causality.datasets import synth_ihdp, iv_dgp_econml
-from auto_causality.data_utils import preprocess_dataset
+from auto_causality.datasets import synth_ihdp, linear_multi_dataset
+from auto_causality.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
@@ -37,31 +39,19 @@ class TestEndToEnd(object):
         from auto_causality.shap import shap_values  # noqa F401
 
         data = synth_ihdp()
-        treatment = data.treatment
-        targets = data.outcomes
-        data_df, features_X, features_W = preprocess_dataset(
-            data.data,
-            data.treatment,
-            data.outcomes,
-        )
+        data.preprocess_dataset()
 
-        estimator_list = [
-            "Dummy",
-            "NewDummy",
-            "SparseLinearDML",
-            "ForestDRLearner",
-            "TransformedOutcome",
-            "CausalForestDML",
-            ".LinearDML",
-            "DomainAdaptationLearner",
-            "SLearner",
-            "XLearner",
-            "TLearner",
-            "Ortho",
-        ]
-        outcome = targets[0]
+        cfg = SimpleParamService(
+            propensity_model=None,
+            outcome_model=None,
+            n_jobs=-1,
+            include_experimental=False,
+            multivalue=False,
+        )
+        estimator_list = cfg.estimator_names_from_patterns("backdoor", "all", 1)
+        # outcome = targets[0]
         auto_causality = AutoCausality(
-            time_budget=60,
+            num_samples=len(estimator_list),
             components_time_budget=10,
             estimator_list=estimator_list,  # "all",  #
             use_ray=False,
@@ -70,7 +60,7 @@ class TestEndToEnd(object):
             resources_per_trial={"cpu": 0.5},
         )
 
-        auto_causality.fit(data_df, treatment, outcome, features_W, features_X)
+        auto_causality.fit(data)
 
         # now let's test Shapley values calculation
         for est_name, scores in auto_causality.scores.items():
@@ -79,36 +69,31 @@ class TestEndToEnd(object):
             if "Dummy" not in est_name and "Ortho" not in est_name:
 
                 print("Calculating Shapley values for", est_name)
-                shap_values(scores["estimator"], data_df[:10])
+                shap_values(scores["estimator"], data.data[:10])
 
         print(f"Best estimator: {auto_causality.best_estimator}")
 
-    def test_endtoend_iv(self):
-
-        data = iv_dgp_econml()
-        treatment = data.treatment
-        targets = data.outcomes
-        instruments = data.instruments
-        data_df, features_X, features_W = preprocess_dataset(
-            data.data, treatment, targets, instruments
+    def test_endtoend_multivalue(self):
+        data = linear_multi_dataset(10000)
+        cfg = SimpleParamService(
+            propensity_model=None,
+            outcome_model=None,
+            n_jobs=-1,
+            include_experimental=False,
+            multivalue=True,
         )
-        outcome = targets[0]
-        auto_causality = AutoCausality(
-            time_budget=1000,
+        estimator_list = cfg.estimator_names_from_patterns(
+            "backdoor", "all", data_rows=len(data)
+        )
+
+        ac = AutoCausality(
+            estimator_list="all",
+            num_samples=len(estimator_list),
             components_time_budget=10,
-            propensity_model="auto",
-            resources_per_trial={"cpu": 0.5},
-            use_ray=False,
-            verbose=3,
-            components_verbose=2,
         )
-
-        auto_causality.fit(
-            data_df, treatment, outcome, features_W, features_X, instruments
-        )
-
-        for est_name, scores in auto_causality.scores.items():
-            assert est_name in auto_causality.estimator_list
+        ac.fit(data)
+        # TODO add an effect() call and an effect_tt call
+        print("yay!")
 
 
 if __name__ == "__main__":

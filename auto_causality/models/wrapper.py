@@ -3,7 +3,8 @@ from typing import List, Any, Union, Callable
 import pandas as pd
 import numpy as np
 
-from dowhy.causal_estimator import CausalEstimator, CausalEstimate
+from dowhy.causal_estimator import CausalEstimate
+from auto_causality.models.monkey_patches import CausalEstimator
 
 
 def remove_list(x: Any):
@@ -41,6 +42,9 @@ class DoWhyWrapper(CausalEstimator):
         self._treatment_name = remove_list(treatment)
         self._outcome_name = remove_list(outcome)
         self._effect_modifier_names = effect_modifiers
+        self._observed_common_causes_names = (
+            identified_estimand.get_backdoor_variables().copy()
+        )
 
         params = {} if params is None else params
         # this is a hack to accomodate different DoWhy versions
@@ -49,9 +53,12 @@ class DoWhyWrapper(CausalEstimator):
         self.estimator = inner_class(
             treatment=self._treatment_name,
             outcome=self._outcome_name,
-            propensity_modifiers=effect_modifiers,
-            outcome_modifiers=effect_modifiers,
-            **params.get("init_params", {})
+            # TODO: feed through the propensity modifiers where available
+            propensity_modifiers=effect_modifiers + self._observed_common_causes_names,
+            outcome_modifiers=effect_modifiers + self._observed_common_causes_names,
+            effect_modifiers=effect_modifiers,
+            control_value=control_value,
+            **params.get("init_params", {}),
         )
 
         self._data = data
@@ -74,7 +81,7 @@ class DoWhyWrapper(CausalEstimator):
         est = self.estimator.predict(self._data)
 
         estimate = CausalEstimate(
-            estimate=np.mean(est),
+            estimate=np.mean(est, axis=0),
             control_value=self._control_value,
             treatment_value=self._treatment_value,
             target_estimand=self._target_estimand,

@@ -10,7 +10,9 @@ class TestEstimatorListGenerator:
 
     def test_auto_list(self):
         """tests if "auto" setting yields all available estimators"""
-        cfg = SimpleParamService(propensity_model=None, outcome_model=None)
+        cfg = SimpleParamService(
+            propensity_model=None, outcome_model=None, multivalue=False
+        )
         auto_estimators_iv = cfg.estimator_names_from_patterns("iv", "auto")
         auto_estimators_backdoor = cfg.estimator_names_from_patterns("backdoor", "auto")
         # verify that returned estimator list includes all available estimators
@@ -38,7 +40,9 @@ class TestEstimatorListGenerator:
 
     def test_substring_group(self):
         """tests if substring match to group of estimators works"""
-        cfg = SimpleParamService(propensity_model=None, outcome_model=None)
+        cfg = SimpleParamService(
+            propensity_model=None, outcome_model=None, multivalue=False
+        )
 
         estimator_list = cfg.estimator_names_from_patterns("backdoor", ["dml"])
         available_estimators = [e for e in cfg._configs().keys() if "dml" in e]
@@ -53,7 +57,9 @@ class TestEstimatorListGenerator:
 
     def test_substring_single(self):
         """tests if substring match to single estimators works"""
-        cfg = SimpleParamService(propensity_model=None, outcome_model=None)
+        cfg = SimpleParamService(
+            propensity_model=None, outcome_model=None, multivalue=False
+        )
         estimator_list = cfg.estimator_names_from_patterns(
             "backdoor", ["DomainAdaptationLearner"]
         )
@@ -63,7 +69,9 @@ class TestEstimatorListGenerator:
 
     def test_checkduplicates(self):
         """tests if duplicates are removed"""
-        cfg = SimpleParamService(propensity_model=None, outcome_model=None)
+        cfg = SimpleParamService(
+            propensity_model=None, outcome_model=None, multivalue=False
+        )
         estimator_list = cfg.estimator_names_from_patterns(
             "backdoor",
             [
@@ -79,7 +87,9 @@ class TestEstimatorListGenerator:
         # this should raise a ValueError
         # unavailable estimators:
 
-        cfg = SimpleParamService(propensity_model=None, outcome_model=None)
+        cfg = SimpleParamService(
+            propensity_model=None, outcome_model=None, multivalue=False
+        )
 
         with pytest.raises(ValueError):
             cfg.estimator_names_from_patterns(

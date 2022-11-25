@@ -1,8 +1,6 @@
 import pytest
 import sys
 import subprocess
-import auto_causality.data_utils
-import auto_causality.utils
 from auto_causality import datasets
 from auto_causality.datasets import CausalityDataset
 
@@ -31,8 +29,7 @@ def check_preprocessor(cd: CausalityDataset):
     Args:
         df (pd.DataFrame): dataset for causal inference, with cols for treatment, outcome and covariates
     """
-    x = auto_causality.data_utils.preprocess_dataset(cd.data, cd.treatment, cd.outcomes)
-    assert x is not None
+    cd.preprocess_dataset()
 
 
 class TestDatasets:

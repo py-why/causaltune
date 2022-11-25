@@ -1,20 +1,48 @@
 import pandas as pd
 import numpy as np
 from scipy import special
-from dataclasses import dataclass
 
-from typing import List
+from typing import Union
 
-
-@dataclass
-class CausalityDataset:
-    data: pd.DataFrame
-    treatment: str
-    outcomes: List[str]
-    instruments: List[str] = None
+from auto_causality.data_utils import CausalityDataset
+from auto_causality.utils import generate_psdmat
 
 
-def nhefs() -> pd.DataFrame:
+def linear_multi_dataset(
+    n_points=10000, impact=None, include_propensity=False, include_control=False
+) -> CausalityDataset:
+    if impact is None:
+        impact = {0: 0.0, 1: 2.0, 2: 1.0}
+    df = pd.DataFrame(
+        {
+            "X": np.random.normal(size=n_points),
+            "W": np.random.normal(size=n_points),
+            "T": np.random.choice(np.array(list(impact.keys())), size=n_points),
+        }
+    )
+    df["Y"] = df["X"] + df["T"].apply(lambda x: impact[x])
+
+    propensity_modifiers = []
+    if include_propensity:
+        skipped_first = False
+        for k in impact.keys():
+            if (not include_control) and (not skipped_first):
+                skipped_first = True
+                continue
+            df[f"propensity_{k}"] = 1.0 / len(impact)
+            propensity_modifiers.append(f"propensity_{k}")
+
+    return CausalityDataset(
+        data=df,
+        treatment="T",
+        outcomes=["Y"],
+        common_causes=["W"],
+        effect_modifiers=["X"],
+        propensity_modifiers=propensity_modifiers,
+    )
+
+
+def nhefs() -> CausalityDataset:
     """loads the NHEFS dataset
     The dataset describes the impact of quitting smoke on weight gain over a period of 11 years
     The data consists of the treatment (quit smoking yes no), the outcome (change in weight) and
@@ -54,7 +82,7 @@ def nhefs() -> pd.DataFrame:
     return CausalityDataset(df, treatment="qsmk", outcomes=["wt82_71"])
 
 
-def lalonde_nsw() -> pd.DataFrame:
+def lalonde_nsw() -> CausalityDataset:
     """loads the Lalonde NSW dataset
     The dataset described the impact of a job training programme on the real earnings
     of individuals several years later.
@@ -90,7 +118,7 @@ def lalonde_nsw() -> pd.DataFrame:
     return CausalityDataset(df, "treatment", ["y_factual"])
 
 
-def amazon_reviews(rating="pos") -> pd.DataFrame:
+def amazon_reviews(rating="pos") -> CausalityDataset:
     """loads amazon reviews dataset
     The dataset describes the impact of positive (or negative) reviews for products on Amazon on sales.
     The authors distinguish between items with more than three reviews (treated) and less than three
@@ -152,7 +180,7 @@ def amazon_reviews(rating="pos") -> pd.DataFrame:
         return None
 
 
-def synth_ihdp() -> pd.DataFrame:
+def synth_ihdp() -> CausalityDataset:
     """loads IHDP dataset
     The Infant Health and Development Program (IHDP) dataset contains data on the impact of visits by specialists
     on the cognitive development of children. The dataset consists of 25 covariates describing various features
@@ -195,7 +223,7 @@ def synth_ihdp() -> pd.DataFrame:
     return CausalityDataset(data, "treatment", ["y_factual"])
 
 
-def synth_acic(condition=1) -> pd.DataFrame:
+def synth_acic(condition=1) -> CausalityDataset:
     """loads data from ACIC Causal Inference Challenge 2016
     The dataset consists of 58 covariates, a binary treatment and a continuous response.
     There are 10 simulated pairs of treatment and response, which can be selected
@@ -290,3 +318,98 @@ def iv_dgp_econml(n=5000, p=10, true_effect=10):
     df["Z"] = Z
 
     return CausalityDataset(df, "treatment", ["y"], ["Z"])
+
+
+def generate_synthetic_data(
+    n_samples: int = 100,
+    n_covariates: int = 5,
+    covariance: Union[str, np.ndarray] = "isotropic",
+    confounding: bool = True,
+    linear_confounder: bool = False,
+    noisy_outcomes: bool = False,
+    effect_size: Union[int, None] = None,
+    add_instrument: bool = False,
+) -> CausalityDataset:
+    """generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.
+    Supports RCT (unconfounded) and observational (confounded) data.
+
+    Args:
+        n_samples (int, optional): number of independent samples. Defaults to 100.
+        n_covariates (int, optional): number of covariates. Defaults to 5.
+        covariance (Union[str, np.ndarray], optional): covariance matrix of covariates. can be "isotropic",
+         "anisotropic" or user-supplied. Defaults to "isotropic".
+        confounding (bool, optional): whether or not values of covariates affect treatment effect. Defaults to True.
+        noisy_outcomes (bool, optional): additive noise in the outcomes. Defaults to False.
+        add_instrument (bool, optional): include instrumental variable (yes/no). Defaults to False
+        effect_size (Union[int, None]): if provided, constant effect size (ATE). if None, generate CATE.
+            Defaults to None.
+
+
+    Returns:
+        CausalityDataset: columns for covariates, treatment assignment, outcome and true treatment effect
+    """
+
+    if covariance == "isotropic":
+        sigma = np.random.randn(1)
+        covmat = np.eye(n_covariates) * sigma**2
+    elif covariance == "anisotropic":
+        covmat = generate_psdmat(n_covariates)
+
+    X = np.random.multivariate_normal(
+        mean=[0] * n_covariates, cov=covmat, size=n_samples
+    )
+
+    if confounding:
+        if linear_confounder:
+            p = 1 / (1 + np.exp(X[:, 0] * 2 + X[:, 1] * 4))
+        else:
+            p = 1 / (1 + np.exp(X[:, 0] * X[:, 1] + X[:, 2] * 3))
+        p = np.clip(p, 0.1, 0.9)
+        C = p > np.random.rand(n_samples)
+        print(min(p), max(p))
+
+    else:
+        p = 0.5 * np.ones(n_samples)
+        C = np.random.binomial(n=1, p=0.5, size=n_samples)
+
+    if add_instrument:
+        Z = np.random.binomial(n=1, p=0.5, size=n_samples)
+        C0 = np.random.binomial(n=1, p=0.006, size=n_samples)
+        T = C * Z + C0 * (1 - Z)
+    else:
+        T = C
+
+    # fixed effect size:
+    if effect_size is not None:
+        tau = [effect_size] * n_samples
+    else:
+        # heterogeneity in effect size:
+        weights = np.random.uniform(low=0.4, high=0.7, size=n_covariates)
+        e = np.random.randn(n_samples) * 0.01
+        tau = X @ weights.T + e + 0.1
+
+    err = np.random.randn(n_samples) * 0.05 if noisy_outcomes else 0
+
+    # nonlinear dependence of Y on X:
+    mu = lambda X: X[:, 0] * X[:, 1] + X[:, 2] + X[:, 3] * X[:, 4]  # noqa E731
+
+    Y_base = mu(X) + err
+    Y = tau * T + Y_base
+
+    features = [f"X{i+1}" for i in range(n_covariates)]
+    df = pd.DataFrame(
+        np.array([*X.T, T, Y, tau, p, Y_base]).T,
+        columns=features
+        + ["treatment", "outcome", "true_effect", "propensity", "base_outcome"],
+    )
+    data = CausalityDataset(
+        data=df,
+        treatment="treatment",
+        outcomes=["outcome"],
+        effect_modifiers=features,
+        propensity_modifiers=["propensity"],
+    )
+    if add_instrument:
+        df["instrument"] = Z
+        data.instruments = ["instrument"]
+    return data

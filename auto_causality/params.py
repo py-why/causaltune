@@ -1,6 +1,6 @@
 from flaml import tune
 from copy import deepcopy
-from typing import Optional, Sequence, Union, Iterable
+from typing import Optional, Sequence, Union, Iterable, Dict
 from dataclasses import dataclass, field
 
 import warnings
@@ -14,6 +14,7 @@ class EstimatorConfig:
     fit_params: dict = field(default_factory=dict)
     search_space: dict = field(default_factory=dict)
     defaults: dict = field(default_factory=dict)
+    supports_multivalue: bool = False
     experimental: bool = False
 
 
@@ -22,6 +23,7 @@ class SimpleParamService:
         self,
         propensity_model,
         outcome_model,
+        multivalue: bool,
         final_model=None,
         n_bootstrap_samples: Optional[int] = None,
         n_jobs: Optional[int] = None,
@@ -33,6 +35,7 @@ class SimpleParamService:
         self.n_jobs = n_jobs
         self.include_experimental = include_experimental
         self.n_bootstrap_samples = n_bootstrap_samples
+        self.multivalue = multivalue
 
     def estimator_names_from_patterns(
         self,
@@ -50,15 +53,20 @@ class SimpleParamService:
                 warnings.warn(
                     "Excluding OrthoForests as they can have problems with large datasets"
                 )
-                return [e for e in self.estimator_names if "OrthoForest" not in e]
+                return [
+                    e
+                    for e in self.estimator_names
+                    if ("OrthoForest" not in e) and (problem_match(e, problem))
+                ]
 
         elif patterns == "auto":
             if problem == "backdoor":
-                # These are the ones we've seen best results from, empirically,
-                # plus dummy for baseline, and SLearner as that's the simplest possible
-                return self.estimator_names_from_patterns(
-                    problem,
-                    [
+                if self.multivalue:
+                    patterns = ["LinearDML"]
+                else:
+                    # These are the ones we've seen best results from, empirically,
+                    # plus dummy for baseline, and SLearner as that's the simplest possible
+                    patterns = [
                         "Dummy",
                         "NewDummy",
                         "SLearner",
@@ -66,19 +74,17 @@ class SimpleParamService:
                         "TransformedOutcome",
                         "CausalForestDML",
                         "ForestDRLearner",
-                    ],
-                )
+                    ]
+
             elif problem == "iv":
-                return self.estimator_names_from_patterns(
-                    problem,
-                    [
-                        "DMLIV",
-                        "LinearDRIV",
-                        "OrthoIV",
-                        "SparseLinearDRIV",
-                        "LinearIntentToTreatDRIV",
-                    ],
-                )
+                patterns = [
+                    "DMLIV",
+                    "LinearDRIV",
+                    "OrthoIV",
+                    "SparseLinearDRIV",
+                    "LinearIntentToTreatDRIV",
+                ]
+            return self.estimator_names_from_patterns(problem, patterns)
         else:
             try:
                 for p in patterns:
@@ -98,10 +104,14 @@ class SimpleParamService:
 
     @property
     def estimator_names(self):
+        cfgs = self._configs()
+        if self.multivalue:
+            cfgs = {k: v for k, v in cfgs.items() if v.supports_multivalue}
+
         if self.include_experimental:
-            return list(self._configs().keys())
+            return list(cfgs.keys())
         else:
-            return [est for est, cfg in self._configs().items() if not cfg.experimental]
+            return [est for est, cfg in cfgs.items() if not cfg.experimental]
 
     def search_space(self, estimator_list: Iterable[str]):
         """constructs search space with estimators and their respective configs
@@ -146,7 +156,7 @@ class SimpleParamService:
     ):
         return self._configs()[estimator]
 
-    def _configs(self):
+    def _configs(self) -> Dict[str, EstimatorConfig]:
         propensity_model = deepcopy(self.propensity_model)
         outcome_model = deepcopy(self.outcome_model)
         if self.n_bootstrap_samples is not None:
@@ -178,6 +188,7 @@ class SimpleParamService:
             ),
             "backdoor.econml.metalearners.SLearner": EstimatorConfig(
                 init_params={"overall_model": outcome_model},
+                supports_multivalue=True,
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -185,6 +196,7 @@ class SimpleParamService:
             ),
             "backdoor.econml.metalearners.TLearner": EstimatorConfig(
                 init_params={"models": outcome_model},
+                supports_multivalue=True,
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -195,6 +207,7 @@ class SimpleParamService:
                     "propensity_model": propensity_model,
                     "models": outcome_model,
                 },
+                supports_multivalue=True,
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -206,6 +219,7 @@ class SimpleParamService:
                     "models": outcome_model,
                     "final_models": final_model,
                 },
+                supports_multivalue=True,
                 # TODO Egor please look into this
                 # These lines cause recursion errors
                 # if self.n_bootstrap_samples is None
@@ -247,6 +261,7 @@ class SimpleParamService:
                     "honest": True,
                     "subforest_size": 4,
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dr.LinearDRLearner": EstimatorConfig(
                 init_params={
@@ -263,6 +278,7 @@ class SimpleParamService:
                     "fit_cate_intercept": True,
                     "min_propensity": 1e-6,
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dr.SparseLinearDRLearner": EstimatorConfig(
                 init_params={
@@ -289,6 +305,7 @@ class SimpleParamService:
                     "max_iter": 10000,
                     "mc_agg": "mean",
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dml.LinearDML": EstimatorConfig(
                 init_params={
@@ -308,6 +325,7 @@ class SimpleParamService:
                     "fit_cate_intercept": True,
                     "mc_agg": "mean",
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dml.SparseLinearDML": EstimatorConfig(
                 init_params={
@@ -335,6 +353,7 @@ class SimpleParamService:
                     "max_iter": 10000,
                     "mc_agg": "mean",
                 },
+                supports_multivalue=True,
             ),
             "backdoor.econml.dml.CausalForestDML": EstimatorConfig(
                 init_params={
@@ -385,6 +404,7 @@ class SimpleParamService:
                     "fit_intercept": True,
                     "subforest_size": 4,
                 },
+                supports_multivalue=True,
             ),
             "backdoor.auto_causality.models.TransformedOutcome": EstimatorConfig(
                 init_params={
@@ -431,6 +451,8 @@ class SimpleParamService:
                     "subsample_ratio": 0.7,
                     "lambda_reg": 0.01,
                 },
+                experimental=True,  # OrthoForest estimators are notoriously slow
+                supports_multivalue=True,
             ),
             "backdoor.econml.orf.DMLOrthoForest": EstimatorConfig(
                 init_params={
@@ -444,7 +466,7 @@ class SimpleParamService:
                     # "n_trees": self.n_estimators,
                     # "min_leaf_size": self.min_leaf_size,
                     # Loky was running out of disk space for some reason
-                    "backend": "loky",
+                    "backend": "threading",
                 },
                 search_space={
                     "n_trees": tune.randint(2, 750),
@@ -462,6 +484,8 @@ class SimpleParamService:
                     # "bootstrap": tune.choice([0, 1]),
                     "lambda_reg": 0.01,
                 },
+                experimental=True,  # OrthoForest estimators are notoriously slow
+                supports_multivalue=True,
             ),
             "iv.econml.iv.dr.LinearDRIV": EstimatorConfig(
                 init_params={

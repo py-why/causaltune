@@ -1,6 +1,7 @@
 import copy
+import logging
 import math
-from typing import Optional, Dict, Union, Any
+from typing import Optional, Dict, Union, Any, List
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from dowhy import CausalModel
 
 from auto_causality.thirdparty.causalml import metrics
 from auto_causality.erupt import ERUPT
+from auto_causality.utils import treatment_values
 
 import dcor
 
@@ -26,22 +28,37 @@ class DummyEstimator:
         return self.cate_estimate
 
 
+def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List[str]:
+    if problem == "iv":
+        return ["energy_distance"]
+    elif problem == "backdoor":
+        if multivalue:
+            # TODO: support other metrics for the multivalue case
+            return ["energy_distance"]
+        else:
+            metrics = [
+                "erupt",
+                "norm_erupt",
+                "qini",
+                "auc",
+                # "r_scorer",
+                "energy_distance",
+            ]
+            if not scores_only:
+                metrics.append("ate")
+            return metrics
+
+
 class Scorer:
-    all_metrics = {
-        "iv": ["energy_distance"],
-        "backdoor": [
-            "erupt",
-            "norm_erupt",
-            "qini",
-            "auc",
-            "ate",
-            "r_scorer",
-            "energy_distance",
-        ],
-    }
-
-    def __init__(self, causal_model: CausalModel, propensity_model: Any):
-
+    def __init__(
+        self,
+        causal_model: CausalModel,
+        propensity_model: Any,
+        problem: str,
+        multivalue: bool,
+    ):
+        self.problem = problem
+        self.multivalue = multivalue
         self.causal_model = copy.deepcopy(causal_model)
         print(
             "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"
@@ -51,84 +68,81 @@ class Scorer:
             proceed_when_unidentifiable=True
         )
 
-        # this will also fit self.propensity model, which we'll also use in self.erupt
+        treatment_series = causal_model._data[causal_model._treatment[0]]
+
+        # this will also fit self.propensity_model, which we'll also use in self.erupt
         self.psw_estimator = self.causal_model.estimate_effect(
             self.identified_estimand,
             # TODO: can we replace this with good old PSW?
-            method_name="backdoor.auto_causality.models.PropensityScoreWeightingEstimator",
+            method_name="backdoor.auto_causality.models.MultivaluePSW",
             control_value=0,
-            treatment_value=1,  # TODO: adjust for multiple categorical treatments
+            treatment_value=treatment_values(
+                treatment_series, 0
+            ),  # TODO: adjust for multiple categorical treatments
             target_units="ate",  # condition used for CATE
             confidence_intervals=False,
             method_params={
-                "propensity_score_model": propensity_model,
+                "init_params": {"propensity_function": propensity_model},
             },
-        )
-        est = self.psw_estimator.estimator
-        treatment_name = est._treatment_name
+        ).estimator
+
+        treatment_name = self.psw_estimator._treatment_name
         if not isinstance(treatment_name, str):
             treatment_name = treatment_name[0]
 
         # No need to call self.erupt.fit() as propensity model is already fitted
-        self.propensity_model = est.propensity_score_model
+        # self.propensity_model = est.propensity_model
         self.erupt = ERUPT(
             treatment_name=treatment_name,
-            propensity_model=self.propensity_model,
-            X_names=est._effect_modifier_names + est._observed_common_causes_names,
+            propensity_model=self.psw_estimator.estimator.propensity_function,
+            X_names=self.psw_estimator._effect_modifier_names
+            + self.psw_estimator._observed_common_causes_names,
         )
 
-        self.ate(self.causal_model._data)
+        # self.ate(self.causal_model._data)
+        # self.causal_model.causal_estimator.recalculate_propensity_score = False
 
     def ate(self, df: pd.DataFrame):
-        estimate = self.causal_model.estimate_effect(
-            self.identified_estimand,
-            target_units=df,
-            fit_estimator=False,
-            confidence_intervals=True,
-            # TODO: remove this once the DoWhy PR #??? is in
-            method_name="backdoor.auto_causality.models.OutOfSamplePSWEstimator",
-        )
+        estimate = self.psw_estimator.estimator.effect(df).mean(axis=0)
 
-        # for now, let's cheat on the std estimation, take that from the naive ate
-        treatment_name = self.causal_model._treatment[0]
-        outcome_name = self.causal_model._outcome[0]
-        naive_est = Scorer.naive_ate(df[treatment_name], df[outcome_name])
-        return estimate.value, naive_est[1], naive_est[2]
-
-    @staticmethod
-    def resolve_metric(metric, problem):
-        if metric not in Scorer.all_metrics[problem]:
-            if problem == "iv":
-                return "energy_distance"
-            elif problem == "backdoor":
-                return "norm_erupt"
-        return metric
-
-    @staticmethod
-    def resolve_reported_metrics(metrics_to_report, used_metric, problem):
-        if metrics_to_report is None:
-            if problem == "iv":
-                return [used_metric]
-            elif problem == "backdoor":
-                metrics_to_report = ["qini", "auc", "ate", "erupt", "norm_erupt"]
+        if len(estimate) == 1:
+            # for now, let's cheat on the std estimation, take that from the naive ate
+            treatment_name = self.causal_model._treatment[0]
+            outcome_name = self.causal_model._outcome[0]
+            naive_est = Scorer.naive_ate(df[treatment_name], df[outcome_name])
+            return estimate[0], naive_est[1], naive_est[2]
         else:
-            for m in metrics_to_report:
-                if m not in Scorer.all_metrics[problem]:
-                    raise ValueError(
-                        f"Metric to report, {m}, for problem: {problem} \
-                        must be one of {Scorer.all_metrics[problem]}"
-                    )
-        if used_metric not in metrics_to_report:
-            metrics_to_report.append(used_metric)
-        return metrics_to_report
+            return estimate, None, None
 
-    @staticmethod
-    def validate_implemented_metrics(metric):
-        if metric not in Scorer.all_metrics["backdoor"]:
-            raise ValueError(
-                f"Metric, {metric}, must be\
-                 one of {Scorer.all_metrics.values()}"
+    def resolve_metric(self, metric: str) -> str:
+        metrics = supported_metrics(self.problem, self.multivalue, scores_only=True)
+
+        if metric not in metrics:
+            logging.warning(
+                f"Using energy_distance metric as {metric} is not in the list "
+                f"of supported metrics for this usecase ({str(metrics)})"
             )
+            return "energy_distance"
+        else:
+            return metric
+
+    def resolve_reported_metrics(
+        self, metrics_to_report: Union[List[str], None], scoring_metric: str
+    ):
+
+        metrics = supported_metrics(self.problem, self.multivalue, scores_only=False)
+        if metrics_to_report is None:
+            return metrics
+        else:
+            metrics_to_report = sorted(list(set(metrics_to_report + [scoring_metric])))
+            for m in metrics_to_report.copy():
+                if m not in metrics:
+                    logging.warning(
+                        f"Dropping the metric {m} for problem: {self.problem} \
+                        : must be one of {metrics}"
+                    )
+                    metrics_to_report.remove(m)
+        return metrics_to_report
 
     @staticmethod
     def energy_distance_score(
@@ -136,17 +150,21 @@ class Scorer:
         df: pd.DataFrame,
     ) -> float:
         est = estimate.estimator
-        assert est.identifier_method in ["iv", "backdoor"]
-
-        df["dy"] = estimate.estimator.effect(df)
-        df.loc[df[est._treatment_name[0]] == 0, "dy"] = 0
+        # assert est.identifier_method in ["iv", "backdoor"]
+        treatment_name = (
+            est._treatment_name
+            if isinstance(est._treatment_name, str)
+            else est._treatment_name[0]
+        )
+        df["dy"] = estimate.estimator.effect_tt(df)
         df["yhat"] = df[est._outcome_name] - df["dy"]
 
         split_test_by = (
             est.estimating_instrument_names[0]
             if est.identifier_method == "iv"
-            else est._treatment_name[0]
+            else treatment_name
         )
+
         X1 = df[df[split_test_by] == 1]
         X0 = df[df[split_test_by] == 0]
         select_cols = est._effect_modifier_names + ["yhat"]
@@ -168,9 +186,9 @@ class Scorer:
         new_df["w"] = df[treatment_name]
         new_df["model"] = cate_estimate
 
-        qini_score = metrics.qini_score(new_df)
+        qini_score = metrics.qini_score(new_df)["model"]
 
-        return qini_score["model"]
+        return qini_score
 
     @staticmethod
     def auc_make_score(
@@ -260,6 +278,10 @@ class Scorer:
         covariates = est._effect_modifier_names
         cate_estimate = est.effect(df)
 
+        # TODO: fix this hack with proper treatment of multivalues
+        if len(cate_estimate.shape) > 1 and cate_estimate.shape[1] == 1:
+            cate_estimate = cate_estimate.reshape(-1)
+
         # Include CATE Interpereter for both IV and CATE models
         intrp = SingleTreeCateInterpreter(
             include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
@@ -269,13 +291,22 @@ class Scorer:
         out["intrp"] = intrp
 
         if problem == "backdoor":
-
+            values = df[[treatment_name, outcome_name]]
             simple_ate = self.ate(df)[0]
-            values = df[[treatment_name, outcome_name]]  # .reset_index(drop=True)
-            values["p"] = self.propensity_model.predict_proba(df)[:, 1]
-            values["policy"] = cate_estimate > 0
-            values["norm_policy"] = cate_estimate > simple_ate
-            values["weights"] = self.erupt.weights(df, lambda x: cate_estimate > 0)
+            if isinstance(simple_ate, float):
+                # simple_ate = simple_ate[0]
+                # .reset_index(drop=True)
+                values[
+                    "p"
+                ] = self.psw_estimator.estimator.propensity_function.predict_proba(df)[
+                    :, 1
+                ]
+                values["policy"] = cate_estimate > 0
+                values["norm_policy"] = cate_estimate > simple_ate
+                values["weights"] = self.erupt.weights(df, lambda x: cate_estimate > 0)
+            else:
+                pass
+                # TODO: what do we do here if multiple treatments?
 
             if "ate" in metrics_to_report:
                 out["ate"] = cate_estimate.mean()
@@ -349,26 +380,3 @@ class Scorer:
             )
 
         return best
-
-
-# def erupt_make_scores(
-#     estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
-# ) -> float:
-#     est = estimate.estimator
-#     treatment_name = est._treatment_name
-#     if not isinstance(treatment_name, str):
-#         treatment_name = treatment_name[0]
-#
-#     # prepare the ERUPT scorer
-#     erupt = ERUPT(
-#         treatment_name=treatment_name,
-#         propensity_model=DummyClassifier(strategy="prior"),
-#         X_names=est._effect_modifier_names,
-#     )
-#     erupt.fit(df)
-#     erupt_score = erupt.score(
-#         df,
-#         df[est._outcome_name],
-#         cate_estimate > 0,
-#     )
-#     return erupt_score
