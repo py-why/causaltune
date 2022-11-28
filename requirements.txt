@@ -1,5 +1,5 @@
 git+https://github.com/py-why/dowhy@9d0d5d8#egg=dowhy
-econml==0.12.0
+econml==0.14.0
 FLAML==1.0.14
 numpy~=1.23.1
 pandas
