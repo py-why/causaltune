@@ -1,7 +1,7 @@
 git+https://github.com/py-why/dowhy@9d0d5d8#egg=dowhy
 econml==0.14.0
 FLAML==1.0.14
-numpy~=1.23.1
+numpy~=1.23.5
 pandas
 pytest
 scikit_learn==1.0.2
