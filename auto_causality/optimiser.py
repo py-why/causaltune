@@ -535,14 +535,12 @@ class AutoCausality:
             "train": self.scorer.make_scores(
                 estimator,
                 self.train_df,
-                self.problem,
                 self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.train,
             ),
             "validation": self.scorer.make_scores(
                 estimator,
                 self.test_df,
-                self.problem,
                 self.metrics_to_report,
                 r_scorer=None if self.r_scorer is None else self.r_scorer.test,
             ),

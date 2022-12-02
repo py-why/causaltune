@@ -173,17 +173,13 @@ class SimpleParamService:
             final_model = deepcopy(self.final_model)
 
         configs: dict[str:EstimatorConfig] = {
-            "backdoor.auto_causality.models.Dummy": EstimatorConfig(),
-            "backdoor.auto_causality.models.NewDummy": EstimatorConfig(
-                init_params={"propensity_score_model": propensity_model},
+            "backdoor.auto_causality.models.NaiveDummy": EstimatorConfig(),
+            "backdoor.auto_causality.models.Dummy": EstimatorConfig(
+                init_params={"propensity_model": propensity_model},
                 experimental=False,
             ),
-            "backdoor.auto_causality.models.OutOfSamplePSWEstimator": EstimatorConfig(
-                init_params={"propensity_score_model": propensity_model},
-                experimental=True,
-            ),
             "backdoor.propensity_score_weighting": EstimatorConfig(
-                init_params={"propensity_score_model": propensity_model},
+                init_params={"propensity_model": propensity_model},
                 experimental=True,
             ),
             "backdoor.econml.metalearners.SLearner": EstimatorConfig(

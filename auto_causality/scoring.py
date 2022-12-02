@@ -60,47 +60,44 @@ class Scorer:
         self.problem = problem
         self.multivalue = multivalue
         self.causal_model = copy.deepcopy(causal_model)
-        print(
-            "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"
-        )
 
         self.identified_estimand = causal_model.identify_effect(
             proceed_when_unidentifiable=True
         )
 
-        treatment_series = causal_model._data[causal_model._treatment[0]]
+        if problem == "backdoor":
+            print(
+                "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"
+            )
+            treatment_series = causal_model._data[causal_model._treatment[0]]
+            # this will also fit self.propensity_model, which we'll also use in self.erupt
+            self.psw_estimator = self.causal_model.estimate_effect(
+                self.identified_estimand,
+                # TODO: can we replace this with good old PSW?
+                method_name="backdoor.auto_causality.models.MultivaluePSW",
+                control_value=0,
+                treatment_value=treatment_values(
+                    treatment_series, 0
+                ),  # TODO: adjust for multiple categorical treatments
+                target_units="ate",  # condition used for CATE
+                confidence_intervals=False,
+                method_params={
+                    "init_params": {"propensity_model": propensity_model},
+                },
+            ).estimator
 
-        # this will also fit self.propensity_model, which we'll also use in self.erupt
-        self.psw_estimator = self.causal_model.estimate_effect(
-            self.identified_estimand,
-            # TODO: can we replace this with good old PSW?
-            method_name="backdoor.auto_causality.models.MultivaluePSW",
-            control_value=0,
-            treatment_value=treatment_values(
-                treatment_series, 0
-            ),  # TODO: adjust for multiple categorical treatments
-            target_units="ate",  # condition used for CATE
-            confidence_intervals=False,
-            method_params={
-                "init_params": {"propensity_function": propensity_model},
-            },
-        ).estimator
+            treatment_name = self.psw_estimator._treatment_name
+            if not isinstance(treatment_name, str):
+                treatment_name = treatment_name[0]
 
-        treatment_name = self.psw_estimator._treatment_name
-        if not isinstance(treatment_name, str):
-            treatment_name = treatment_name[0]
-
-        # No need to call self.erupt.fit() as propensity model is already fitted
-        # self.propensity_model = est.propensity_model
-        self.erupt = ERUPT(
-            treatment_name=treatment_name,
-            propensity_model=self.psw_estimator.estimator.propensity_function,
-            X_names=self.psw_estimator._effect_modifier_names
-            + self.psw_estimator._observed_common_causes_names,
-        )
-
-        # self.ate(self.causal_model._data)
-        # self.causal_model.causal_estimator.recalculate_propensity_score = False
+            # No need to call self.erupt.fit() as propensity model is already fitted
+            # self.propensity_model = est.propensity_model
+            self.erupt = ERUPT(
+                treatment_name=treatment_name,
+                propensity_model=self.psw_estimator.estimator.propensity_model,
+                X_names=self.psw_estimator._effect_modifier_names
+                + self.psw_estimator._observed_common_causes_names,
+            )
 
     def ate(self, df: pd.DataFrame):
         estimate = self.psw_estimator.estimator.effect(df).mean(axis=0)
@@ -262,7 +259,6 @@ class Scorer:
         self,
         estimate: CausalEstimate,
         df: pd.DataFrame,
-        problem,
         metrics_to_report,
         r_scorer=None,
     ) -> dict:
@@ -290,7 +286,7 @@ class Scorer:
         intrp.feature_names = covariates
         out["intrp"] = intrp
 
-        if problem == "backdoor":
+        if self.problem == "backdoor":
             values = df[[treatment_name, outcome_name]]
             simple_ate = self.ate(df)[0]
             if isinstance(simple_ate, float):
@@ -298,7 +294,7 @@ class Scorer:
                 # .reset_index(drop=True)
                 values[
                     "p"
-                ] = self.psw_estimator.estimator.propensity_function.predict_proba(df)[
+                ] = self.psw_estimator.estimator.propensity_model.predict_proba(df)[
                     :, 1
                 ]
                 values["policy"] = cate_estimate > 0
