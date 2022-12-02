@@ -44,7 +44,7 @@ def effect_tt(self, df: pd.DataFrame, *args, **kwargs):
 
 CausalEstimator.effect_tt = effect_tt
 
-# TODO: raise a dowhy PR for this
+
 def effect(
     self,
     df: pd.DataFrame,
