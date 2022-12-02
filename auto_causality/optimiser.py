@@ -511,7 +511,17 @@ class AutoCausality:
                     "fit_params": {},
                 },
             )
-            scores = self._compute_metrics(estimate)
+            scores = {
+                "estimator_name": self.estimator_name,
+                "train": self._compute_metrics(
+                    estimate,
+                    self.train_df,
+                ),
+                "validation": self._compute_metrics(
+                    estimate,
+                    self.test_df,
+                ),
+            }
 
             return {
                 self.metric: scores["validation"][self.metric],
@@ -529,23 +539,20 @@ class AutoCausality:
                 "traceback": traceback.format_exc(),
             }
 
-    def _compute_metrics(self, estimator) -> dict:
-        scores = {
-            "estimator_name": self.estimator_name,
-            "train": self.scorer.make_scores(
-                estimator,
-                self.train_df,
-                self.metrics_to_report,
-                r_scorer=None if self.r_scorer is None else self.r_scorer.train,
-            ),
-            "validation": self.scorer.make_scores(
-                estimator,
-                self.test_df,
-                self.metrics_to_report,
-                r_scorer=None if self.r_scorer is None else self.r_scorer.test,
-            ),
-        }
-        return scores
+    def _compute_metrics(self, estimator, df: pd.DataFrame) -> dict:
+        return self.scorer.make_scores(
+            estimator, df, self.metrics_to_report, r_scorer=None
+        )
+
+    def score_dataset(self, df: pd.DataFrame, dataset_name: str):
+        """
+        After fitting, generate scores for an additional dataset, add them to the scores dict
+        @param df:
+        @param dataset_name:
+        @return:
+        """
+        for scr in self.scores.values():
+            scr["scores"][dataset_name] = self._compute_metrics(scr["estimator"], df)
 
     @property
     def best_estimator(self) -> str:
@@ -555,7 +562,7 @@ class AutoCausality:
     @property
     def model(self):
         """Return the *trained* best estimator"""
-        return self.results.best_result["estimator"]
+        return self.results.best_result["estimator"].estimator
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
@@ -590,3 +597,6 @@ class AutoCausality:
     def best_score(self):
         """A float of the best score found."""
         return self.results.best_result[self.metric]
+
+    def effect(self, df, *args, **kwargs):
+        return self.model.effect(df, *args, **kwargs)
