@@ -61,6 +61,8 @@ class TestEndToEnd(object):
         )
 
         auto_causality.fit(data)
+        auto_causality.effect(data.data)
+        auto_causality.score_dataset(data.data, "test")
 
         # now let's test Shapley values calculation
         for est_name, scores in auto_causality.scores.items():
@@ -99,4 +101,3 @@ class TestEndToEnd(object):
 if __name__ == "__main__":
     pytest.main([__file__])
     # TestEndToEnd().test_endtoend_iv()
-    # TestEndToEnd().test_endtoend_cate()

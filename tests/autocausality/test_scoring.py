@@ -114,7 +114,7 @@ class TestMetrics:
     #
     #     rscorer = RScoreWrapper(
     #         DecisionTreeRegressor(random_state=123),
-    #         scorer.psw_estimator.estimator.propensity_function,
+    #         scorer.psw_estimator.estimator.propensity_model,
     #         *smr[:-1]
     #     )
     #     true_keys = [
@@ -152,7 +152,7 @@ class TestMetrics:
         """Tests make_scores (without rscorer) returns 0 for 'r_score' key"""
         scorer = simple_model_run(rscorer=True)[-1]
 
-        scores = scorer.make_scores(*(simple_model_run()[:2]), "backdoor", ["ate"])
+        scores = scorer.make_scores(*(simple_model_run()[:2]), ["ate"])
         assert scores.get("r_score", 0) == 0
 
 

@@ -3,7 +3,7 @@ from typing import List, Callable, Any
 import numpy as np
 import pandas as pd
 
-from auto_causality.models.monkey_patches import PropensityScoreWeightingEstimator
+# from auto_causality.models.monkey_patches import PropensityScoreWeightingEstimator
 from auto_causality.models.wrapper import DoWhyMethods, DoWhyWrapper
 from auto_causality.scoring import Scorer
 
@@ -31,54 +31,42 @@ def effect(self, df: pd.DataFrame, **kwargs) -> np.ndarray:
     return np.ones(len(df)) * scalar_effect.value
 
 
-class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
-    """
-    A flavor of PSWEstimator that doesn't refit the propensity function
-    when doing out-of-sample evaluation
-    """
+# class OutOfSamplePSWEstimator(PropensityScoreWeightingEstimator):
+#     """
+#     A flavor of PSWEstimator that doesn't refit the propensity function
+#     when doing out-of-sample evaluation
+#     """
+#
+#     def __init__(self, *args, recalculate_propensity_score=False, **kwargs):
+#         # for the case when this is not invoked via Econml wrapper,
+#         # need to merge init_args in
+#         init_params = kwargs.pop("init_params", {})
+#         kwargs = {
+#             **kwargs,
+#             **init_params,
+#             "recalculate_propensity_score": recalculate_propensity_score,
+#         }
+#         super().__init__(*args, **kwargs)
+#
+#         # force fitting for the first time
+#         self.recalculate_propensity_score = True
+#         self._estimate_effect()
+#         self.recalculate_propensity_score = recalculate_propensity_score
+#
+#     def effect(self, df: pd.DataFrame, **kwargs):
+#
+#         effect = super().effect(
+#             df,
+#             propensity_model=self.propensity_model,
+#             **kwargs,
+#         )
+#
+#         return effect
 
-    def __init__(self, *args, recalculate_propensity_score=False, **kwargs):
-        # for the case when this is not invoked via Econml wrapper,
-        # need to merge init_args in
-        init_params = kwargs.pop("init_params", {})
-        kwargs = {
-            **kwargs,
-            **init_params,
-            "recalculate_propensity_score": recalculate_propensity_score,
-        }
-        super().__init__(*args, **kwargs)
-
-        # force fitting for the first time
-        self.recalculate_propensity_score = True
-        self._estimate_effect()
-        self.recalculate_propensity_score = recalculate_propensity_score
-
-    def effect(self, df: pd.DataFrame, **kwargs):
-
-        effect = super().effect(
-            df,
-            propensity_score_model=self.propensity_score_model,
-            **kwargs,
-        )
-
-        return effect
-
-    # # TODO: delete this once PR #486 is merged in dowhy
-    # def _estimate_effect(self):
-    #     self._refresh_propensity_score()
-    #     return super()._estimate_effect()
-
-
-class NewDummy(PropensityScoreWeightingEstimator):  # OutOfSamplePSWEstimator):  #
-    identifier_method = "backdoor"
-    """
-    Apply a small random disturbance so the effect values are slightly different
-    across units
-    """
-
-    def effect(self, df: pd.DataFrame, **kwargs):
-        effect = super(NewDummy, self).effect(df, **kwargs)
-        return effect * (1 + 0.01 * np.random.normal(size=effect.shape))
+# # TODO: delete this once PR #486 is merged in dowhy
+# def _estimate_effect(self):
+#     self._refresh_propensity_score()
+#     return super()._estimate_effect()
 
 
 class DummyModel(DoWhyMethods):
@@ -116,7 +104,7 @@ class PropensityScoreWeighter(DoWhyMethods):
         effect_modifiers: List[str],
         treatment: str,
         outcome: str,
-        propensity_function: Callable,
+        propensity_model: Callable,
         min_ps_score: float = 0.05,
         control_value: Any = 0,
     ):
@@ -130,7 +118,7 @@ class PropensityScoreWeighter(DoWhyMethods):
 
         self.treatment = treatment
         self.outcome = outcome
-        self.propensity_function = propensity_function
+        self.propensity_model = propensity_model
         self.min_ps_score = min_ps_score
         self._control_value = control_value
 
@@ -138,10 +126,10 @@ class PropensityScoreWeighter(DoWhyMethods):
         self._treatment_value = sorted(
             [v for v in df[self.treatment].unique() if v != self._control_value]
         )
-        self.propensity_function.fit(df[self.propensity_modifiers], df[self.treatment])
+        self.propensity_model.fit(df[self.propensity_modifiers], df[self.treatment])
 
     def predict(self, X: pd.DataFrame):
-        p = self.propensity_function.predict_proba(X[self.propensity_modifiers])
+        p = self.propensity_model.predict_proba(X[self.propensity_modifiers])
         p = np.clip(p, self.min_ps_score, 1 - self.min_ps_score)
         est = np.ones((len(X), len(self._treatment_value)))
         for i, v in enumerate(self._treatment_value):
@@ -167,7 +155,19 @@ class MultivaluePSW(DoWhyWrapper):
         self.identifier_method = "backdoor"
 
 
-class Dummy(DoWhyWrapper):
+class Dummy(MultivaluePSW):
+    identifier_method = "backdoor"
+    """
+    Apply a small random disturbance so the effect values are slightly different
+    across units
+    """
+
+    def effect(self, df: pd.DataFrame, **kwargs):
+        effect = super(MultivaluePSW, self).effect(df, **kwargs)
+        return effect * (1 + 0.01 * np.random.normal(size=effect.shape))
+
+
+class NaiveDummy(DoWhyWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, inner_class=DummyModel, **kwargs)
         self.identifier_method = "backdoor"
