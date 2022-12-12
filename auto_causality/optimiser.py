@@ -498,8 +498,8 @@ class AutoCausality:
         # }
         cfg = self.cfg.method_params(self.estimator_name)
 
-        # try:  #
-        if True:  #
+        try:  #
+            # if True:  #
             estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,
                 method_name=self.estimator_name,
@@ -531,14 +531,14 @@ class AutoCausality:
                 "scores": scores,
                 "config": config,
             }
-        # except Exception as e:
-        #     print("Evaluation failed!\n", config, traceback.format_exc())
-        #     return {
-        #         self.metric: -np.inf,
-        #         "estimator_name": self.estimator_name,
-        #         "exception": e,
-        #         "traceback": traceback.format_exc(),
-        #     }
+        except Exception as e:
+            print("Evaluation failed!\n", config, traceback.format_exc())
+            return {
+                self.metric: -np.inf,
+                "estimator_name": self.estimator_name,
+                "exception": e,
+                "traceback": traceback.format_exc(),
+            }
 
     def _compute_metrics(self, estimator, df: pd.DataFrame) -> dict:
         return self.scorer.make_scores(
