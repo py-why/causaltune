@@ -73,12 +73,9 @@ class Scorer:
             # this will also fit self.propensity_model, which we'll also use in self.erupt
             self.psw_estimator = self.causal_model.estimate_effect(
                 self.identified_estimand,
-                # TODO: can we replace this with good old PSW?
                 method_name="backdoor.auto_causality.models.MultivaluePSW",
                 control_value=0,
-                treatment_value=treatment_values(
-                    treatment_series, 0
-                ),  # TODO: adjust for multiple categorical treatments
+                treatment_value=treatment_values(treatment_series, 0),
                 target_units="ate",  # condition used for CATE
                 confidence_intervals=False,
                 method_params={

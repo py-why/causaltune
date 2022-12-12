@@ -22,8 +22,8 @@ class TransformedOutcomeFitter(DoWhyMethods):
         propensity_modifiers: List[str],
         outcome_modifiers: List[str],
         effect_modifiers: List[str],
-        treatment: str,
-        outcome: str,
+        treatment_name: str,
+        outcome_name: str,
         control_value: Any = 0,
     ):
         self.propensity_model = propensity_model
@@ -31,8 +31,8 @@ class TransformedOutcomeFitter(DoWhyMethods):
         self.propensity_modifiers = propensity_modifiers
         self.outcome_modifiers = outcome_modifiers
         self.effect_modifiers = effect_modifiers
-        self.treatment = treatment
-        self.outcome = outcome
+        self.treatment = treatment_name
+        self.outcome = outcome_name
 
     def fit(
         self,

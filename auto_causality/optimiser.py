@@ -498,7 +498,8 @@ class AutoCausality:
         # }
         cfg = self.cfg.method_params(self.estimator_name)
 
-        try:  # if True:  #
+        try:  #
+            # if True:  #
             estimate = self.causal_model.estimate_effect(
                 self.identified_estimand,
                 method_name=self.estimator_name,
