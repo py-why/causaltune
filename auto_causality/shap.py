@@ -4,7 +4,7 @@ import shap
 
 
 def shap_values(estimate: CausalEstimate, df: pd.DataFrame):
-    nice_df = df[estimate.estimator._effect_modifier_names]
+    nice_df = df[estimate._effect_modifier_names]
     try:
         # this will work on dowhy versions that include https://github.com/microsoft/dowhy/pull/374
         sv = estimate.estimator.shap_values(nice_df)
