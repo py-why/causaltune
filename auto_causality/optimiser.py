@@ -86,6 +86,7 @@ class AutoCausality:
         test_size=None,
         num_samples=-1,
         propensity_model="dummy",
+        outcome_model=None,
         components_task="regression",
         components_verbose=0,
         components_pred_time_limit=10 / 1e6,
@@ -171,6 +172,7 @@ class AutoCausality:
         self._settings["metric"] = metric
         self._settings["metrics_to_report"] = metrics_to_report
         self._settings["propensity_model"] = propensity_model
+        self._settings["outcome_model"] = outcome_model
 
         self.results = None
         self._best_estimators = defaultdict(lambda: (float("-inf"), None))
@@ -206,6 +208,33 @@ class AutoCausality:
             raise ValueError(
                 'propensity_model valid values are "dummy", "auto", or a classifier object'
             )
+
+    def init_outcome_model(self, outcome_model):
+        # if we are only supplying certain features to the propensity function,
+        # make them invisible to the outcome component model
+        # This is a workaround for the DoWhy/EconML data model which doesn't
+        # support that out of the box
+        if outcome_model is not None:
+            # TODO: implement filtering like below, when there are propensity-only features
+            # feature_filter below acts on classes not instances
+            # to preserve all the extra methods through inheritance
+            self.outcome_model = outcome_model
+        else:
+            data = self.data
+            propensity_only_cols = [
+                p
+                for p in data.propensity_modifiers
+                if p not in data.common_causes + data.effect_modifiers
+            ]
+
+            if len(propensity_only_cols):
+                outcome_model_class = feature_filter(
+                    AutoML, data.effect_modifiers + data.common_causes, first_cols=True
+                )
+            else:
+                outcome_model_class = AutoML
+
+            self.outcome_model = outcome_model_class(**self._settings["component_models"])
 
     def fit(
         self,
@@ -275,24 +304,7 @@ class AutoCausality:
         )
 
         self.init_propensity_model(self._settings["propensity_model"])
-        # if we are only supplying certain features to the propensity function,
-        # make them invisible to the outcome component model
-        # This is a workaround for the DoWhy/EconML data model which doesn't
-        # support that out of the box
-        propensity_only_cols = [
-            p
-            for p in data.propensity_modifiers
-            if p not in data.common_causes + data.effect_modifiers
-        ]
-
-        if len(propensity_only_cols):
-            outcome_model_class = feature_filter(
-                AutoML, data.effect_modifiers + data.common_causes, first_cols=True
-            )
-        else:
-            outcome_model_class = AutoML
-        # outcome_model_class = AutoML
-        self.outcome_model = outcome_model_class(**self._settings["component_models"])
+        self.init_outcome_model(self._settings["outcome_model"])
 
         self.identified_estimand: IdentifiedEstimand = (
             self.causal_model.identify_effect(proceed_when_unidentifiable=True)

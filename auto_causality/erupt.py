@@ -4,9 +4,25 @@ import copy
 import pandas as pd
 import numpy as np
 
-
 # implementation of https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957
 # we assume treatment takes integer values from 0 to n
+
+
+class DummyPropensity:
+    def __init__(self, p: pd.Series, treatment: pd.Series):
+        n_vals = max(treatment) + 1
+        out = np.zeros((len(treatment), n_vals))
+        for i, pp in p.values:
+            out[i, treatment.values[i]] = pp
+        self.p = out
+
+    def fit(self, *args, **kwargs):
+        pass
+
+    def predict_proba(self):
+        return self.p
+
+
 class ERUPT:
     def __init__(
         self,
