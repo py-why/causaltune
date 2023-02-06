@@ -45,7 +45,7 @@ class TransformedOutcomeFitter(DoWhyMethods):
             df[self.treatment].values, df[self.outcome].values, p
         )
         # The causal graph assumption is that only effect_modifiers can affect the effect :)
-        self.outcome_model.fit(X_train=df[self.effect_modifiers].values, y_train=ystar)
+        self.outcome_model.fit(df[self.effect_modifiers].values, ystar)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         if isinstance(X, pd.DataFrame):
