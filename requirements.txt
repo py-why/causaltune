@@ -5,7 +5,7 @@ numpy~=1.23.5
 pandas
 pytest
 scikit_learn==1.0.2
-matplotlib~=3.5
+matplotlib~=3.7
 dcor
 holidays
 setuptools==65.5.1
