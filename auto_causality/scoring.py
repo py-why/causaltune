@@ -275,13 +275,14 @@ class Scorer:
         if len(cate_estimate.shape) > 1 and cate_estimate.shape[1] == 1:
             cate_estimate = cate_estimate.reshape(-1)
 
+        # TODO: fix this, currently broken
         # Include CATE Interpereter for both IV and CATE models
-        intrp = SingleTreeCateInterpreter(
-            include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
-        )
-        intrp.interpret(DummyEstimator(cate_estimate), df[covariates])
-        intrp.feature_names = covariates
-        out["intrp"] = intrp
+        # intrp = SingleTreeCateInterpreter(
+        #     include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
+        # )
+        # intrp.interpret(DummyEstimator(cate_estimate), df[covariates])
+        # intrp.feature_names = covariates
+        # out["intrp"] = intrp
 
         if self.problem == "backdoor":
             values = df[[treatment_name, outcome_name]]

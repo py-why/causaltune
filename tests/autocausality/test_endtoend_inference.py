@@ -28,7 +28,7 @@ class TestEndToEndInference(object):
         )
 
         estimator_list = cfg.estimator_names_from_patterns(
-            "backdoor", "cheap_inference", 1
+            "backdoor", "cheap_inference", len(data.data)
         )
 
         for e in estimator_list:
@@ -43,10 +43,10 @@ class TestEndToEndInference(object):
             )
 
             auto_causality.fit(data)
-            auto_causality.effect_inference(data.data)
+            auto_causality.effect_stderr(data.data)
 
-    def test_endtoend_multivalue(self):
-        data = linear_multi_dataset(10000)
+    def test_endtoend_multivalue_nobootstrap(self):
+        data = linear_multi_dataset(1000)
         cfg = SimpleParamService(
             propensity_model=None,
             outcome_model=None,
@@ -54,16 +54,25 @@ class TestEndToEndInference(object):
             include_experimental=False,
             multivalue=True,
         )
+
         estimator_list = cfg.estimator_names_from_patterns(
-            "backdoor", "all", data_rows=len(data)
+            "backdoor", "cheap_inference", len(data.data)
         )
 
-        ac = AutoCausality(
-            estimator_list="all",
-            num_samples=len(estimator_list),
-            components_time_budget=10,
-        )
-        ac.fit(data)
+        for e in estimator_list:
+            auto_causality = AutoCausality(
+                num_samples=1,
+                components_time_budget=10,
+                estimator_list=[e],
+                use_ray=False,
+                verbose=3,
+                components_verbose=2,
+                resources_per_trial={"cpu": 0.5},
+            )
+
+            auto_causality.fit(data)
+            auto_causality.effect_stderr(data.data)
+
         # TODO add an effect() call and an effect_tt call
         print("yay!")
 

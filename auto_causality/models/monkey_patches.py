@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Callable
 
 import numpy as np
 from numpy.distutils.misc_util import is_sequence
@@ -7,6 +7,50 @@ import pandas as pd
 from flaml import AutoML as FLAMLAutoML
 
 from dowhy.causal_estimator import CausalEstimator
+
+
+def effect_stderr(self, df: pd.DataFrame, *args, **kwargs):
+    """
+    Inference (uncertainty) results produced by the underlying EconML estimator
+    :param df: Features of the units to evaluate
+    :param args: passed through to the underlying estimator
+    :param kwargs: passed through to the underlying estimator
+    """
+
+    def effect_inference_fun(filtered_df, T0, T1, *args, **kwargs):
+        return self.estimator.effect_inference(
+            filtered_df, T0=T0, T1=T1, *args, **kwargs
+        ).stderr
+
+    return self.apply_multitreatment(df, effect_inference_fun, *args, **kwargs)
+
+
+def apply_multitreatment(self, df: pd.DataFrame, fun: Callable, *args, **kwargs):
+    ests = []
+    assert not isinstance(self._treatment_value, str)
+    assert is_sequence(self._treatment_value)
+
+    if df is None:
+        filtered_df = None
+    else:
+        filtered_df = df[self._effect_modifier_names].values
+
+    for tv in self._treatment_value:
+        ests.append(
+            fun(
+                filtered_df,
+                T0=self._control_value,
+                T1=tv,
+                *args,
+                **kwargs,
+            )
+        )
+
+    if isinstance(ests[0], np.ndarray):
+        est = np.stack(ests, axis=1)
+    else:
+        est = ests
+    return est
 
 
 def effect_tt(self, df: pd.DataFrame, *args, **kwargs):

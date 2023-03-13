@@ -59,13 +59,21 @@ class SimpleParamService:
                     for e in self.estimator_names
                     if ("OrthoForest" not in e) and (problem_match(e, problem))
                 ]
+
         elif patterns == "cheap_inference":
             cfgs = self._configs()
-            return [
+            ests = [
                 est
-                for est, cfg in cfgs.items()
-                if cfg.inference != "bootstrap" and problem_match(est, problem)
+                for est in self.estimator_names
+                if cfgs[est].inference != "bootstrap" and problem_match(est, problem)
             ]
+            if data_rows <= 1000:
+                return ests
+            else:
+                warnings.warn(
+                    "Excluding OrthoForests as they can have problems with large datasets"
+                )
+                return [e for e in ests if ("OrthoForest" not in e)]
 
         elif patterns == "auto":
             if problem == "backdoor":
@@ -355,7 +363,7 @@ class SimpleParamService:
                     # "max_depth": self.max_depth,
                     # "n_estimators": self.n_estimators,
                     "discrete_treatment": True,
-                    "inference": False,
+                    # "inference": False,
                     "mc_iters": None,
                     "max_depth": None,
                     "min_var_fraction_leaf": None,

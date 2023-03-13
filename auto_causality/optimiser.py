@@ -20,7 +20,11 @@ from auto_causality.params import SimpleParamService
 from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config, treatment_is_multivalue
-from auto_causality.models.monkey_patches import AutoML
+from auto_causality.models.monkey_patches import (
+    AutoML,
+    apply_multitreatment,
+    effect_stderr,
+)
 from auto_causality.data_utils import CausalityDataset
 from auto_causality.models.passthrough import feature_filter
 
@@ -617,4 +621,35 @@ class AutoCausality:
         return self.model.effect(df, *args, **kwargs)
 
     def effect_inference(self, df, *args, **kwargs):
-        return self.model.effect_inference(df, *args, **kwargs)
+
+        if "Econml" in str(type(self.model)):
+            # Get a list of "Inference" objects from EconML, one per treatment
+            self.model.__class__.apply_multitreatment = apply_multitreatment
+            if self.cfg._configs()[self.best_estimator].inference == "bootstrap":
+                raise NotImplementedError(
+                    f"Can't calculate stds for estimator \
+                {self.best_estimator} \
+                as boostrap inference is not supported yet"
+                )
+            return self.model.effect_inference(df, *args, **kwargs)
+        else:
+            raise NotImplementedError(
+                "No pointwise error estimates for non-EconML estimators implemented yet"
+            )
+
+    def effect_stderr(self, df, *args, **kwargs):
+
+        if "Econml" in str(type(self.model)):
+            # Get a list of "Inference" objects from EconML, one per treatment
+            self.model.__class__.effect_stderr = effect_stderr
+            if self.cfg._configs()[self.best_estimator].inference == "bootstrap":
+                raise NotImplementedError(
+                    f"Can't calculate stds for estimator \
+                {self.best_estimator} \
+                as boostrap inference is not supported yet"
+                )
+            return self.model.effect_stderr(df, *args, **kwargs)
+        else:
+            raise NotImplementedError(
+                "No pointwise error estimates for non-EconML estimators implemented yet"
+            )
