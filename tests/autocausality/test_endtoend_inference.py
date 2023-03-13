@@ -1,6 +1,7 @@
 import pytest
 import warnings
 
+from econml.inference import BootstrapInference
 
 from auto_causality import AutoCausality
 from auto_causality.datasets import synth_ihdp, linear_multi_dataset
@@ -45,6 +46,28 @@ class TestEndToEndInference(object):
             auto_causality.fit(data)
             auto_causality.effect_stderr(data.data)
 
+    def test_endtoend_inference_bootstrap(self):
+        """tests if CATE model can be instantiated and fit to data"""
+        data = synth_ihdp()
+        data.preprocess_dataset()
+
+        BootstrapInference(n_bootstrap_samples=10, n_jobs=10)
+        estimator_list = ["SLearner"]
+
+        for e in estimator_list:
+            auto_causality = AutoCausality(
+                num_samples=1,
+                components_time_budget=10,
+                estimator_list=[e],
+                use_ray=False,
+                verbose=3,
+                components_verbose=2,
+                resources_per_trial={"cpu": 0.5},
+            )
+
+            auto_causality.fit(data)
+            auto_causality.effect_stderr(data.data)
+
     def test_endtoend_multivalue_nobootstrap(self):
         data = linear_multi_dataset(1000)
         cfg = SimpleParamService(
@@ -72,6 +95,28 @@ class TestEndToEndInference(object):
 
             auto_causality.fit(data)
             auto_causality.effect_stderr(data.data)
+
+        # TODO add an effect() call and an effect_tt call
+        print("yay!")
+
+    def test_endtoend_multivalue_bootstrap(self):
+        data = linear_multi_dataset(1000)
+
+        estimator_list = ["SLearner"]
+
+        for e in estimator_list:
+            auto_causality = AutoCausality(
+                num_samples=1,
+                components_time_budget=10,
+                estimator_list=[e],
+                use_ray=False,
+                verbose=3,
+                components_verbose=2,
+                resources_per_trial={"cpu": 0.5},
+            )
+
+            auto_causality.fit(data)
+            tmp = auto_causality.effect_stderr(data.data)
 
         # TODO add an effect() call and an effect_tt call
         print("yay!")
