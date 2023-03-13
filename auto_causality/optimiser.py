@@ -234,7 +234,9 @@ class AutoCausality:
             else:
                 outcome_model_class = AutoML
 
-            self.outcome_model = outcome_model_class(**self._settings["component_models"])
+            self.outcome_model = outcome_model_class(
+                **self._settings["component_models"]
+            )
 
     def fit(
         self,
@@ -613,3 +615,6 @@ class AutoCausality:
 
     def effect(self, df, *args, **kwargs):
         return self.model.effect(df, *args, **kwargs)
+
+    def effect_inference(self, df, *args, **kwargs):
+        return self.model.effect_inference(df, *args, **kwargs)
