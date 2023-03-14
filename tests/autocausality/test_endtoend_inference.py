@@ -116,7 +116,7 @@ class TestEndToEndInference(object):
             )
 
             auto_causality.fit(data)
-            tmp = auto_causality.effect_stderr(data.data)
+            tmp = auto_causality.effect_stderr(data.data)  # noqa F841
 
         # TODO add an effect() call and an effect_tt call
         print("yay!")

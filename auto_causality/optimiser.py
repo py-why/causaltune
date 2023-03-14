@@ -657,16 +657,14 @@ class AutoCausality:
                 )
 
                 best_cfg = {
-                    k: v
-                    for k, v in self.best_config.items()
-                    if k not in ["estimator", "overall_model"]
+                    k: v for k, v in self.best_config.items() if k not in ["estimator"]
                 }
                 method_params = {
                     "init_params": {**best_cfg, **cfg.init_params},
                     "fit_params": {"inference": bootstrap},
                 }
-                estimate = self._est_effect_stub(method_params)
-                est = estimate.estimator
+                self.bootstrapped_estimate = self._est_effect_stub(method_params)
+                est = self.bootstrapped_estimate.estimator
             else:
                 # If the estimator supports other inference methods,
                 # those have already been included

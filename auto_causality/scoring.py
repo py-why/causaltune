@@ -6,7 +6,7 @@ from typing import Optional, Dict, Union, Any, List
 import numpy as np
 import pandas as pd
 
-from econml.cate_interpreter import SingleTreeCateInterpreter
+from econml.cate_interpreter import SingleTreeCateInterpreter  # noqa F401
 from dowhy.causal_estimator import CausalEstimate
 from dowhy import CausalModel
 
@@ -268,7 +268,7 @@ class Scorer:
         if not isinstance(treatment_name, str):
             treatment_name = treatment_name[0]
         outcome_name = est._outcome_name
-        covariates = est._effect_modifier_names
+
         cate_estimate = est.effect(df)
 
         # TODO: fix this hack with proper treatment of multivalues
@@ -276,6 +276,7 @@ class Scorer:
             cate_estimate = cate_estimate.reshape(-1)
 
         # TODO: fix this, currently broken
+        # covariates = est._effect_modifier_names
         # Include CATE Interpereter for both IV and CATE models
         # intrp = SingleTreeCateInterpreter(
         #     include_model_uncertainty=False, max_depth=2, min_samples_leaf=10
