@@ -14,13 +14,20 @@ from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
 from dowhy import CausalModel
 from dowhy.causal_identifier import IdentifiedEstimand
+
+from econml.inference import BootstrapInference
+
 from joblib import Parallel, delayed
 
 from auto_causality.params import SimpleParamService
 from auto_causality.scoring import Scorer
 from auto_causality.r_score import RScoreWrapper
 from auto_causality.utils import clean_config, treatment_is_multivalue
-from auto_causality.models.monkey_patches import AutoML
+from auto_causality.models.monkey_patches import (
+    AutoML,
+    apply_multitreatment,
+    effect_stderr,
+)
 from auto_causality.data_utils import CausalityDataset
 from auto_causality.models.passthrough import feature_filter
 
@@ -234,7 +241,9 @@ class AutoCausality:
             else:
                 outcome_model_class = AutoML
 
-            self.outcome_model = outcome_model_class(**self._settings["component_models"])
+            self.outcome_model = outcome_model_class(
+                **self._settings["component_models"]
+            )
 
     def fit(
         self,
@@ -499,6 +508,17 @@ class AutoCausality:
 
         return estimates
 
+    def _est_effect_stub(self, method_params):
+        return self.causal_model.estimate_effect(
+            self.identified_estimand,
+            method_name=self.estimator_name,
+            control_value=self._control_value,
+            treatment_value=self._treatment_values,
+            target_units="ate",  # condition used for CATE
+            confidence_intervals=False,
+            method_params=method_params,
+        )
+
     def _estimate_effect(self, config):
         """estimates effect with chosen estimator"""
 
@@ -509,21 +529,13 @@ class AutoCausality:
         #     k: v for k, v in config.items() if (not k == "estimator_name")
         # }
         cfg = self.cfg.method_params(self.estimator_name)
-
+        method_params = {
+            "init_params": {**deepcopy(config), **cfg.init_params},
+            "fit_params": {},
+        }
         try:  #
             # if True:  #
-            estimate = self.causal_model.estimate_effect(
-                self.identified_estimand,
-                method_name=self.estimator_name,
-                control_value=self._control_value,
-                treatment_value=self._treatment_values,
-                target_units="ate",  # condition used for CATE
-                confidence_intervals=False,
-                method_params={
-                    "init_params": {**deepcopy(config), **cfg.init_params},
-                    "fit_params": {},
-                },
-            )
+            estimate = self._est_effect_stub(method_params)
             scores = {
                 "estimator_name": self.estimator_name,
                 "train": self._compute_metrics(
@@ -613,3 +625,52 @@ class AutoCausality:
 
     def effect(self, df, *args, **kwargs):
         return self.model.effect(df, *args, **kwargs)
+
+    def effect_inference(self, df, *args, **kwargs):
+
+        if "Econml" in str(type(self.model)):
+            # Get a list of "Inference" objects from EconML, one per treatment
+            self.model.__class__.apply_multitreatment = apply_multitreatment
+            if self.cfg._configs()[self.best_estimator].inference == "bootstrap":
+                raise NotImplementedError(
+                    f"Can't calculate stds for estimator \
+                {self.best_estimator} \
+                as boostrap inference is not supported yet"
+                )
+            return self.model.effect_inference(df, *args, **kwargs)
+        else:
+            raise NotImplementedError(
+                "No pointwise error estimates for non-EconML estimators implemented yet"
+            )
+
+    def effect_stderr(self, df, n_bootstrap_samples=5, n_jobs=1, *args, **kwargs):
+
+        if "Econml" in str(type(self.model)):
+            # Get a list of "Inference" objects from EconML, one per treatment
+            self.model.__class__.effect_stderr = effect_stderr
+            cfg = self.cfg.method_params(self.best_estimator)
+
+            if cfg.inference == "bootstrap":
+                # TODO: before bootstrapping, check whether that's already been done
+                bootstrap = BootstrapInference(
+                    n_bootstrap_samples=n_bootstrap_samples, n_jobs=n_jobs
+                )
+
+                best_cfg = {
+                    k: v for k, v in self.best_config.items() if k not in ["estimator"]
+                }
+                method_params = {
+                    "init_params": {**best_cfg, **cfg.init_params},
+                    "fit_params": {"inference": bootstrap},
+                }
+                self.bootstrapped_estimate = self._est_effect_stub(method_params)
+                est = self.bootstrapped_estimate.estimator
+            else:
+                # If the estimator supports other inference methods,
+                # those have already been included
+                est = self.model
+            return est.effect_stderr(df, *args, **kwargs)
+        else:
+            raise NotImplementedError(
+                "No pointwise error estimates for non-EconML estimators implemented yet"
+            )
