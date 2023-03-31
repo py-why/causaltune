@@ -293,7 +293,9 @@ class Scorer:
                 # .reset_index(drop=True)
                 values[
                     "p"
-                ] = self.psw_estimator.estimator.propensity_model.predict_proba(df)[
+                ] = self.psw_estimator.estimator.propensity_model.predict_proba(
+                        df[self.causal_model.get_effect_modifiers() + self.causal_model.get_common_causes()]
+                    )[
                     :, 1
                 ]
                 values["policy"] = cate_estimate > 0
