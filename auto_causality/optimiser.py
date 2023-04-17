@@ -275,6 +275,10 @@ class AutoCausality:
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
 
         """
+        if isinstance(data, CausalityDataset):
+            if len(data.outcomes) > 1:
+                assert outcome is not None, 'Multiple outcomes detected. Please specify outcome.'
+
         if not isinstance(data, CausalityDataset):
             assert isinstance(data, pd.DataFrame)
             data = CausalityDataset(
@@ -302,11 +306,14 @@ class AutoCausality:
             self.data.data, train_size=self._settings["train_size"], shuffle=True
         )
 
+        # dirty fix to use outcome param when multiple outcomes present
+        outcome = outcome if len(data.outcomes) > 1 else data.outcomes[0]        
+
         # smuggle propensity modifiers into common causes, filter later in component models
         self.causal_model = CausalModel(
             data=self.train_df,
             treatment=data.treatment,
-            outcome=data.outcomes[0],
+            outcome=outcome,
             common_causes=data.common_causes + data.propensity_modifiers,
             effect_modifiers=data.effect_modifiers,
             instruments=data.instruments,
