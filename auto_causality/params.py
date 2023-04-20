@@ -380,7 +380,7 @@ class SimpleParamService:
                     # "min_var_fraction_leaf": tune.uniform(0, 1),
                     "max_features": tune.choice(["auto", "sqrt", "log2", None]),
                     "min_impurity_decrease": tune.uniform(0, 10),
-                    "max_samples": tune.uniform(0, 1),
+                    "max_samples": tune.uniform(0, .5),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
                     "honest": tune.choice([0, 1]),
                     # "inference": tune.choice([0, 1]),
