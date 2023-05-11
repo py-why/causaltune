@@ -19,7 +19,9 @@ import dcor
 
 class DummyEstimator:
     def __init__(
-        self, cate_estimate: np.ndarray, effect_intervals: Optional[np.ndarray] = None
+        self, 
+        cate_estimate: np.ndarray, 
+        effect_intervals: Optional[np.ndarray] = None
     ):
         self.cate_estimate = cate_estimate
         self.effect_intervals = effect_intervals
@@ -57,6 +59,14 @@ class Scorer:
         problem: str,
         multivalue: bool,
     ):
+        
+        """
+        Contains scoring logic for CausalTune.
+
+        Access methods and attributes via `causal_tune.scorer`.
+        
+        """
+
         self.problem = problem
         self.multivalue = multivalue
         self.causal_model = copy.deepcopy(causal_model)
@@ -96,7 +106,21 @@ class Scorer:
                 + self.psw_estimator._observed_common_causes_names,
             )
 
-    def ate(self, df: pd.DataFrame):
+    def ate(
+        self, 
+        df: pd.DataFrame
+    ) -> tuple:
+
+        """
+        Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.
+
+        @param df (pandas.DataFrame): input dataframe
+        
+        @return tuple: tuple containing the ATE, standard deviation of the estimate (or None if multi-treatment), 
+            and sample size (or None if estimate has more than one dimension)
+        
+        """
+
         estimate = self.psw_estimator.estimator.effect(df).mean(axis=0)
 
         if len(estimate) == 1:
@@ -108,7 +132,20 @@ class Scorer:
         else:
             return estimate, None, None
 
-    def resolve_metric(self, metric: str) -> str:
+    def resolve_metric(
+        self, 
+        metric: str
+    ) -> str:
+
+        """
+        Check if supplied metric is supported. If not, default to 'energy_distance'.
+        
+        @param metric (str): evaluation metric
+        
+        @return str: metric/'energy_distance'
+
+        """
+
         metrics = supported_metrics(self.problem, self.multivalue, scores_only=True)
 
         if metric not in metrics:
@@ -121,8 +158,20 @@ class Scorer:
             return metric
 
     def resolve_reported_metrics(
-        self, metrics_to_report: Union[List[str], None], scoring_metric: str
-    ):
+        self, 
+        metrics_to_report: Union[List[str], None], 
+        scoring_metric: str
+    ) -> List[str]:
+
+        """
+        Check if supplied reporting metrics are valid.
+
+        @param metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute. 
+            Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', and 'energy_distance'.
+        @param scoring_metric (str): specified metric
+        
+        @return List[str]: list of valid metrics
+        """
 
         metrics = supported_metrics(self.problem, self.multivalue, scores_only=False)
         if metrics_to_report is None:
@@ -143,6 +192,19 @@ class Scorer:
         estimate: CausalEstimate,
         df: pd.DataFrame,
     ) -> float:
+        
+        """
+        Calculate energy distance score between treated and controls.
+
+        For theoretical details, see Ramos-Carreño and Torrecilla (2023).
+
+        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+        @param df (pandas.DataFrame): input dataframe
+        
+        @return float: energy distance score
+        
+        """
+
         est = estimate.estimator
         # assert est.identifier_method in ["iv", "backdoor"]
         treatment_name = (
@@ -169,8 +231,22 @@ class Scorer:
 
     @staticmethod
     def qini_make_score(
-        estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
+        estimate: CausalEstimate, 
+        df: pd.DataFrame, 
+        cate_estimate: np.ndarray
     ) -> float:
+        
+        """
+        Calculate the Qini score, defined as the area between the Qini curves of a model and random.
+
+        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+        @param df (pandas.DataFrame): input dataframe
+        @param cate_estimate (np.ndarray): array with cate estimates
+        
+        @return float: Qini score
+
+        """
+
         est = estimate.estimator
         new_df = pd.DataFrame()
         new_df["y"] = df[est._outcome_name]
@@ -180,14 +256,28 @@ class Scorer:
         new_df["w"] = df[treatment_name]
         new_df["model"] = cate_estimate
 
-        qini_score = metrics.qini_score(new_df)["model"]
+        qini_score = metrics.qini_score(new_df)
 
-        return qini_score
+        return qini_score["model"]
 
     @staticmethod
     def auc_make_score(
-        estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
+        estimate: CausalEstimate, 
+        df: pd.DataFrame, 
+        cate_estimate: np.ndarray
     ) -> float:
+        
+        """
+        Calculate the area under the uplift curve.
+        
+        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+        @param df (pandas.DataFrame): input dataframe
+        @param cate_estimate (np.ndarray): array with cate estimates
+        
+        @return float: area under the uplift curve
+        
+        """
+
         est = estimate.estimator
         new_df = pd.DataFrame()
         new_df["y"] = df[est._outcome_name]
@@ -203,7 +293,9 @@ class Scorer:
 
     @staticmethod
     def real_qini_make_score(
-        estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
+        estimate: CausalEstimate, 
+        df: pd.DataFrame, 
+        cate_estimate: np.ndarray
     ) -> float:
         # TODO  To calculate the 'real' qini score for synthetic datasets, to be done
 
@@ -219,16 +311,47 @@ class Scorer:
 
     @staticmethod
     def r_make_score(
-        estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, r_scorer
+        estimate: CausalEstimate, 
+        df: pd.DataFrame, 
+        cate_estimate: np.ndarray, 
+        r_scorer
     ) -> float:
+        
+        """
+        Calculate r_score.
+
+        For details refer to Nie and Wager (2017) and Schuler et al. (2018).
+        
+        Adaption from EconML implementation.
+
+        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+        @param df (pandas.DataFrame): input dataframe
+        @param cate_estimate (np.ndarray): array with cate estimates
+        @param r_scorer: callable object used to compute the R-score
+        
+        @return float: r_score
+        
+        """
+
         # TODO
         return r_scorer.score(cate_estimate)
 
     @staticmethod
     def naive_ate(
-        treatment,
-        outcome,
+        treatment: pd.Series,
+        outcome: pd.Series
     ):
+        
+        """
+        Calculate simple ATE.
+
+        @param treatment (pandas.Series): series of treatments
+        @param outcome (pandas.Series): series of outcomes
+        
+        @return: tuple of simple ATE, standard deviation, and sample size
+
+        """
+
         treated = (treatment == 1).sum()
 
         mean_ = outcome[treatment == 1].mean() - outcome[treatment == 0].mean()
@@ -239,7 +362,21 @@ class Scorer:
         std_ = math.sqrt(std1 * std1 + std2 * std2)
         return (mean_, std_, len(treatment))
 
-    def group_ate(self, df, policy: Union[pd.DataFrame, np.ndarray]):
+    def group_ate(
+        self, 
+        df: pd.DataFrame, 
+        policy: Union[pd.DataFrame, np.ndarray]
+    ) -> pd.DataFrame:
+        
+        """
+        Compute the average treatment effect (ATE) for different groups specified by a policy. 
+
+        @param df (pandas.DataFrame): input dataframe, should contain columns for the treatment, outcome, and policy
+        @param policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values, used to group the data
+        
+        @return: pandas.DataFrame of ATE, std, and size per policy
+        
+        """
 
         tmp = {"all": self.ate(df)}
         for p in sorted(list(policy.unique())):
@@ -256,9 +393,21 @@ class Scorer:
         self,
         estimate: CausalEstimate,
         df: pd.DataFrame,
-        metrics_to_report,
+        metrics_to_report: List[str],
         r_scorer=None,
     ) -> dict:
+        
+        """
+        Calculate various performance metrics for a given causal estimate using a given DataFrame.
+
+        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+        @param df (pandas.DataFrame): input dataframe
+        @param metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute. Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', and 'energy_distance'.
+        @param r_scorer (Optional): callable object used to compute the R-score, default is None
+
+        @return dict: dictionary containing the evaluation metrics specified in metrics_to_report. 
+            The values key in the dictionary contains the input DataFrame with additional columns for the propensity scores, the policy, the normalized policy, and the weights, if applicable.
+        """
 
         out = dict()
         df = df.copy().reset_index()
@@ -344,8 +493,20 @@ class Scorer:
 
     @staticmethod
     def best_score_by_estimator(
-        scores: Dict[str, dict], metric: str
+        scores: Dict[str, dict], 
+        metric: str
     ) -> Dict[str, dict]:
+        
+        """
+        Obtain best score for each estimator.
+
+        @param scores (Dict[str, dict]): auto_causality.scores dictionary
+        @param metric (str): metric of interest
+        
+        @return Dict[str, dict]: dictionary containing best score by estimator
+        
+        """
+
         for k, v in scores.items():
             if "estimator_name" not in v:
                 raise ValueError(

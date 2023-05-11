@@ -61,7 +61,7 @@ _base._check_precomputed_gram_matrix = _check_precomputed_gram_matrix
 
 
 class AutoCausality:
-    """Performs AutoML to find best econML estimator.
+    """Performs AutoML to find best EconML estimator.
     Optimises hyperparams of component models of each estimator
     and hyperparams of the estimators themselves. Uses the ERUPT
     metric for estimator selection.
@@ -69,13 +69,15 @@ class AutoCausality:
     Example:
     ```python
 
+    cd = CausalityDataset(data=df, treatment='T', outcomes=['Y'])
+    cd.preprocess_dataset()
+
     estimator_list = [".LinearDML","LinearDRLearner","metalearners"]
-    auto_causality = AutoCausality(time_budget=10, estimator_list=estimator_list)
+    ct = CausalTune(time_budget=10, estimator_list=estimator_list)
 
-    auto_causality.fit(train_df, test_df, treatment, outcome,
-    features_W, features_X)
+    ct.fit(cd)
 
-    print(f"Best estimator: {auto_causality.best_estimator}")
+    print(f"Best estimator: {ct.best_estimator}")
 
     ```
     """
@@ -104,7 +106,7 @@ class AutoCausality:
         include_experimental_estimators=False,
         store_all_estimators: Optional[bool] = False,
     ):
-        """constructor.
+        """Constructor.
 
         Args:
             data_df (pandas.DataFrame): dataset to perform causal inference on
@@ -571,10 +573,12 @@ class AutoCausality:
 
     def score_dataset(self, df: pd.DataFrame, dataset_name: str):
         """
-        After fitting, generate scores for an additional dataset, add them to the scores dict
-        @param df:
-        @param dataset_name:
-        @return:
+        After fitting, generate scores for an additional dataset, add them to the scores dict.
+        
+        @param df (pandas.DataFrame):
+        @param dataset_name (str):
+        
+        @return: None.
         """
         for scr in self.scores.values():
             scr["scores"][dataset_name] = self._compute_metrics(scr["estimator"], df)
