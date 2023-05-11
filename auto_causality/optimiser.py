@@ -82,7 +82,6 @@ class AutoCausality:
 
     def __init__(
         self,
-        data_df=None,
         metric="energy_distance",
         metrics_to_report=None,
         time_budget=None,
@@ -107,7 +106,6 @@ class AutoCausality:
         """constructor.
 
         Args:
-            data_df (pandas.DataFrame): dataset to perform causal inference on
             metric (str): metric to optimise.
                 Defaults to "erupt" for CATE, "energy_distance" for IV
             metrics_to_report (list). additional metrics to compute and report.
@@ -185,7 +183,6 @@ class AutoCausality:
         self._best_estimators = defaultdict(lambda: (float("-inf"), None))
 
         self.original_estimator_list = estimator_list
-        self.data_df = data_df or pd.DataFrame()
         self.causal_model = None
         self.identified_estimand = None
         self.problem = None
@@ -257,13 +254,14 @@ class AutoCausality:
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
+        store_data: Optional[bool] = True,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
         - Otherwise, only its component models are optimised
 
         Args:
-            data_df (pandas.DataFrame): dataset for causal inference
+            data (pandas.DataFrame): dataset for causal inference
             treatment (str): name of treatment variable
             outcome (str): name of outcome variable
             common_causes (List[str]): list of names of common causes
@@ -273,6 +271,7 @@ class AutoCausality:
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
+            store_data (Optional[bool]): Set true if keep train_df, test_df after fit
 
         """
         if not isinstance(data, CausalityDataset):
@@ -456,6 +455,11 @@ class AutoCausality:
             )
 
         self.update_summary_scores()
+        
+        if not store_data:
+            delattr(self, 'train_df')
+            delattr(self, 'test_df')
+            delattr(self, 'data')
 
     def update_summary_scores(self):
         self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
