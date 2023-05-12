@@ -109,34 +109,39 @@ class AutoCausality:
         """Constructor.
 
         Args:
-            data_df (pandas.DataFrame): dataset to perform causal inference on
-            metric (str): metric to optimise.
+            @param data_df (pandas.DataFrame): dataset to perform causal inference on
+            @param metric (str): metric to optimise.
                 Defaults to "erupt" for CATE, "energy_distance" for IV
-            metrics_to_report (list). additional metrics to compute and report.
+            @param metrics_to_report (list): additional metrics to compute and report.
                 Defaults to ["qini","auc","ate","erupt", "norm_erupt"] for CATE
                 or ["energy_distance"] for IV
-            time_budget (float): a number of the time budget in seconds. -1 if no limit.
-            num_samples (int): max number of iterations.
-            verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
-            use_ray (bool): use Ray backend (nrequires ray to be installed).
-            estimator_list (list): a list of strings for estimator names,
+            @param time_budget (float): a number of the time budget in seconds. -1 if no limit.
+            @param num_samples (int): max number of iterations.
+            @param verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
+            @param use_ray (bool): use Ray backend (requires ray to be installed).
+            @param estimator_list (list): a list of strings for estimator names,
              or "auto" for a recommended subset, "all" for all, or a list of substrings of estimator names
                e.g. ```['dml', 'CausalForest']```
-            train_size (float): Fraction of data used for training set. Defaults to 0.5.
-            test_fraction (float): Optional size of test dataset. Defaults to None.
-            propensity_model (Union[str, Any]): 'dummy' for dummy classifier, 'auto' for AutoML, or an
+            @param train_size (float): Fraction of data used for training set. Defaults to 0.8.
+            @param test_size (float): Optional size of test dataset. Defaults to None.
+            @param propensity_model (Union[str, Any]): 'dummy' for dummy classifier, 'auto' for AutoML, or an
                 sklearn-style classifier
-            components_task (str): task for component models. Defaults to "regression".
-            components_verbose (int): verbosity of component model HPO. range (0,3). Defaults to 0.
-            components_pred_time_limit (float): prediction time limit for component models
-            components_njobs (int): number of concurrent jobs for component model optimisation.
+            @param components_task (str): task for component models. Defaults to "regression".
+            @param components_verbose (int): verbosity of component model HPO (hyper parameter optimisation).
+                range (0,3). Defaults to 0.
+            @param components_pred_time_limit (float): prediction time limit for component models
+            @param components_njobs (int): number of concurrent jobs for component model optimisation.
                 Defaults to -1 (all available cores).
-            components_time_budget (float): time budget for HPO of component models in seconds.
+            @param components_time_budget (float): time budget for HPO of component models in seconds.
                 Defaults to overall time budget / 2.
-            try_init_configs (bool): try list of good performing estimators before continuing with HPO.
+            @param try_init_configs (bool): try list of good performing estimators before continuing with HPO.
                 Defaults to False.
-            blacklisted_estimators (list): [optional] list of estimators not to include in fitting
-            store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False
+            @param resources_per_trial: computational resources per trial, defaults in constructor to {"cpu": 0.5}
+            @param include_experimental_estimators (bool): Include experimental causal estimators. Whether an estimator
+                is experimental can be seen in SimpleParamsService in scoring.py
+            @param store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False
+
+            @return: None
         """
         assert (
             time_budget is not None or components_time_budget is not None
@@ -265,17 +270,18 @@ class AutoCausality:
         - Otherwise, only its component models are optimised
 
         Args:
-            data_df (pandas.DataFrame): dataset for causal inference
-            treatment (str): name of treatment variable
-            outcome (str): name of outcome variable
-            common_causes (List[str]): list of names of common causes
-            effect_modifiers (List[str]): list of names of effect modifiers
-            propensity_modifiers (List[str]): list of names of propensity modifiers
-            instruments (List[str]): list of names of instrumental variables
-            estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
-            resume (Optional[bool]): set to True to continue previous fit
-            time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
+            @param data (pandas.DataFrame): dataset for causal inference
+            @param treatment (str): name of treatment variable
+            @param outcome (str): name of outcome variable
+            @param common_causes (List[str]): list of names of common causes
+            @param effect_modifiers (List[str]): list of names of effect modifiers
+            @param instruments (List[str]): list of names of instrumental variables
+            @param propensity_modifiers (List[str]): list of names of propensity modifiers
+            @param estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
+            @param resume (Optional[bool]): set to True to continue previous fit
+            @param time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
 
+            @return: None
         """
         if not isinstance(data, CausalityDataset):
             assert isinstance(data, pd.DataFrame)
@@ -460,6 +466,10 @@ class AutoCausality:
         self.update_summary_scores()
 
     def update_summary_scores(self):
+        """Stores scores for metric of interest for each estimator
+
+        @return: None
+        """
         self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
         # now inject the separately saved model objects
         for est_name in self.scores:
@@ -473,12 +483,10 @@ class AutoCausality:
         """Performs Hyperparameter Optimisation for a
         causal inference estimator
 
-        Args:
-            config (dict): dictionary with search space for
+        @param config (dict): dictionary with search space for
             all tunable parameters
 
-        Returns:
-            dict: values of metrics after optimisation
+        @return (dict): values of metrics after optimisation
         """
         # estimate effect with current config
 
@@ -574,10 +582,10 @@ class AutoCausality:
     def score_dataset(self, df: pd.DataFrame, dataset_name: str):
         """
         After fitting, generate scores for an additional dataset, add them to the scores dict.
-        
+
         @param df (pandas.DataFrame):
         @param dataset_name (str):
-        
+
         @return: None.
         """
         for scr in self.scores.values():
@@ -585,23 +593,27 @@ class AutoCausality:
 
     @property
     def best_estimator(self) -> str:
-        """A string indicating the best estimator found"""
+        """A string indicating the best estimator found
+
+        @return: None
+        """
         return self.results.best_result["estimator_name"]
 
     @property
     def model(self):
-        """Return the *trained* best estimator"""
+        """Return the *trained* best estimator
+
+        @return CausalEstimator
+        """
         return self.results.best_result["estimator"].estimator
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
         estimator: self.tune_results[estimator].best_config
 
-        Args:
-            estimator_name: a str of the estimator's name.
+        @param estimator_name (str): the estimator's name.
 
-        Returns:
-            An object storing the best model for estimator_name.
+        @return (dowhy.causal_estimator.CausalEstimate): the best model for estimator_name.
         """
         # Note that this returns the trained Econml estimator, whose attributes include
         # fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc.
@@ -609,12 +621,15 @@ class AutoCausality:
 
     @property
     def best_config(self):
-        """A dictionary containing the best configuration"""
+        """
+        @return (dict): the best configuration
+        """
         return self.results.best_config
 
     @property
     def best_config_per_estimator(self):
-        """A dictionary of all estimators' best configuration."""
+        """
+        @return (dict): all estimators' best configuration."""
         return {e: s["config"] for e, s in self.scores.values()}
 
     @property
@@ -624,14 +639,29 @@ class AutoCausality:
 
     @property
     def best_score(self):
-        """A float of the best score found."""
+        """
+        @return (float):  the best score found."""
         return self.results.best_result[self.metric]
 
     def effect(self, df, *args, **kwargs):
+        """Heterogeneous Treatment Effects for data df
+
+        @param    df (pd.DataFrame): Data to predict treatment effect for
+        @return (np.ndarray): predicted treatment effect for each datapoint
+        """
         return self.model.effect(df, *args, **kwargs)
 
     def effect_inference(self, df, *args, **kwargs):
+        """Inference (uncertainty) results produced by best estimator
+        Only implemented for EconML estimators so far
 
+        @param df (pd.DataFrame): data to run inference on
+        @param args: passed through to underlying estimator
+        @param kwargs: passed through to underlying estimator
+        @return (from EconML: NormalInferenceResults):
+            EconML results object for inference assuming a normal distribution.
+
+        """
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.apply_multitreatment = apply_multitreatment
@@ -648,7 +678,15 @@ class AutoCausality:
             )
 
     def effect_stderr(self, df, n_bootstrap_samples=5, n_jobs=1, *args, **kwargs):
+        """Compute standard errors for best causal estimator
+            Currently implemented for EconML estimators.
+            Computes analytical standard errors if available and boostraps otherwise.
 
+        @param    df (pd.DataFrame): data to run inference on
+        @param   n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.
+        @param    n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.
+        @return  (np.ndarray): standard error for each data point from df
+        """
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.effect_stderr = effect_stderr
