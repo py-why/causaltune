@@ -319,7 +319,7 @@ class AutoCausality:
             self.causal_model.identify_effect(proceed_when_unidentifiable=True)
         )
 
-        if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
+        if bool(self.identified_estimand.estimands["iv"]) and bool(data.instruments):
             self.problem = "iv"
         elif bool(self.identified_estimand.estimands["backdoor"]):
             self.problem = "backdoor"
@@ -627,7 +627,6 @@ class AutoCausality:
         return self.model.effect(df, *args, **kwargs)
 
     def effect_inference(self, df, *args, **kwargs):
-
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.apply_multitreatment = apply_multitreatment
@@ -644,7 +643,6 @@ class AutoCausality:
             )
 
     def effect_stderr(self, df, n_bootstrap_samples=5, n_jobs=1, *args, **kwargs):
-
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.effect_stderr = effect_stderr

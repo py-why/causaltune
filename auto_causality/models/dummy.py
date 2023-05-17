@@ -6,6 +6,10 @@ import pandas as pd
 from auto_causality.models.wrapper import DoWhyMethods, DoWhyWrapper
 from auto_causality.scoring import Scorer
 
+from dowhy.causal_estimators.instrumental_variable_estimator import (
+    InstrumentalVariableEstimator,
+)
+
 
 # # Let's engage in a bit of monkey patching as we wait for this to be merged into DoWhy
 # # #TODO: delete this as soon as PR #485 is merged into dowhy
@@ -132,3 +136,16 @@ class NaiveDummy(DoWhyWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, inner_class=DummyModel, **kwargs)
         self.identifier_method = "backdoor"
+
+
+class SimpleIV(InstrumentalVariableEstimator):
+    """
+    Based on Wald & 2SlS Estimator from dowhy's IV estimator
+    """
+
+    identifier_method = "iv"
+
+    def effect(self, df: pd.DataFrame, **kwargs):
+        scalar_effect = self.estimate_effect().value
+        # Or randomized: (1 + 0.01 * np.random.normal(size=effect.shape))
+        return np.ones(len(df)) * scalar_effect
