@@ -438,8 +438,13 @@ def generate_synth_data_with_categories(
     X = np.random.hypergeometric(5, 5, 8, size=(n_samples, n_x))
     epsilon = np.random.uniform(low=-1, high=1, size=(n_samples,))
     gamma = np.random.uniform(low=0.5, high=1.5, size=(n_x,))
-    rho = lambda x: 0.01
-    feature_transform = lambda x: 0.5 * x
+
+    def rho(v):
+        return 0.01 * v
+
+    def feature_transform(v):
+        return 0.5 * v
+
     Y = (
         T.T * rho(X[:, : int(n_x / 2)])
         + feature_transform(np.matmul(gamma.T, X.T))

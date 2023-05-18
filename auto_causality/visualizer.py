@@ -113,7 +113,7 @@ class Visualizer:
                 plt.scatter(sc[1:2], crv[1:2], c=col, s=70, label="_nolegend_")
                 plt.scatter(sc[2:], crv[2:], c=col, s=120, label="_nolegend_")
 
-            except:
+            except Exception as e:
                 print("Please check inputs.")
         plt.xlabel(m1)
         plt.ylabel(m2)

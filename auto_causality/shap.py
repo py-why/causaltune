@@ -6,7 +6,7 @@ import shap
 def shap_values(estimate: CausalEstimate, df: pd.DataFrame):
     try:
         nice_df = df[estimate.estimator._effect_modifier_names]
-    except:
+    except AttributeError:
         # for EconML estimators
         nice_df = df[estimate.estimator._input_names["feature_names"]]
     try:
