@@ -19,7 +19,6 @@ class RScoreWrapper:
         common_causes,
         effect_modifiers,
     ):
-
         self.train = RScorer(model_y=model_y, model_t=model_t, discrete_treatment=True)
         self.test = RScorer(model_y=model_y, model_t=model_t, discrete_treatment=True)
         self.train.fit(

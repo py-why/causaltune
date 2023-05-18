@@ -48,7 +48,6 @@ class TestCustomOutputModel(object):
             # Dummy model doesn't support Shapley values
             # Orthoforest shapley calc is VERY slow
             if "Dummy" not in est_name and "Ortho" not in est_name:
-
                 print("Calculating Shapley values for", est_name)
                 shap_values(scores["estimator"], data.data[:10])
 
