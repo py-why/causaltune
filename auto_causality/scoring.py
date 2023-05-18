@@ -330,7 +330,7 @@ class Scorer:
                     estimate, df, cate_estimate, r_scorer
                 )
 
-            values = values.rename(columns={treatment_name: "treated"})
+            # values = values.rename(columns={treatment_name: "treated"})
             assert len(values) == len(df), "Index weirdness when adding columns!"
             values = values.copy()
             out["values"] = values
