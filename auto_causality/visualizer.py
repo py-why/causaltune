@@ -1,5 +1,4 @@
-import math
-from typing import Optional, Dict, Union, Any, List, Tuple, Literal
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -9,7 +8,6 @@ import matplotlib.pyplot as plt
 
 import shap
 from auto_causality.shap import shap_values
-from auto_causality.models.dummy import PropensityScoreWeighter
 from auto_causality.scoring import Scorer
 from dowhy.causal_model import CausalEstimate
 
@@ -56,7 +54,7 @@ class Visualizer:
 
         """
 
-        if shaps == None:
+        if shaps is None:
             sv = shap_values(estimate=estimate, df=df)
         else:
             sv = shaps
@@ -116,7 +114,7 @@ class Visualizer:
                 plt.scatter(sc[2:], crv[2:], c=col, s=120, label="_nolegend_")
 
             except:
-                pass
+                print("Please check inputs.")
         plt.xlabel(m1)
         plt.ylabel(m2)
 
