@@ -453,3 +453,40 @@ def generate_synth_data_with_categories(
         outcomes=["Y"],
     )
     return cd
+
+
+def generate_non_random_dataset(num_samples=1000):
+    num_samples = num_samples
+
+    x1 = np.random.normal(0, 1, num_samples)
+    x2 = np.random.normal(0, 1, num_samples)
+    x3 = np.random.normal(0, 1, num_samples)
+    x4 = np.random.normal(0, 1, num_samples)
+    x5 = np.random.normal(0, 1, num_samples)
+
+    propensity = 1 / (
+        1 + np.exp(-(0.5 * x1 + 0.8 * x2 - 0.3 * x3 + 0.2 * x4 - 0.1 * x5))
+    )
+    treatment = np.random.binomial(1, propensity)
+    outcome = 2 * treatment + 0.5 * x1 - 0.2 * x2 + np.random.normal(0, 1, num_samples)
+
+    dataset = {
+        "T": treatment,
+        "Y": outcome,
+        "X1": x1,
+        "X2": x2,
+        "X3": x3,
+        "X4": x4,
+        "X5": x5,
+        "propensity": propensity,
+    }
+
+    df = pd.DataFrame(dataset)
+    cd = CausalityDataset(
+        data=df,
+        treatment="treatment",
+        outcomes=["outcome"],
+        propensity_modifiers="propensity",
+    )
+
+    return cd
