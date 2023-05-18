@@ -484,9 +484,9 @@ def generate_non_random_dataset(num_samples=1000):
     df = pd.DataFrame(dataset)
     cd = CausalityDataset(
         data=df,
-        treatment="treatment",
-        outcomes=["outcome"],
-        propensity_modifiers="propensity",
+        treatment="T",
+        outcomes=["Y"],
+        propensity_modifiers=["propensity"],
     )
 
     return cd
