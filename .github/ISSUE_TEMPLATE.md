@@ -2,7 +2,7 @@
 Describe your issue here.
 
 ### Your environment
-* Version of Auto-Causality, e.g branch/commit #/release/tag
+* Version of causaltune, e.g branch/commit #/release/tag
 * Source type and setup
 * Target type and setup
 

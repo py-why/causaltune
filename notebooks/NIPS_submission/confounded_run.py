@@ -11,9 +11,9 @@
 # from typing import Union
 #
 # from sklearn.model_selection import train_test_split
-# from auto_causality import AutoCausality
-# from auto_causality.datasets import generate_synthetic_data
-# from auto_causality.models.passthrough import Passthrough
+# from causaltune import CausalTune
+# from causaltune.datasets import generate_synthetic_data
+# from causaltune.models.passthrough import Passthrough
 #
 # # set a few params
 # metrics = ["norm_erupt", "qini", "energy_distance"]
@@ -55,7 +55,7 @@
 #
 # train_df, test_df = train_test_split(data_df, test_size=test_size)
 # test_df = test_df.reset_index(drop=True)
-# ac = AutoCausality(
+# ac = CausalTune(
 #     metric="norm_erupt",
 #     verbose=2,
 #     components_verbose=2,
@@ -66,7 +66,7 @@
 #     propensity_model=Passthrough("propensity"),
 # )
 #
-# ac.fit(
+# ct.fit(
 #     train_df,
 #     treatment="treatment",
 #     outcome="outcome",
@@ -83,13 +83,13 @@
 #
 #             estimator_scores = defaultdict(list)
 #             # compute relevant scores (skip newdummy)
-#             datasets = {"train": ac.train_df, "validation": ac.test_df, "test": test_df}
+#             datasets = {"train": ct.train_df, "validation": ct.test_df, "test": test_df}
 #             # get scores on train,val,test for each trial,
 #             # sort trials by validation set performance
 #             # assign trials to estimators
-#             #             estimator_scores = {est: [] for est in ac.scores.keys() if "NewDummy" not in est}
+#             #             estimator_scores = {est: [] for est in ct.scores.keys() if "NewDummy" not in est}
 #
-#             for trial in ac.results.trials:
+#             for trial in ct.results.trials:
 #                 # estimator name:
 #                 estimator_name = trial.last_result["estimator_name"]
 #                 if trial.last_result.get("estimator", False):
@@ -98,11 +98,11 @@
 #                     for ds_name, df in datasets.items():
 #                         scores[ds_name] = {}
 #                         # make scores
-#                         est_scores = ac.scorer.make_scores(
+#                         est_scores = ct.scorer.make_scores(
 #                             estimator,
 #                             df,
-#                             problem=ac.problem,
-#                             metrics_to_report=ac.metrics_to_report,
+#                             problem=ct.problem,
+#                             metrics_to_report=ct.metrics_to_report,
 #                         )
 #
 #                         # add cate:
@@ -122,9 +122,9 @@
 #                     reverse=False if metric == "energy_distance" else True,
 #                 )
 #             results = {
-#                 "best_estimator": ac.best_estimator,
-#                 "best_config": ac.best_config,
-#                 "best_score": ac.best_score,
+#                 "best_estimator": ct.best_estimator,
+#                 "best_config": ct.best_config,
+#                 "best_score": ct.best_score,
 #                 "optimised_metric": metric,
 #                 "scores_per_estimator": estimator_scores,
 #             }

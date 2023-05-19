@@ -1,7 +1,7 @@
-# Auto-Causality: A library for automated Causal Inference model estimation and selection
+# causaltune: A library for automated Causal Inference model estimation and selection
 
 
-**AutoCausality** is a library for automated tuning and selection for causal estimators.
+**CausalTune** is a library for automated tuning and selection for causal estimators.
 
 Its estimators are taken from [EconML](https://github.com/microsoft/EconML/) augmented by a couple of extra models
 (currently Transformed Outcome and a dummy model to be used as a baseline), all called in a uniform fashion via a
@@ -20,7 +20,7 @@ using builtin EconML functionality for that where it is available and bootstrapp
 Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
 provided by the user do reflect all sources of confounding between the treatment and the outcome).
-The validation methods in auto-causality cannot catch such violations and therefore this is an important assumption.
+The validation methods in causaltune cannot catch such violations and therefore this is an important assumption.
 
 We also implement the [ERUPT](https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4)
 [calculation](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957) (also known as policy value),
@@ -50,7 +50,7 @@ though energy score performed better in our synthetic data experiments.
 The automated search over the many powerful models from EconML and elsewhere allows you to easily do the following
 
 ### 1. Supercharge A/B tests by getting impact by customer, instead of just an average
-By enriching the results of a regular A/B/N test with customer features, and running auto-causality on the
+By enriching the results of a regular A/B/N test with customer features, and running causaltune on the
 resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
 impact in the next iteration.
 
@@ -84,7 +84,7 @@ who have support queries is most likely not randomly sampled, confounding correc
 As with other usecases, the advanced causal inference models allow impact estimation as a function
 of customer features, rather than just averages, **under the assumption that all relevant confounders are observed**.
 
-To use this, just set `propensity_model` to an instance of the desired classifier when instantiating `AutoCausality`, or to `"auto"`
+To use this, just set `propensity_model` to an instance of the desired classifier when instantiating `CausalTune`, or to `"auto"`
 if you want to use the FLAML classifier (the default setting is `"dummy"` which assumes random assigment and infers
 the assignment probability from the data). [Example notebook](???)
 
@@ -114,7 +114,7 @@ TODO: make available as package on pypi
 
 
 **Requirements**
-AutoCausality requires the following libraries to work:
+CausalTune requires the following libraries to work:
 - NumPy
 - Pandas
 - EconML
@@ -127,24 +127,24 @@ pip install -r requirements.txt
 ```
 
 ## Quick Start
-The autocausality package can be used like a scikit-style estimator:
+The causaltune package can be used like a scikit-style estimator:
 
 ```Python
-from auto_causality import AutoCausality
-from auto_causality.datasets import synth_ihdp
+from causaltune import CausalTune
+from causaltune.datasets import synth_ihdp
 
 # prepare dataset
 data = synth_ihdp()
 data.preprocess_dataset()
 
-# init autocausality object with chosen metric to optimise
-ac = AutoCausality(time_budget=10, metric='erupt')
+# init causaltune object with chosen metric to optimise
+ac = CausalTune(time_budget=10, metric='erupt')
 
-# run autocausality
-myresults = ac.fit(data)
+# run causaltune
+myresults = ct.fit(data)
 
 # return best estimator
-print(f"Best estimator: {ac.best_estimator}")
+print(f"Best estimator: {ct.best_estimator}")
 
 ```
 
@@ -177,14 +177,14 @@ We support a variety of different metrics that quantify the performance of a cau
 * ATE (average treatment effect)
 
 ## Citation
-If you use AutoCausality in your research, please cite us as follows:
-Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Auto-Causality: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/auto-causality. 2022. Version 0.x
+If you use CausalTune in your research, please cite us as follows:
+Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Causaltune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/causaltune. 2022. Version 0.x
 You can use the following BibTex entry:
 ```
-@misc{autocausality,
+@misc{causaltune,
   author={Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev},
-  title={{Auto-Causality}: {A Python package for Automated Causal Inference model estimation and selection}},
-  howpublished={https://github.com/transferwise/auto-causality},
+  title={{Causaltune}: {A Python package for Automated Causal Inference model estimation and selection}},
+  howpublished={https://github.com/transferwise/causaltune},
   note={Version 0.x},
   year={2022}
 }
