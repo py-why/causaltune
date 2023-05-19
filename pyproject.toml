@@ -2,10 +2,11 @@
 requires = ["setuptools", "wheel"]
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers -vv"
+addopts = "--strict-markers -vv --nbmake"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
 testpaths = [
     "tests",
+    "notebooks"
 ]
