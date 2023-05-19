@@ -16,11 +16,11 @@ We perform automated hyperparameter tuning of first stage models (for the treatm
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
 
 The estimators provide not only per-row treatment impact estimates, but also confidence intervals for these,
-using builtin EconML functionality for that where it is available and bootstrapping where it is not [example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Standard%20errors.ipynb).
+using builtin EconML functionality for that where it is available and bootstrapping where it is not (see [example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Standard%20errors.ipynb)).
 
 Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
-provided by the user do reflect all sources of confounding between the treatment and the outcome).
+provided by the user do reflect all sources of confounding between the treatment and the outcome.
 
 The validation methods in causaltune cannot catch such violations and therefore this is an important assumption.
 
