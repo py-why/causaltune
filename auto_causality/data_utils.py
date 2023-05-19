@@ -16,6 +16,7 @@ def featurize(
     prune_min_categories: int = 50,
     prune_thresh: float = 0.99,
 ) -> pd.DataFrame:
+    
     # fill all the NaNs
     for col, t in zip(df.columns, df.dtypes):
         if pd.api.types.is_float_dtype(t):
@@ -57,8 +58,13 @@ def featurize(
     return out
 
 
-def frequent_values(x: pd.Series, thresh: float = 0.99) -> set:
-    # get the most frequent values, making up to the fraction thresh of total
+def frequent_values(
+    x: pd.Series, 
+    thresh: float = 0.99
+) -> set:
+    
+    # get the most frequent values of a pandas.Series, making up to the fraction thresh of total.
+
     data = x.to_frame("value")
     data["dummy"] = True
     tmp = (
@@ -72,8 +78,15 @@ def frequent_values(x: pd.Series, thresh: float = 0.99) -> set:
 
 
 def otherize_tail(
-    x: pd.Series, new_val: Any, thresh: float = 0.99, min_categories: int = 20
-):
+    x: pd.Series, 
+    new_val: Any, 
+    thresh: float = 0.99, 
+    min_categories: int = 20
+) -> pd.Series:
+
+    # convert infrequent values in a pandas.Series to a specified value.
+
+
     uniques = x.unique()
     if len(uniques) < min_categories:
         return x
@@ -104,6 +117,12 @@ class CausalityDataset:
         propensity_modifiers: Optional[List[str]] = None,
         instruments: Optional[List[str]] = None,
     ):
+        
+        """
+        Implements data logic for CausalTune.
+
+        """
+
         assert isinstance(data, pd.DataFrame)
         self.data = data
 
@@ -165,14 +184,17 @@ class CausalityDataset:
         scale_floats: bool = False,
         prune_min_categories: int = 50,
         prune_thresh: float = 0.99,
-    ) -> tuple:
-        """preprocesses dataset for causal inference
-        Args:
-            data (pd.DataFrame): a dataset for causal inference
-    \
+    ):
+        """
+        Preprocesses input dataset for CausalTune by 
+            converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.
 
-        Returns:
-            CausalityDataset
+        @param drop_first (bool): whether to drop the first dummy variable for each categorical feature (default False)
+        @param scale_floats (bool): whether to scale float features to have zero mean and unit variance (default False)
+        @param prune_min_categories (int): minimum number of categories to keep for each categorical feature (default 50)
+        @param prune_thresh (float): threshold for category frequency when pruning categories (default 0.99)
+
+        @return: None. Modifies self.data in-place by replacing it with the preprocessed dataframe.
         """
 
         self.data[self.treatment] = self.data[self.treatment].astype(int)
@@ -208,62 +230,3 @@ class CausalityDataset:
 
     def __len__(self):
         return len(self.data)
-
-
-# def preprocess_dataset(
-#     data: Union[pd.DataFrame],
-#     treatment: Optional[str] = None,
-#     targets: Optional[Union[str, List[str]]] = None,
-#     instruments: List[str] = None,
-#     drop_first: bool = False,
-#     scale_floats: bool = False,
-#     prune_min_categories: int = 50,
-#     prune_thresh: float = 0.99,
-# ) -> tuple:
-#     """preprocesses dataset for causal inference
-#     Args:
-#         data (pd.DataFrame): a dataset for causal inference
-#         treatment: name of treatment column
-#         targets: target column name or list of target column names
-#
-#     Returns:
-#         tuple: dataset, features_x, features_w
-#     """
-#
-#     if isinstance(targets, str):
-#         targets = [targets]
-#
-#     if instruments is None:
-#         instruments = []
-#
-#     cols_to_exclude = [treatment] + targets + instruments
-#     for c in cols_to_exclude:
-#         assert c in data.columns, f"Column {c} not found in dataset"
-#
-#     # else:
-#     # prepare the data
-#     features = [c for c in data.columns if c not in cols_to_exclude]
-#
-#     data[treatment] = data[treatment].astype(int)
-#     data[instruments] = data[instruments].astype(int)
-#
-#     # this is a trick to bypass some DoWhy/EconML bugs
-#     if "random" not in data.columns:
-#         data["random"] = np.random.randint(0, 2, size=len(data))
-#
-#     used_df = featurize(
-#         data,
-#         features=features,
-#         exclude_cols=cols_to_exclude,
-#         drop_first=drop_first,
-#         scale_floats=scale_floats,
-#         prune_min_categories=prune_min_categories,
-#         prune_thresh=prune_thresh,
-#     )
-#     used_features = [c for c in used_df.columns if c not in cols_to_exclude]
-#
-#     # Let's treat all features as effect modifiers
-#     features_X = [f for f in used_features if f != "random"]
-#     features_W = [f for f in used_features if f not in features_X]
-#
-#     return used_df, features_X, features_W
