@@ -1,8 +1,8 @@
-# CausalTune: A library for automated Causal Inference model estimation and selection
+# Causaltune: A library for automated Causal Inference model estimation and selection
 
 
 
-**CausalTune** is a library for automated tuning and selection for causal estimators.
+**Causaltune** is a library for automated tuning and selection for causal estimators.
 
 Its estimators are taken from [EconML](https://github.com/microsoft/EconML/) augmented by a couple of extra models
 (currently Transformed Outcome and a dummy model to be used as a baseline), all called in a uniform fashion via a
@@ -32,7 +32,7 @@ though energy score performed better in our synthetic data experiments.
 
 <summary><strong><em>Table of Contents</em></strong></summary>
 
-- [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
+- [Causaltune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
   - [What can this do for you?](#what-can-this-do-for-you)
     - [1. Supercharge A/B tests by getting impact by customer, instead of just an average](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
     - [2. Continuous testing combined with exploitation](#2-continuous-testing-combined-with-exploitation)
@@ -128,7 +128,7 @@ Isn't it already available?
 
 
 **Requirements**
-CausalTune requires the following libraries to work:
+Causaltune requires the following libraries to work:
 - NumPy
 - Pandas
 - EconML
@@ -154,7 +154,7 @@ data.preprocess_dataset()
 
 
 # init causaltune object with chosen metric to optimise
-ac = CausalTune(time_budget=10, metric='erupt')
+ct = CausalTune(time_budget=10, metric='erupt')
 
 # run causaltune
 myresults = ct.fit(data)
@@ -193,7 +193,7 @@ We support a variety of different metrics that quantify the performance of a cau
 * ATE (average treatment effect)
 
 ## Citation
-If you use CausalTune in your research, please cite us as follows:
+If you use causaltune in your research, please cite us as follows:
 
 Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Causaltune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/causaltune. 2022. Version 0.x
 You can use the following BibTex entry:
