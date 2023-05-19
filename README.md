@@ -1,6 +1,7 @@
 # CausalTune: A library for automated Causal Inference model estimation and selection
 
 
+
 **CausalTune** is a library for automated tuning and selection for causal estimators.
 
 Its estimators are taken from [EconML](https://github.com/microsoft/EconML/) augmented by a couple of extra models
@@ -20,7 +21,8 @@ using builtin EconML functionality for that where it is available and bootstrapp
 Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
 provided by the user do reflect all sources of confounding between the treatment and the outcome).
-The validation methods in CausalTune cannot catch such violations and therefore this is an important assumption.
+
+The validation methods in causaltune cannot catch such violations and therefore this is an important assumption.
 
 We also implement the [ERUPT](https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4)
 [calculation](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957) (also known as policy value),
@@ -52,7 +54,8 @@ though energy score performed better in our synthetic data experiments.
 The automated search over the many powerful models from EconML and elsewhere allows you to easily do the following
 
 ### 1. Supercharge A/B tests by getting impact by customer, instead of just an average
-By enriching the results of a regular A/B/N test with customer features, and running CausalTune on the
+
+By enriching the results of a regular A/B/N test with customer features, and running causaltune on the
 resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
 impact in the next iteration.
 
@@ -138,24 +141,26 @@ pip install -r requirements.txt
 ```
 
 ## Quick Start
-The CausalTune package can be used like a scikit-style estimator:
+
+The causaltune package can be used like a scikit-style estimator:
 
 ```Python
-from auto_causality import AutoCausality
-from auto_causality.datasets import synth_ihdp
+from causaltune import CausalTune
+from causaltune.datasets import synth_ihdp
 
 # prepare dataset
 data = synth_ihdp()
 data.preprocess_dataset()
 
-# init CausalTune object with chosen metric to optimise
-ac = AutoCausality(time_budget=10, metric='erupt')
 
-# run autocausality
-myresults = ac.fit(data)
+# init causaltune object with chosen metric to optimise
+ac = CausalTune(time_budget=10, metric='erupt')
+
+# run causaltune
+myresults = ct.fit(data)
 
 # return best estimator
-print(f"Best estimator: {ac.best_estimator}")
+print(f"Best estimator: {ct.best_estimator}")
 
 ```
 
@@ -189,13 +194,14 @@ We support a variety of different metrics that quantify the performance of a cau
 
 ## Citation
 If you use CausalTune in your research, please cite us as follows:
-Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Auto-Causality: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/auto-causality. 2022. Version 0.x
+
+Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Causaltune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/causaltune. 2022. Version 0.x
 You can use the following BibTex entry:
 ```
-@misc{autocausality,
+@misc{causaltune,
   author={Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev},
-  title={{Auto-Causality}: {A Python package for Automated Causal Inference model estimation and selection}},
-  howpublished={https://github.com/transferwise/auto-causality},
+  title={{Causaltune}: {A Python package for Automated Causal Inference model estimation and selection}},
+  howpublished={https://github.com/transferwise/causaltune},
   note={Version 0.x},
   year={2022}
 }

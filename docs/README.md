@@ -1,1 +1,1 @@
-# auto_causality Documentation
+# causaltune Documentation

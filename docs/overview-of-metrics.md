@@ -40,7 +40,7 @@ https://arxiv.org/pdf/2002.05897.pdf
 
 http://proceedings.mlr.press/v67/gutierrez17a/gutierrez17a.pdf
 
-https://www.research.manchester.ac.uk/portal/files/205626621/FULL_TEXT.PDF
+https://www.research.manchester.ct.uk/portal/files/205626621/FULL_TEXT.PDF
 
 https://arxiv.org/pdf/2104.04103.pdf
 
