@@ -16,7 +16,6 @@ def featurize(
     prune_min_categories: int = 50,
     prune_thresh: float = 0.99,
 ) -> pd.DataFrame:
-    
     # fill all the NaNs
     for col, t in zip(df.columns, df.dtypes):
         if pd.api.types.is_float_dtype(t):
@@ -58,11 +57,7 @@ def featurize(
     return out
 
 
-def frequent_values(
-    x: pd.Series, 
-    thresh: float = 0.99
-) -> set:
-    
+def frequent_values(x: pd.Series, thresh: float = 0.99) -> set:
     # get the most frequent values of a pandas.Series, making up to the fraction thresh of total.
 
     data = x.to_frame("value")
@@ -78,14 +73,9 @@ def frequent_values(
 
 
 def otherize_tail(
-    x: pd.Series, 
-    new_val: Any, 
-    thresh: float = 0.99, 
-    min_categories: int = 20
+    x: pd.Series, new_val: Any, thresh: float = 0.99, min_categories: int = 20
 ) -> pd.Series:
-
     # convert infrequent values in a pandas.Series to a specified value.
-
 
     uniques = x.unique()
     if len(uniques) < min_categories:
@@ -117,7 +107,6 @@ class CausalityDataset:
         propensity_modifiers: Optional[List[str]] = None,
         instruments: Optional[List[str]] = None,
     ):
-        
         """
         Implements data logic for CausalTune.
 
@@ -186,7 +175,7 @@ class CausalityDataset:
         prune_thresh: float = 0.99,
     ):
         """
-        Preprocesses input dataset for CausalTune by 
+        Preprocesses input dataset for CausalTune by
             converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.
 
         @param drop_first (bool): whether to drop the first dummy variable for each categorical feature (default False)

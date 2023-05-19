@@ -341,7 +341,8 @@ class Scorer:
         Compute the average treatment effect (ATE) for different groups specified by a policy.
 
         @param df (pandas.DataFrame): input dataframe, should contain columns for the treatment, outcome, and policy
-        @param policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values, used to group the data
+        @param policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values,
+            used to group the data
 
         @return: pandas.DataFrame of ATE, std, and size per policy
 
@@ -370,11 +371,13 @@ class Scorer:
 
         @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
         @param df (pandas.DataFrame): input dataframe
-        @param metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute. Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', and 'energy_distance'.
+        @param metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.
+            Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', and 'energy_distance'.
         @param r_scorer (Optional): callable object used to compute the R-score, default is None
 
         @return dict: dictionary containing the evaluation metrics specified in metrics_to_report.
-            The values key in the dictionary contains the input DataFrame with additional columns for the propensity scores, the policy, the normalized policy, and the weights, if applicable.
+            The values key in the dictionary contains the input DataFrame with additional columns for
+            the propensity scores, the policy, the normalized policy, and the weights, if applicable.
         """
 
         out = dict()
