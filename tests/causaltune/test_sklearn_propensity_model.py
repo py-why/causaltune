@@ -67,7 +67,7 @@ class TestCustomPropensityModel(object):
             "backdoor", "all", data_rows=len(data)
         )
 
-        ac = CausalTune(
+        ct = CausalTune(
             propensity_model=LogisticRegression(),
             estimator_list="all",
             num_samples=len(estimator_list),

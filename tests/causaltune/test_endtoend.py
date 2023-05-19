@@ -87,7 +87,7 @@ class TestEndToEnd(object):
             "backdoor", "all", data_rows=len(data)
         )
 
-        ac = CausalTune(
+        ct = CausalTune(
             estimator_list="all",
             num_samples=len(estimator_list),
             components_time_budget=10,

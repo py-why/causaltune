@@ -66,7 +66,7 @@ class TestCustomOutputModel(object):
             "backdoor", "all", data_rows=len(data)
         )
 
-        ac = CausalTune(
+        ct = CausalTune(
             outcome_model=LinearRegression(),
             estimator_list="all",
             num_samples=len(estimator_list),
