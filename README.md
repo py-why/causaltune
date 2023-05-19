@@ -1,4 +1,5 @@
-# causaltune: A library for automated Causal Inference model estimation and selection
+# CausalTune: A library for automated Causal Inference model estimation and selection
+
 
 
 **CausalTune** is a library for automated tuning and selection for causal estimators.
@@ -20,6 +21,7 @@ using builtin EconML functionality for that where it is available and bootstrapp
 Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
 provided by the user do reflect all sources of confounding between the treatment and the outcome).
+
 The validation methods in causaltune cannot catch such violations and therefore this is an important assumption.
 
 We also implement the [ERUPT](https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4)
@@ -30,19 +32,21 @@ though energy score performed better in our synthetic data experiments.
 
 <summary><strong><em>Table of Contents</em></strong></summary>
 
-- [What can this do for you?](#what-can-this-do-for-you)
-  - [Segment A/B tests by per-customer impact](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
-  - [Continuous testing](#2-continuous-testing-combined-with-exploitation)
-  - [Observational inference](#3-observational-inference)
-  - [Impact of customer choosing to use a feature (IV models)](#4-impact-of-customer-choosing-to-use-a-feature-iv-models)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Supported Models](#supported-models)
-- [Supported Metrics](#supported-metrics)
-- [Citation](#citation)
-- [For Developers](#for-developers)
-  - [Installation from source](#installation-from-source)
-  - [Tests](#testing)
+- [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
+  - [What can this do for you?](#what-can-this-do-for-you)
+    - [1. Supercharge A/B tests by getting impact by customer, instead of just an average](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
+    - [2. Continuous testing combined with exploitation](#2-continuous-testing-combined-with-exploitation)
+    - [3. Estimate the benefit of smarter (but still partially random) assignment compared to fully random without the need for an actual fully random test group](#3-estimate-the-benefit-of-smarter-but-still-partially-random-assignment-compared-to-fully-random-without-the-need-for-an-actual-fully-random-test-group)
+    - [4. Observational inference](#4-observational-inference)
+    - [5. IV models: Impact of customer choosing to use a feature](#5-iv-models-impact-of-customer-choosing-to-use-a-feature)
+  - [Installation](#installation)
+  - [Quick Start](#quick-start)
+  - [Supported Models](#supported-models)
+  - [Supported Metrics](#supported-metrics)
+  - [Citation](#citation)
+  - [For Developers](#for-developers)
+    - [Installation from source](#installation-from-source)
+    - [Testing](#testing)
 
 
 ## What can this do for you?
@@ -50,6 +54,7 @@ though energy score performed better in our synthetic data experiments.
 The automated search over the many powerful models from EconML and elsewhere allows you to easily do the following
 
 ### 1. Supercharge A/B tests by getting impact by customer, instead of just an average
+
 By enriching the results of a regular A/B/N test with customer features, and running causaltune on the
 resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
 impact in the next iteration.
@@ -90,13 +95,19 @@ the assignment probability from the data). [Example notebook](???)
 
 If you have reason to suppose unobserved confounders, such as customer intent (did the customer do a lot of volume
 because of the promotion, or did they sign up for the promotion because they intended to do lots of volume anyway?)
-consider looking for an instrumental variable instead.
+consider looking for an instrumental variable instead. 
+<!--
+Can we reformulate to (did the customer do a lot of volume because of the promotion or is the customer more likely
+to sign up for the promotion because they have a higher volume per se?) 
+-->
 
 Note that our derivation of energy score as a valid out-of-sample score for causal models is strictly speaking not
 applicable for this usecase, but still appears to work reasonably well in practice.
 
-### 5. Impact of customer choosing to use a feature (IV models)
-The case we're focussing on is making a feature or a promotion available to a customer, and trying to
+### 5. IV models: Impact of customer choosing to use a feature
+Instrumental variable (IV) estimation to avoid an estimation bias from unobserved confounders.
+
+A natural use case for IV models is making a feature or a promotion available to a customer, and trying to
 measure the impact of the customer actually choosing to use the feature (the impact of making the feature
 available can be solved with 1. and 2. above).
 
@@ -105,12 +116,15 @@ and search over IV models in EconML to estimate the
 impact of the customer choosing to use it. To score IV model fits out of sample, we again use the
 [energy score](https://arxiv.org/abs/2212.10076).
 
-Please be aware we haven't yet extensively used the IV model fitting functionality internally,
+Please be aware we have not yet extensively used the IV model fitting functionality internally,
 so if you run into any issues, please report them!
 
 ## Installation
 To install from source, see [For Developers](#for-developers) section below.
 TODO: make available as package on pypi
+<!-- 
+Isn't it already available?
+-->
 
 
 **Requirements**
@@ -127,6 +141,7 @@ pip install -r requirements.txt
 ```
 
 ## Quick Start
+
 The causaltune package can be used like a scikit-style estimator:
 
 ```Python
@@ -136,6 +151,7 @@ from causaltune.datasets import synth_ihdp
 # prepare dataset
 data = synth_ihdp()
 data.preprocess_dataset()
+
 
 # init causaltune object with chosen metric to optimise
 ac = CausalTune(time_budget=10, metric='erupt')
@@ -178,6 +194,7 @@ We support a variety of different metrics that quantify the performance of a cau
 
 ## Citation
 If you use CausalTune in your research, please cite us as follows:
+
 Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Causaltune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/causaltune. 2022. Version 0.x
 You can use the following BibTex entry:
 ```
