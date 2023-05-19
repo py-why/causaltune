@@ -1,6 +1,7 @@
 autoflake
-black
+black==23.3.0
 flake8
 isort
 pytest
 pytest-cov
+nbmake

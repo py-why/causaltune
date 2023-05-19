@@ -32,7 +32,10 @@ class DummyEstimator:
 
 def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List[str]:
     if problem == "iv":
-        return ["energy_distance"]
+        metrics = ["energy_distance"]
+        if not scores_only:
+            metrics.append("ate")
+        return metrics
     elif problem == "backdoor":
         if multivalue:
             # TODO: support other metrics for the multivalue case
@@ -172,6 +175,7 @@ class Scorer:
         
         @return List[str]: list of valid metrics
         """
+
 
         metrics = supported_metrics(self.problem, self.multivalue, scores_only=False)
         if metrics_to_report is None:
@@ -378,6 +382,7 @@ class Scorer:
         
         """
 
+
         tmp = {"all": self.ate(df)}
         for p in sorted(list(policy.unique())):
             tmp[p] = self.ate(df[policy == p])
@@ -408,6 +413,7 @@ class Scorer:
         @return dict: dictionary containing the evaluation metrics specified in metrics_to_report. 
             The values key in the dictionary contains the input DataFrame with additional columns for the propensity scores, the policy, the normalized policy, and the weights, if applicable.
         """
+
 
         out = dict()
         df = df.copy().reset_index()
@@ -443,8 +449,11 @@ class Scorer:
                 values[
                     "p"
                 ] = self.psw_estimator.estimator.propensity_model.predict_proba(
-                        df[self.causal_model.get_effect_modifiers() + self.causal_model.get_common_causes()]
-                    )[
+                    df[
+                        self.causal_model.get_effect_modifiers()
+                        + self.causal_model.get_common_causes()
+                    ]
+                )[
                     :, 1
                 ]
                 values["policy"] = cate_estimate > 0
@@ -453,10 +462,6 @@ class Scorer:
             else:
                 pass
                 # TODO: what do we do here if multiple treatments?
-
-            if "ate" in metrics_to_report:
-                out["ate"] = cate_estimate.mean()
-                out["ate_std"] = cate_estimate.std()
 
             if "erupt" in metrics_to_report:
                 erupt_score = self.erupt.score(df, df[outcome_name], cate_estimate > 0)
@@ -480,10 +485,14 @@ class Scorer:
                     estimate, df, cate_estimate, r_scorer
                 )
 
-            values = values.rename(columns={treatment_name: "treated"})
+            # values = values.rename(columns={treatment_name: "treated"})
             assert len(values) == len(df), "Index weirdness when adding columns!"
             values = values.copy()
             out["values"] = values
+
+        if "ate" in metrics_to_report:
+            out["ate"] = cate_estimate.mean()
+            out["ate_std"] = cate_estimate.std()
 
         if "energy_distance" in metrics_to_report:
             out["energy_distance"] = Scorer.energy_distance_score(estimate, df)

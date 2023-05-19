@@ -12,7 +12,7 @@ class DummyPropensity:
     def __init__(self, p: pd.Series, treatment: pd.Series):
         n_vals = max(treatment) + 1
         out = np.zeros((len(treatment), n_vals))
-        for i, pp in p.values:
+        for i, pp in enumerate(p.values):
             out[i, treatment.values[i]] = pp
         self.p = out
 
@@ -53,7 +53,6 @@ class ERUPT:
     def weights(
         self, df: pd.DataFrame, policy: Union[Callable, np.ndarray, pd.Series]
     ) -> pd.Series:
-
         W = df[self.treatment_name].astype(int)
         assert all(
             [x >= 0 for x in W.unique()]
@@ -70,7 +69,10 @@ class ERUPT:
             [x >= 0 for x in d.unique()]
         ), "Policy values must be non-negative integers"
 
-        p = self.propensity_model.predict_proba(df[self.X_names])
+        if isinstance(self.propensity_model, DummyPropensity):
+            p = self.propensity_model.predict_proba()
+        else:
+            p = self.propensity_model.predict_proba(df[self.X_names])
         # normalize to hopefully avoid NaNs
         p = np.maximum(p, 1e-4)
 

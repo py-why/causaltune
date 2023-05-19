@@ -327,7 +327,7 @@ class AutoCausality:
             self.causal_model.identify_effect(proceed_when_unidentifiable=True)
         )
 
-        if bool(self.identified_estimand.estimands["iv"]) and bool(instruments):
+        if bool(self.identified_estimand.estimands["iv"]) and bool(data.instruments):
             self.problem = "iv"
         elif bool(self.identified_estimand.estimands["backdoor"]):
             self.problem = "backdoor"
@@ -662,6 +662,7 @@ class AutoCausality:
             EconML results object for inference assuming a normal distribution.
 
         """
+
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.apply_multitreatment = apply_multitreatment
@@ -687,6 +688,7 @@ class AutoCausality:
         @param    n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.
         @return  (np.ndarray): standard error for each data point from df
         """
+
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.effect_stderr = effect_stderr

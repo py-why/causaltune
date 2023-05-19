@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy import special
 
-from typing import Union
+from typing import Union, Callable
 
 from auto_causality.data_utils import CausalityDataset
 from auto_causality.utils import generate_psdmat
@@ -277,15 +277,18 @@ def synth_acic(condition=1) -> CausalityDataset:
     return CausalityDataset(data, "treatment", ["y_factual"])
 
 
-def iv_dgp_econml(n=5000, p=10, true_effect=10):
+def iv_dgp_econml(
+    n: int = 5000, p: int = 10, true_effect: Union[float, int, Callable] = 10
+):
     """Generates synthetic IV data for binary treatment and instruments.
     Source: https://github.com/microsoft/EconML/tree/main/notebooks/
     Eg: OrthoIV and DRIV Examples.ipynb
 
     Args:
-        n: number of data instances
-        p: number of observed features
-        true_effect: known effect (function or value) to observe
+        n (int): number of data instances
+        p (int): number of observed features
+        true_effect (Union[float, int, Callable]): known effect (function or value) to observe.
+            Can be a function of covariates or a constant
 
     Returns:
         CausalityDataset: Data class containing (1) pd.DataFrame with columns "treatment", "y"
@@ -304,6 +307,8 @@ def iv_dgp_econml(n=5000, p=10, true_effect=10):
         1, 0.006 * np.ones(X.shape[0])
     )  # Non-compliers when not recommended
     T = C * Z + C0 * (1 - Z)
+    if not isinstance(true_effect, (float, int)):
+        true_effect = true_effect(X)
     y = (
         true_effect * T
         + 2 * nu
@@ -317,7 +322,7 @@ def iv_dgp_econml(n=5000, p=10, true_effect=10):
     df["treatment"] = T
     df["Z"] = Z
 
-    return CausalityDataset(df, "treatment", ["y"], ["Z"])
+    return CausalityDataset(df, "treatment", ["y"], instruments=["Z"])
 
 
 def generate_synthetic_data(
@@ -413,3 +418,80 @@ def generate_synthetic_data(
         df["instrument"] = Z
         data.instruments = ["instrument"]
     return data
+
+
+def generate_synth_data_with_categories(
+    n_samples=10000,
+    n_x=10,
+) -> CausalityDataset:
+    """Generates synthetic dataset just with categorical features
+        Can be used, e.g. in connection with Wise pizza segmentation analysis
+
+    Args:
+        n_samples (int, optional): number of independent samples. Defaults to 10000.
+        n_x (int, optional): number of features. Defaults to 10.
+
+    Returns:
+        CausalityDataset: data object
+    """
+    T = np.random.binomial(1, 0.5, size=(n_samples,))
+    X = np.random.hypergeometric(5, 5, 8, size=(n_samples, n_x))
+    epsilon = np.random.uniform(low=-1, high=1, size=(n_samples,))
+    gamma = np.random.uniform(low=0.5, high=1.5, size=(n_x,))
+
+    def rho(v):
+        return 0.01 * v
+
+    def feature_transform(v):
+        return 0.5 * v
+
+    Y = (
+        T.T * rho(X[:, : int(n_x / 2)])
+        + feature_transform(np.matmul(gamma.T, X.T))
+        + epsilon
+    )
+    features = [f"X{i+1}" for i in range(n_x)]
+    df = pd.DataFrame(np.array([*X.T, T, Y]).T, columns=features + ["variant", "Y"])
+    cd = CausalityDataset(
+        data=df,
+        treatment="variant",
+        outcomes=["Y"],
+    )
+    return cd
+
+
+def generate_non_random_dataset(num_samples=1000):
+    num_samples = num_samples
+
+    x1 = np.random.normal(0, 1, num_samples)
+    x2 = np.random.normal(0, 1, num_samples)
+    x3 = np.random.normal(0, 1, num_samples)
+    x4 = np.random.normal(0, 1, num_samples)
+    x5 = np.random.normal(0, 1, num_samples)
+
+    propensity = 1 / (
+        1 + np.exp(-(0.5 * x1 + 0.8 * x2 - 0.3 * x3 + 0.2 * x4 - 0.1 * x5))
+    )
+    treatment = np.random.binomial(1, propensity)
+    outcome = 2 * treatment + 0.5 * x1 - 0.2 * x2 + np.random.normal(0, 1, num_samples)
+
+    dataset = {
+        "T": treatment,
+        "Y": outcome,
+        "X1": x1,
+        "X2": x2,
+        "X3": x3,
+        "X4": x4,
+        "X5": x5,
+        "propensity": propensity,
+    }
+
+    df = pd.DataFrame(dataset)
+    cd = CausalityDataset(
+        data=df,
+        treatment="T",
+        outcomes=["Y"],
+        propensity_modifiers=["propensity"],
+    )
+
+    return cd

@@ -86,6 +86,7 @@ def otherize_tail(
 
     # convert infrequent values in a pandas.Series to a specified value.
 
+
     uniques = x.unique()
     if len(uniques) < min_categories:
         return x
