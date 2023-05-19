@@ -88,7 +88,7 @@ class CausalTune:
         metric="energy_distance",
         metrics_to_report=None,
         time_budget=None,
-        verbose=3,
+        verbose=0,
         use_ray=False,
         estimator_list="auto",
         train_size=0.8,

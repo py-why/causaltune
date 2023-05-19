@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import shap
+import causaltune
 from causaltune.shap import shap_values
 from causaltune.scoring import Scorer
 from dowhy.causal_model import CausalEstimate
@@ -53,6 +54,9 @@ class Visualizer:
         @return: None
 
         """
+        assert not isinstance(
+            estimate, causaltune.models.dummy.Dummy
+        ), "Supplied model does not depends on features!"
 
         if shaps is None:
             sv = shap_values(estimate=estimate, df=df)
