@@ -1,5 +1,6 @@
 import pandas as pd
 from dowhy.causal_model import CausalEstimate
+from causaltune.models.dummy import Dummy
 import shap
 
 
