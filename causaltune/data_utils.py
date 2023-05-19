@@ -180,7 +180,7 @@ class CausalityDataset:
 
         @param drop_first (bool): whether to drop the first dummy variable for each categorical feature (default False)
         @param scale_floats (bool): whether to scale float features to have zero mean and unit variance (default False)
-        @param prune_min_categories (int): minimum number of categories to keep for each categorical feature (default 50)
+        @param prune_min_categories (int): min number of categories to keep for each categorical feature (default 50)
         @param prune_thresh (float): threshold for category frequency when pruning categories (default 0.99)
 
         @return: None. Modifies self.data in-place by replacing it with the preprocessed dataframe.

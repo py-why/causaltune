@@ -64,7 +64,7 @@ class TestEndToEndAutoMLPropensity(object):
             "backdoor", "all", data_rows=len(data)
         )
 
-        ac = CausalTune(
+        ct = CausalTune(
             estimator_list="all",
             propensity_model="auto",
             num_samples=len(estimator_list),
