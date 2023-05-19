@@ -16,7 +16,7 @@ We perform automated hyperparameter tuning of first stage models (for the treatm
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
 
 The estimators provide not only per-row treatment impact estimates, but also confidence intervals for these,
-using builtin EconML functionality for that where it is available and bootstrapping where it is not [example notebook](???).
+using builtin EconML functionality for that where it is available and bootstrapping where it is not [example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Standard%20errors.ipynb).
 
 Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
@@ -35,7 +35,7 @@ though energy score performed better in our synthetic data experiments.
 - [Causaltune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
   - [What can this do for you?](#what-can-this-do-for-you)
     - [1. Supercharge A/B tests by getting impact by customer, instead of just an average](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
-    - [2. Continuous testing combined with exploitation](#2-continuous-testing-combined-with-exploitation)
+    - [2. Continuous testing combined with exploitation: (Dynamic) uplift modelling](#2-continuous-testing-combined-with-exploitation-dynamic-uplift-modelling)
     - [3. Estimate the benefit of smarter (but still partially random) assignment compared to fully random without the need for an actual fully random test group](#3-estimate-the-benefit-of-smarter-but-still-partially-random-assignment-compared-to-fully-random-without-the-need-for-an-actual-fully-random-test-group)
     - [4. Observational inference](#4-observational-inference)
     - [5. IV models: Impact of customer choosing to use a feature](#5-iv-models-impact-of-customer-choosing-to-use-a-feature)
@@ -59,7 +59,7 @@ By enriching the results of a regular A/B/N test with customer features, and run
 resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
 impact in the next iteration.
 
-### 2. Continuous testing combined with exploitation
+### 2. Continuous testing combined with exploitation: (Dynamic) uplift modelling
 The per-customer impact estimates, even if noisy, can be used to implement
 per-customer Thompson sampling for new customers, biasing random treatment assignment towards ones we think
 are most likely to work. As we still control the per-customer propensity to treat, same methods as above can be
@@ -68,7 +68,7 @@ applied to keep refining our impact estimates.
 Thus, there is no need to either wait for the test to gather enough data for significance, nor to ever end the
 test, before using its results to assign the most impactful treatment (based on our knowlede so far) to each customer.
 
-As in this case the propensity to treat is known for each customer, we [allow to explicitly supply it](Link to example notebook)
+As in this case the propensity to treat is known for each customer, we [allow to explicitly supply it](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Propensity%20Model%20Selection.ipynb)
 as a column to the estimators, instead of estimating it from the data like in other cases.
 
 ### 3. Estimate the benefit of smarter (but still partially random) assignment compared to fully random without the need for an actual fully random test group
@@ -77,7 +77,7 @@ most likely to work best for a given
 customer.
 
 However, after the fact we would like to know the extra benefit of that compared to a fully random assignment.
-The ERUPT technique [sample notebook](???) re-weights the actual outcomes to produce an unbiased estimate of the average
+The ERUPT technique [sample notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/ERUPT%20under%20simulated%20random%20assignment.ipynb) re-weights the actual outcomes to produce an unbiased estimate of the average
 outcome that a fully random assignment would have yielded, with no actual additional group needed.
 
 
@@ -91,7 +91,7 @@ of customer features, rather than just averages, **under the assumption that all
 
 To use this, just set `propensity_model` to an instance of the desired classifier when instantiating `CausalTune`, or to `"auto"`
 if you want to use the FLAML classifier (the default setting is `"dummy"` which assumes random assigment and infers
-the assignment probability from the data). [Example notebook](???)
+the assignment probability from the data). [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Propensity%20Model%20Selection.ipynb)
 
 If you have reason to suppose unobserved confounders, such as customer intent (did the customer do a lot of volume
 because of the promotion, or did they sign up for the promotion because they intended to do lots of volume anyway?)
