@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from scipy import special
+from scipy.stats import betabinom
+
 
 from typing import Union, Callable
 
@@ -434,24 +436,47 @@ def generate_synth_data_with_categories(
     Returns:
         CausalityDataset: data object
     """
+    n_w = 2
     T = np.random.binomial(1, 0.5, size=(n_samples,))
     X = np.random.hypergeometric(5, 5, 8, size=(n_samples, n_x))
-    epsilon = np.random.uniform(low=-1, high=1, size=(n_samples,))
+    X_cont = 0.05 * np.random.uniform(low=-1, high=1, size=(n_samples,))
+
+    W = betabinom.rvs(8, 600, 400, size=(n_samples, n_w))
+    epsilon = 0.01 * np.random.uniform(low=-1, high=1, size=(n_samples,))
     gamma = np.random.uniform(low=0.5, high=1.5, size=(n_x,))
-
-    def rho(v):
-        return 0.01 * v
-
-    def feature_transform(v):
-        return 0.5 * v
+    rho = lambda x: 0.01
+    feature_transform = lambda x: 0.5 * x
 
     Y = (
         T.T * rho(X[:, : int(n_x / 2)])
+        + T.T * 2 * rho(X) * np.where(np.isin(X[:, 0], [1]), 1, 0)
+        - T.T
+        * 3
+        * rho(X)
+        * (np.where(np.isin(X[:, 1:3], [2, 3]), 1, 0) == [1, 1]).all(1)
+        + T.T * 4 * rho(X) * np.where(np.isin(X[:, 0], [4]), 1, 0)
         + feature_transform(np.matmul(gamma.T, X.T))
-        + epsilon
+        + X_cont
+        # + epsilon
     )
+
     features = [f"X{i+1}" for i in range(n_x)]
-    df = pd.DataFrame(np.array([*X.T, T, Y]).T, columns=features + ["variant", "Y"])
+    features_w = [f"W{i+1}" for i in range(n_w)]
+    features_cont = ["X_continuous"]
+    df = pd.DataFrame(
+        np.array(
+            [
+                *X.T,
+                T,
+                Y,
+                # *W.T,
+                X_cont.T,
+            ]
+        ).T,
+        columns=features + ["variant", "Y"]
+        # + features_w
+        + features_cont,
+    )
     cd = CausalityDataset(
         data=df,
         treatment="variant",

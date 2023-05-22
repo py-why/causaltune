@@ -85,6 +85,14 @@ class PassthroughInner:
 
 
 def passthrough_model(col_names: Union[str, List[str]], include_control: bool = False):
+    """Create a model with fit and predict_proba methods from columns where
+        predict_proba is generated from the supplied columns
+
+    @param col_names (Union[str, List[str]]): name of columns
+    @param include_control (bool, optional): Whether a column with control propensities is supplied.
+        Defaults to False.
+    @return PassthroughInner: A model with fit and predict_proba method
+    """
     if isinstance(col_names, str):
         col_names = [col_names]
 
