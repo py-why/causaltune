@@ -57,7 +57,7 @@ The automated search over the many powerful models from EconML and elsewhere all
 
 By enriching the results of a regular A/B/N test with customer features, and running causaltune on the
 resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
-impact in the next iteration.
+impact in the next iteration. Causaltune also serves as a variance reduction method leveraging the availability of any additional features. [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/AB_testing.ipynb)
 
 ### 2. Continuous testing combined with exploitation: (Dynamic) uplift modelling
 The per-customer impact estimates, even if noisy, can be used to implement
@@ -114,21 +114,20 @@ available can be solved with 1. and 2. above).
 Here we use feature availability as an instrumental variable (assuming its assignment to be strictly randomized),
 and search over IV models in EconML to estimate the
 impact of the customer choosing to use it. To score IV model fits out of sample, we again use the
-[energy score](https://arxiv.org/abs/2212.10076).
+[energy score](https://arxiv.org/abs/2212.10076). [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Comparing%20IV%20Estimators.ipynb)
 
 Please be aware we have not yet extensively used the IV model fitting functionality internally,
 so if you run into any issues, please report them!
 
 ## Installation
 To install from source, see [For Developers](#for-developers) section below.
-TODO: make available as package on pypi
-<!-- 
-Isn't it already available?
--->
+
 
 
 **Requirements**
-Causaltune requires the following libraries to work:
+Causaltune works with Python 3.7, 3.8, and 3.9.
+
+It requires the following libraries to work:
 - NumPy
 - Pandas
 - EconML
@@ -157,7 +156,7 @@ data.preprocess_dataset()
 ct = CausalTune(time_budget=10, metric='erupt')
 
 # run causaltune
-myresults = ct.fit(data)
+ct.fit(data)
 
 # return best estimator
 print(f"Best estimator: {ct.best_estimator}")
@@ -188,8 +187,7 @@ The package supports the following causal estimators:
 We support a variety of different metrics that quantify the performance of a causal model:
 * Energy distance
 * ERUPT (Expected Response Under Proposed Treatments)
-* Qini coefficient
-* AUC (area under curve)
+* Qini coefficient and AUC (area under curve)
 * ATE (average treatment effect)
 
 ## Citation
