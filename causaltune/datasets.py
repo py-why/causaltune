@@ -436,16 +436,20 @@ def generate_synth_data_with_categories(
     Returns:
         CausalityDataset: data object
     """
-    n_w = 2
+    # n_w = 2
     T = np.random.binomial(1, 0.5, size=(n_samples,))
     X = np.random.hypergeometric(5, 5, 8, size=(n_samples, n_x))
     X_cont = 0.05 * np.random.uniform(low=-1, high=1, size=(n_samples,))
 
-    W = betabinom.rvs(8, 600, 400, size=(n_samples, n_w))
+    # W = betabinom.rvs(8, 600, 400, size=(n_samples, n_w))
     epsilon = 0.01 * np.random.uniform(low=-1, high=1, size=(n_samples,))
     gamma = np.random.uniform(low=0.5, high=1.5, size=(n_x,))
-    rho = lambda x: 0.01
-    feature_transform = lambda x: 0.5 * x
+
+    def rho(x):
+        return 0.01
+
+    def feature_transform(x):
+        return 0.5 * x
 
     Y = (
         T.T * rho(X[:, : int(n_x / 2)])
@@ -457,11 +461,11 @@ def generate_synth_data_with_categories(
         + T.T * 4 * rho(X) * np.where(np.isin(X[:, 0], [4]), 1, 0)
         + feature_transform(np.matmul(gamma.T, X.T))
         + X_cont
-        # + epsilon
+        + epsilon
     )
 
     features = [f"X{i+1}" for i in range(n_x)]
-    features_w = [f"W{i+1}" for i in range(n_w)]
+    # features_w = [f"W{i+1}" for i in range(n_w)]
     features_cont = ["X_continuous"]
     df = pd.DataFrame(
         np.array(

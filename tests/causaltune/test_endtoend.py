@@ -66,7 +66,7 @@ class TestEndToEnd(object):
         ct.score_dataset(data.data, "test")
 
         # now let's test Shapley ct calculation
-        for est_name, scores in causaltune.scores.items():
+        for est_name, scores in ct.scores.items():
             # Dummy model doesn't support Shapley values
             # Orthoforest shapley calc is VERY slow
             if "Dummy" not in est_name and "Ortho" not in est_name:
