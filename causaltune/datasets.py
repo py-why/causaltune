@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 from scipy import special
-from scipy.stats import betabinom
+
+# from scipy.stats import betabinom
 
 
 from typing import Union, Callable
