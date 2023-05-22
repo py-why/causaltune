@@ -15,7 +15,7 @@ It explores both variance reduction techniques leveraging additional features an
 
 ### 3. [ERUPT under simulated random assignment](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/ERUPT%20under%20simulated%20random%20assignment.ipynb)
 
-This analysis walks the user through evaluating and conducting uplift modelling with the ERUP metric. 
+This analysis walks the user through evaluating and conducting uplift modelling with the ERUPT metric. 
 
 ### 4. [Propensity Model Selection](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Propensity%20Model%20Selection.ipynb)
 
