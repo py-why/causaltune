@@ -183,7 +183,7 @@ def amazon_reviews(rating="pos") -> CausalityDataset:
         return None
 
 
-def synth_ihdp() -> CausalityDataset:
+def synth_ihdp(return_df=False) -> CausalityDataset:
     """loads IHDP dataset
     The Infant Health and Development Program (IHDP) dataset contains data on the impact of visits by specialists
     on the cognitive development of children. The dataset consists of 25 covariates describing various features
@@ -223,7 +223,7 @@ def synth_ihdp() -> CausalityDataset:
     ignore_cols = [c for c in data.columns if any([s in c for s in ignore_patterns])]
     data = data.drop(columns=ignore_cols)
 
-    return CausalityDataset(data, "treatment", ["y_factual"])
+    return CausalityDataset(data, "treatment", ["y_factual"]) if not return_df else data
 
 
 def synth_acic(condition=1) -> CausalityDataset:

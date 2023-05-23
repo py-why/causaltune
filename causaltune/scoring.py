@@ -63,7 +63,7 @@ class Scorer:
         """
         Contains scoring logic for CausalTune.
 
-        Access methods and attributes via `causal_tune.scorer`.
+        Access methods and attributes via `CausalTune.scorer`.
 
         """
 
@@ -472,7 +472,7 @@ class Scorer:
         """
         Obtain best score for each estimator.
 
-        @param scores (Dict[str, dict]): causaltune.scores dictionary
+        @param scores (Dict[str, dict]): CausalTune.scores dictionary
         @param metric (str): metric of interest
 
         @return Dict[str, dict]: dictionary containing best score by estimator

@@ -39,7 +39,7 @@ def treatment_is_multivalue(treatment: Union[int, str, Sequence]) -> bool:
 #                 self.fit_params = fit_params
 #             else:
 #                 self.fit_params = {}
-#
+
 #         def fit(self, *args, **kwargs):
 #             # we defer the initialization to the fit() method so we can memoize the fit
 #             # using all the args from both init and fit
@@ -52,12 +52,12 @@ def treatment_is_multivalue(treatment: Union[int, str, Sequence]) -> bool:
 #                 "init_kwargs": self.init_kwargs,
 #             }
 #             test_fun(to_hash)
-#
+
 #             super().__init__(*self.init_args, **self.init_kwargs)
-#
+
 #             print("calling AutoML fit method with ", used_kwargs)
 #             super().fit(*args, **used_kwargs)
-#
+
 #     return FitParamsWrapper
 
 
