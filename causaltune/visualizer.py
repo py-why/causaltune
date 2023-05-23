@@ -13,7 +13,7 @@ from causaltune.scoring import Scorer
 from dowhy.causal_model import CausalEstimate
 
 
-# TODO: decide on how Visualizer and causaltune should interact; currently standalone
+# TODO: decide on how Visualizer and CausalTune should interact; currently standalone
 # TODO: make plots themselves a bit nicer and allow for more flexibility/customization
 # currently not natively supporting multiple treatments
 
@@ -77,7 +77,7 @@ class Visualizer:
         """
         Plot metrics by estimator.
 
-        @param scores_dict (Dict): scores dict from fitted causaltune object
+        @param scores_dict (Dict): scores dict from fitted CausalTune object
         @param figtitle (str): specifying plot title, defaults to ""
         @param metrics (Tuple[str, str]): specifying metrics, defaults to ('norm_erupt', 'ate')
         @param figsize (Tuple[int, int]): specifying plot size, defaults to (7,5)
@@ -142,8 +142,8 @@ class Visualizer:
         Plot out-of sample difference of outcomes between treated and untreated
             for the points where model predicts positive vs negative impact.
 
-        @param scorer (CausalTune.scorer): scorer from causaltune
-        @param scores_dict (Dict): scores dict from fitted causaltune object
+        @param scorer (CausalTune.scorer): scorer from CausalTune
+        @param scores_dict (Dict): scores dict from fitted CausalTune object
         @param estimator (str): name of estimator to use
 
         @return pandas.DataFrame: dataframe of policy groups and average effect
