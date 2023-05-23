@@ -424,42 +424,49 @@ def generate_synthetic_data(
 
 
 def generate_synth_data_with_categories(
-    n_samples=10000,
-    n_x=10,
+    n_samples=10000, n_x=10, true_effect: Union[float, int, Callable] = 0.1
 ) -> CausalityDataset:
     """Generates synthetic dataset just with categorical features
         Can be used, e.g. in connection with Wise pizza segmentation analysis
 
     Args:
         n_samples (int, optional): number of independent samples. Defaults to 10000.
-        n_x (int, optional): number of features. Defaults to 10.
+        n_x (int, optional): number of features. Must be at least 3. Defaults to 10.
 
     Returns:
         CausalityDataset: data object
     """
+    assert n_x >= 3
+
     # n_w = 2
     T = np.random.binomial(1, 0.5, size=(n_samples,))
-    X = np.random.hypergeometric(5, 5, 8, size=(n_samples, n_x))
-    X_cont = 0.05 * np.random.uniform(low=-1, high=1, size=(n_samples,))
+    X = np.random.choice(4, size=(n_samples, n_x))
+    X_cont = 0.1 * np.random.uniform(low=-1, high=1, size=(n_samples,))
 
     # W = betabinom.rvs(8, 600, 400, size=(n_samples, n_w))
-    epsilon = 0.01 * np.random.uniform(low=-1, high=1, size=(n_samples,))
-    gamma = np.random.uniform(low=0.5, high=1.5, size=(n_x,))
+    epsilon = 0.1 * np.random.uniform(low=-1, high=1, size=(n_samples,))
+    gamma = np.random.uniform(low=0.8, high=1.2, size=(n_x,))
 
-    def rho(x):
-        return 0.01
+    if not isinstance(true_effect, (float, int)):
+        true_effect = true_effect(X)
 
     def feature_transform(x):
-        return 0.5 * x
+        return 0.4 * x
 
     Y = (
-        T.T * rho(X[:, : int(n_x / 2)])
-        + T.T * 2 * rho(X) * np.where(np.isin(X[:, 0], [1]), 1, 0)
+        T.T * true_effect
+        + T.T * 4 * true_effect * np.where(np.isin(X[:, 0], [1]), 1, 0)
+        - T.T * 4 * true_effect * np.where(np.isin(X[:, 0], [2]), 1, 0)
         - T.T
-        * 3
-        * rho(X)
+        * 5
+        * true_effect
         * (np.where(np.isin(X[:, 1:3], [2, 3]), 1, 0) == [1, 1]).all(1)
-        + T.T * 4 * rho(X) * np.where(np.isin(X[:, 0], [4]), 1, 0)
+        + T.T
+        * 5
+        * true_effect
+        * (np.where(np.isin(X[:, 1:3], [3, 2]), 1, 0) == [1, 1]).all(1)
+        + T.T * 4 * true_effect * np.where(np.isin(X[:, 0], [4]), 1, 0)
+        - T.T * 4 * true_effect * np.where(np.isin(X[:, 0], [3]), 1, 0)
         + feature_transform(np.matmul(gamma.T, X.T))
         + X_cont
         + epsilon
