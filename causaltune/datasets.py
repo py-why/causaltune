@@ -444,7 +444,7 @@ def generate_synth_data_with_categories(
     X_cont = 0.1 * np.random.uniform(low=-1, high=1, size=(n_samples,))
 
     # W = betabinom.rvs(8, 600, 400, size=(n_samples, n_w))
-    epsilon = 0.1 * np.random.uniform(low=-1, high=1, size=(n_samples,))
+    epsilon = 0.05 * np.random.uniform(low=-1, high=1, size=(n_samples,))
     gamma = np.random.uniform(low=0.8, high=1.2, size=(n_x,))
 
     if not isinstance(true_effect, (float, int)):
@@ -458,15 +458,15 @@ def generate_synth_data_with_categories(
         + T.T * 4 * true_effect * np.where(np.isin(X[:, 0], [1]), 1, 0)
         - T.T * 4 * true_effect * np.where(np.isin(X[:, 0], [2]), 1, 0)
         - T.T
-        * 5
+        * 0.5
         * true_effect
         * (np.where(np.isin(X[:, 1:3], [2, 3]), 1, 0) == [1, 1]).all(1)
         + T.T
-        * 5
+        * 0.5
         * true_effect
         * (np.where(np.isin(X[:, 1:3], [3, 2]), 1, 0) == [1, 1]).all(1)
-        + T.T * 4 * true_effect * np.where(np.isin(X[:, 0], [4]), 1, 0)
-        - T.T * 4 * true_effect * np.where(np.isin(X[:, 0], [3]), 1, 0)
+        + T.T * 0.4 * true_effect * np.where(np.isin(X[:, 0], [4]), 1, 0)
+        - T.T * 0.4 * true_effect * np.where(np.isin(X[:, 0], [3]), 1, 0)
         + feature_transform(np.matmul(gamma.T, X.T))
         + X_cont
         + epsilon
