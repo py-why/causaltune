@@ -10,7 +10,7 @@ This notebook serves as a good starting when exploring CausalTune. It encompasse
 ### 2. [CausalityDataset setup](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/CausalityDataset%20setup.ipynb)
 Causaltune models require work based on a CausalityDataset instance which includes all relevant data and information to build the causal graph. This notebook briefly outlines how to define a CausalityDataset.
 
-### 3. [AB Testing](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/AB_testing.ipynb)
+### 3. [AB testing](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/AB_testing.ipynb)
 
 A guide on how to use CausalTune for AB test evaluation.
 
@@ -21,7 +21,7 @@ It explores both variance reduction techniques leveraging additional features an
 
 This analysis walks the user through evaluating and conducting uplift modelling with the ERUPT metric. 
 
-### 5. [Propensity Model Selection](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Propensity%20Model%20Selection.ipynb)
+### 5. [Propensity model selection](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Propensity%20Model%20Selection.ipynb)
 
 The estimators that CausalTune is based on (e.g. doubly robust learners, metalearners etc.) mostly require propensity score weighting. CausalTune therefore requires propensity score weights. This notebook displays the different methods that can be used to bild the propensity score weights.
 
