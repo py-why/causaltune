@@ -1,8 +1,8 @@
-# Causaltune: A library for automated Causal Inference model estimation and selection
+# CausalTune: A library for automated Causal Inference model estimation and selection
 
 
 
-**Causaltune** is a library for automated tuning and selection for causal estimators.
+**CausalTune** is a library for automated tuning and selection for causal estimators.
 
 Its estimators are taken from [EconML](https://github.com/microsoft/EconML/) augmented by a couple of extra models
 (currently Transformed Outcome and a dummy model to be used as a baseline), all called in a uniform fashion via a
@@ -10,7 +10,7 @@ Its estimators are taken from [EconML](https://github.com/microsoft/EconML/) aug
 
 Our contribution is enabling automatic estimator tuning
 and selection by out-of-sample scoring of causal estimators, notably using the [energy score](https://arxiv.org/abs/2212.10076).
-We use  [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
+We use [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
 
 We perform automated hyperparameter tuning of first stage models (for the treatment and outcome models)
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
@@ -22,7 +22,7 @@ Just like DoWhy and EconML, we assume that the causal graph provided by the user
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
 provided by the user do reflect all sources of confounding between the treatment and the outcome.
 
-The validation methods in causaltune cannot catch such violations and therefore this is an important assumption.
+The validation methods in CausalTune cannot catch such violations and therefore this is an important assumption.
 
 We also implement the [ERUPT](https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4)
 [calculation](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957) (also known as policy value),
@@ -32,7 +32,7 @@ though energy score performed better in our synthetic data experiments.
 
 <summary><strong><em>Table of Contents</em></strong></summary>
 
-- [Causaltune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
+- [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
   - [What can this do for you?](#what-can-this-do-for-you)
     - [1. Supercharge A/B tests by getting impact by customer, instead of just an average](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
     - [2. Continuous testing combined with exploitation: (Dynamic) uplift modelling](#2-continuous-testing-combined-with-exploitation-dynamic-uplift-modelling)
@@ -55,9 +55,9 @@ The automated search over the many powerful models from EconML and elsewhere all
 
 ### 1. Supercharge A/B tests by getting impact by customer, instead of just an average
 
-By enriching the results of a regular A/B/N test with customer features, and running causaltune on the
+By enriching the results of a regular A/B/N test with customer features, and running CausalTune on the
 resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
-impact in the next iteration. Causaltune also serves as a variance reduction method leveraging the availability of any additional features. [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/AB_testing.ipynb)
+impact in the next iteration. CausalTune also serves as a variance reduction method leveraging the availability of any additional features. [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/AB_testing.ipynb)
 
 ### 2. Continuous testing combined with exploitation: (Dynamic) uplift modelling
 The per-customer impact estimates, even if noisy, can be used to implement
@@ -125,7 +125,7 @@ To install from source, see [For Developers](#for-developers) section below.
 
 
 **Requirements**
-Causaltune works with Python 3.7, 3.8, and 3.9.
+CausalTune works with Python 3.7, 3.8, and 3.9.
 
 It requires the following libraries to work:
 - NumPy
@@ -141,7 +141,7 @@ pip install -r requirements.txt
 
 ## Quick Start
 
-The causaltune package can be used like a scikit-style estimator:
+The CausalTune package can be used like a scikit-style estimator:
 
 ```Python
 from causaltune import CausalTune
@@ -152,10 +152,10 @@ data = synth_ihdp()
 data.preprocess_dataset()
 
 
-# init causaltune object with chosen metric to optimise
+# init CausalTune object with chosen metric to optimise
 ct = CausalTune(time_budget=10, metric='erupt')
 
-# run causaltune
+# run CausalTune
 ct.fit(data)
 
 # return best estimator
@@ -191,14 +191,14 @@ We support a variety of different metrics that quantify the performance of a cau
 * ATE (average treatment effect)
 
 ## Citation
-If you use causaltune in your research, please cite us as follows:
+If you use CausalTune in your research, please cite us as follows:
 
-Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Causaltune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/causaltune. 2022. Version 0.x
+Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **CausalTune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/causaltune. 2022. Version 0.x
 You can use the following BibTex entry:
 ```
 @misc{causaltune,
   author={Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev},
-  title={{Causaltune}: {A Python package for Automated Causal Inference model estimation and selection}},
+  title={{CausalTune}: {A Python package for Automated Causal Inference model estimation and selection}},
   howpublished={https://github.com/transferwise/causaltune},
   note={Version 0.x},
   year={2022}

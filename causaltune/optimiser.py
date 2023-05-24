@@ -583,8 +583,8 @@ class CausalTune:
         """
         After fitting, generate scores for an additional dataset, add them to the scores dict.
 
-        @param df (pandas.DataFrame):
-        @param dataset_name (str):
+        @param df (pandas.DataFrame): input dataframe
+        @param dataset_name (str): dictionary key
 
         @return: None.
         """
@@ -646,7 +646,7 @@ class CausalTune:
     def effect(self, df, *args, **kwargs):
         """Heterogeneous Treatment Effects for data df
 
-        @param    df (pd.DataFrame): Data to predict treatment effect for
+        @param df (pd.DataFrame): data to predict treatment effect for
         @return (np.ndarray): predicted treatment effect for each datapoint
         """
         return self.model.effect(df, *args, **kwargs)
@@ -683,10 +683,10 @@ class CausalTune:
             Currently implemented for EconML estimators.
             Computes analytical standard errors if available and boostraps otherwise.
 
-        @param    df (pd.DataFrame): data to run inference on
-        @param   n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.
-        @param    n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.
-        @return  (np.ndarray): standard error for each data point from df
+        @param df (pd.DataFrame): data to run inference on
+        @param n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.
+        @param n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.
+        @return (np.ndarray): standard error for each data point from df
         """
 
         if "Econml" in str(type(self.model)):
