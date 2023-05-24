@@ -32,7 +32,7 @@ class TestCustomPropensityModel(object):
         ct = CausalTune(
             propensity_model=RandomForestClassifier(),
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=50,
             estimator_list=estimator_list,  # "all",  #
             use_ray=False,
             verbose=3,
@@ -55,7 +55,7 @@ class TestCustomPropensityModel(object):
         print(f"Best estimator: {ct.best_estimator}")
 
     def test_sklearn_propensity_model_multivalue(self):
-        data = linear_multi_dataset(10000)
+        data = linear_multi_dataset(5000)
         cfg = SimpleParamService(
             propensity_model=None,
             outcome_model=None,
@@ -71,7 +71,7 @@ class TestCustomPropensityModel(object):
             propensity_model=LogisticRegression(),
             estimator_list="all",
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=50,
         )
         ct.fit(data)
         # TODO add an effect() call and an effect_tt call

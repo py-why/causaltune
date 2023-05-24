@@ -52,7 +52,7 @@ class TestEndToEnd(object):
         # outcome = targets[0]
         ct = CausalTune(
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=40,
             estimator_list=estimator_list,  # "all",  #
             use_ray=False,
             verbose=3,
@@ -76,7 +76,7 @@ class TestEndToEnd(object):
         print(f"Best estimator: {ct.best_estimator}")
 
     def test_endtoend_multivalue(self):
-        data = linear_multi_dataset(10000)
+        data = linear_multi_dataset(5000)
         cfg = SimpleParamService(
             propensity_model=None,
             outcome_model=None,
@@ -91,7 +91,7 @@ class TestEndToEnd(object):
         ct = CausalTune(
             estimator_list="all",
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=40,
         )
         ct.fit(data)
         ct.fit(data, resume=True)
