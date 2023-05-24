@@ -1,10 +1,10 @@
 dowhy==0.9.1
-econml==0.14.0
+econml==0.14.1
 FLAML==1.0.14
 numpy
 pandas
 pytest
-scikit_learn<=1.0.2
+scikit_learn
 matplotlib
 dcor
 holidays
