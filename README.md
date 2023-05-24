@@ -1,16 +1,14 @@
 # CausalTune: A library for automated Causal Inference model estimation and selection
 
 
-
 **CausalTune** is a library for automated tuning and selection for causal estimators.
 
 Its estimators are taken from [EconML](https://github.com/microsoft/EconML/) augmented by a couple of extra models
 (currently Transformed Outcome and a dummy model to be used as a baseline), all called in a uniform fashion via a
 [DoWhy](https://github.com/microsoft/DoWhy/) wrapper.
 
-Our contribution is enabling automatic estimator tuning
-and selection by out-of-sample scoring of causal estimators, notably using the [energy score](https://arxiv.org/abs/2212.10076).
-We use  [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
+Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the [energy score](https://arxiv.org/abs/2212.10076).
+We use [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
 
 We perform automated hyperparameter tuning of first stage models (for the treatment and outcome models)
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
@@ -32,6 +30,7 @@ though energy score performed better in our synthetic data experiments.
 
 <summary><strong><em>Table of Contents</em></strong></summary>
 
+- [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
 - [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
   - [What can this do for you?](#what-can-this-do-for-you)
     - [1. Supercharge A/B tests by getting impact by customer, instead of just an average](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
@@ -60,10 +59,8 @@ resulting dataset, you can get impact estimates as a function of customer featur
 impact in the next iteration. CausalTune also serves as a variance reduction method leveraging the availability of any additional features. [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/AB_testing.ipynb)
 
 ### 2. Continuous testing combined with exploitation: (Dynamic) uplift modelling
-The per-customer impact estimates, even if noisy, can be used to implement
-per-customer Thompson sampling for new customers, biasing random treatment assignment towards ones we think
-are most likely to work. As we still control the per-customer propensity to treat, same methods as above can be
-applied to keep refining our impact estimates.
+
+The per-customer impact estimates, even if noisy, can be used to implement per-customer Thompson sampling for new customers, biasing random treatment assignment towards ones we think are most likely to work. As we still control the per-customer propensity to treat, same methods as above can be applied to keep refining our impact estimates.
 
 Thus, there is no need to either wait for the test to gather enough data for significance, nor to ever end the
 test, before using its results to assign the most impactful treatment (based on our knowlede so far) to each customer.
@@ -72,16 +69,16 @@ As in this case the propensity to treat is known for each customer, we [allow to
 as a column to the estimators, instead of estimating it from the data like in other cases.
 
 ### 3. Estimate the benefit of smarter (but still partially random) assignment compared to fully random without the need for an actual fully random test group
+
 Previous section described using causal estimators to bias treatment assignment towards the choice we think is
-most likely to work best for a given
-customer.
+most likely to work best for a given customer.
 
 However, after the fact we would like to know the extra benefit of that compared to a fully random assignment.
-The ERUPT technique [sample notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/ERUPT%20under%20simulated%20random%20assignment.ipynb) re-weights the actual outcomes to produce an unbiased estimate of the average
-outcome that a fully random assignment would have yielded, with no actual additional group needed.
+The ERUPT technique [sample notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/ERUPT%20under%20simulated%20random%20assignment.ipynb) re-weights the actual outcomes to produce an unbiased estimate of the average outcome that a fully random assignment would have yielded, with no actual additional group needed.
 
 
 ### 4. Observational inference
+
 The traditional application of causal inference. For example, estimating the impact on
 volumes and churn likelihood of the time it takes us to answer a customer query. As the set of customers
 who have support queries is most likely not randomly sampled, confounding corrections are needed.
@@ -89,8 +86,7 @@ who have support queries is most likely not randomly sampled, confounding correc
 As with other usecases, the advanced causal inference models allow impact estimation as a function
 of customer features, rather than just averages, **under the assumption that all relevant confounders are observed**.
 
-To use this, just set `propensity_model` to an instance of the desired classifier when instantiating `CausalTune`, or to `"auto"`
-if you want to use the FLAML classifier (the default setting is `"dummy"` which assumes random assigment and infers
+To use this, just set `propensity_model` to an instance of the desired classifier when instantiating `CausalTune`, or to `"auto"` if you want to use the FLAML classifier (the default setting is `"dummy"` which assumes random assigment and infers
 the assignment probability from the data). [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Propensity%20Model%20Selection.ipynb)
 
 If you have reason to suppose unobserved confounders, such as customer intent (did the customer do a lot of volume
@@ -105,6 +101,7 @@ Note that our derivation of energy score as a valid out-of-sample score for caus
 applicable for this usecase, but still appears to work reasonably well in practice.
 
 ### 5. IV models: Impact of customer choosing to use a feature
+
 Instrumental variable (IV) estimation to avoid an estimation bias from unobserved confounders.
 
 A natural use case for IV models is making a feature or a promotion available to a customer, and trying to
@@ -112,16 +109,12 @@ measure the impact of the customer actually choosing to use the feature (the imp
 available can be solved with 1. and 2. above).
 
 Here we use feature availability as an instrumental variable (assuming its assignment to be strictly randomized),
-and search over IV models in EconML to estimate the
-impact of the customer choosing to use it. To score IV model fits out of sample, we again use the
-[energy score](https://arxiv.org/abs/2212.10076). [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Comparing%20IV%20Estimators.ipynb)
+and search over IV models in EconML to estimate the impact of the customer choosing to use it. To score IV model fits out of sample, we again use the [energy score](https://arxiv.org/abs/2212.10076). [Example notebook](https://github.com/transferwise/auto-causality/blob/pywhy-integration/notebooks/Comparing%20IV%20Estimators.ipynb)
 
-Please be aware we have not yet extensively used the IV model fitting functionality internally,
-so if you run into any issues, please report them!
+Please be aware we have not yet extensively used the IV model fitting functionality internally, so if you run into any issues, please report them!
 
 ## Installation
 To install from source, see [For Developers](#for-developers) section below.
-
 
 
 **Requirements**
@@ -152,7 +145,7 @@ data = synth_ihdp()
 data.preprocess_dataset()
 
 
-# init causaltune object with chosen metric to optimise
+# init CausalTune object with chosen metric to optimise
 ct = CausalTune(time_budget=10, metric='erupt')
 
 # run CausalTune

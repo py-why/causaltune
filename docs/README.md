@@ -1,1 +1,1 @@
-# causaltune Documentation
+# CausalTune Documentation
