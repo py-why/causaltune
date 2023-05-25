@@ -5,7 +5,7 @@ from sklearn.dummy import DummyClassifier
 
 from dowhy import CausalModel
 
-from causaltune.datasets import synth_ihdp
+from causaltune.datasets import generate_synthetic_data
 from causaltune.scoring import Scorer, supported_metrics
 
 
@@ -20,7 +20,7 @@ def simple_model_run(rscorer=False):
         if rscorer=False:
             input parameters for metrics functions (such as qini_make_score
     """
-    data = synth_ihdp()
+    data = generate_synthetic_data()
     data.preprocess_dataset()
 
     train_df, test_df = train_test_split(data.data, train_size=0.5, random_state=123)
