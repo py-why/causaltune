@@ -30,3 +30,4 @@ jobs:
 
       - name: Testing and coverage
         run: make slowcov
+        timeout-minutes: 360
