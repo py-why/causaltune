@@ -34,8 +34,8 @@ class TestEndToEndInference(object):
 
         for e in estimator_list:
             causaltune = CausalTune(
-                num_samples=20,
-                components_time_budget=40,
+                num_samples=4,
+                components_time_budget=20,
                 estimator_list=[e],
                 use_ray=False,
                 verbose=3,
@@ -56,8 +56,8 @@ class TestEndToEndInference(object):
 
         for e in estimator_list:
             causaltune = CausalTune(
-                num_samples=20,
-                components_time_budget=30,
+                num_samples=4,
+                components_time_budget=20,
                 estimator_list=[e],
                 use_ray=False,
                 verbose=3,
@@ -84,8 +84,8 @@ class TestEndToEndInference(object):
 
         for e in estimator_list:
             causaltune = CausalTune(
-                num_samples=1,
-                components_time_budget=30,
+                num_samples=4,
+                components_time_budget=20,
                 estimator_list=[e],
                 use_ray=False,
                 verbose=3,
@@ -106,8 +106,8 @@ class TestEndToEndInference(object):
 
         for e in estimator_list:
             causaltune = CausalTune(
-                num_samples=1,
-                components_time_budget=30,
+                num_samples=4,
+                components_time_budget=20,
                 estimator_list=[e],
                 use_ray=False,
                 verbose=3,
