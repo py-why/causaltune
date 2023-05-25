@@ -17,7 +17,7 @@ class TestEndToEndInference(object):
 
     def test_endtoend_inference_nobootstrap(self):
         """tests if CATE model can be instantiated and fit to data"""
-        data = synth_ihdp()
+        data = linear_multi_dataset(1000)
         data.preprocess_dataset()
 
         cfg = SimpleParamService(
@@ -48,7 +48,7 @@ class TestEndToEndInference(object):
 
     def test_endtoend_inference_bootstrap(self):
         """tests if CATE model can be instantiated and fit to data"""
-        data = synth_ihdp()
+        data = linear_multi_dataset(1000)
         data.preprocess_dataset()
 
         BootstrapInference(n_bootstrap_samples=10, n_jobs=10)

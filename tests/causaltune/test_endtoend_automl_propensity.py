@@ -2,7 +2,7 @@ import pytest
 import warnings
 
 from causaltune import CausalTune
-from causaltune.datasets import synth_ihdp, linear_multi_dataset
+from causaltune.datasets import linear_multi_dataset
 from causaltune.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
@@ -21,7 +21,7 @@ class TestEndToEndAutoMLPropensity(object):
 
         from causaltune.shap import shap_values  # noqa F401
 
-        data = synth_ihdp()
+        data = linear_multi_dataset()
         data.preprocess_dataset()
 
         estimator_list = "all"

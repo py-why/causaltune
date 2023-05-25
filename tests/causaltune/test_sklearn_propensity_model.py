@@ -5,7 +5,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
 from causaltune import CausalTune
-from causaltune.datasets import synth_ihdp, linear_multi_dataset
+from causaltune.datasets import (
+    generate_synth_data_with_categories,
+    linear_multi_dataset,
+)
 from causaltune.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
@@ -17,7 +20,7 @@ class TestCustomPropensityModel(object):
 
         from causaltune.shap import shap_values  # noqa F401
 
-        data = synth_ihdp()
+        data = generate_synth_data_with_categories()
         data.preprocess_dataset()
 
         cfg = SimpleParamService(

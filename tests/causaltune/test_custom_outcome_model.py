@@ -4,7 +4,7 @@ import warnings
 from sklearn.linear_model import LinearRegression
 
 from causaltune import CausalTune
-from causaltune.datasets import synth_ihdp, linear_multi_dataset
+from causaltune.datasets import linear_multi_dataset, generate_synthetic_data
 from causaltune.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
@@ -16,7 +16,7 @@ class TestCustomOutputModel(object):
 
         from causaltune.shap import shap_values  # noqa F401
 
-        data = synth_ihdp()
+        data = generate_synthetic_data(n_samples=5000)
         data.preprocess_dataset()
 
         cfg = SimpleParamService(

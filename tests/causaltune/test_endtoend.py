@@ -3,7 +3,7 @@ import warnings
 
 
 from causaltune import CausalTune
-from causaltune.datasets import synth_ihdp, linear_multi_dataset
+from causaltune.datasets import generate_non_random_dataset, linear_multi_dataset
 from causaltune.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
@@ -24,7 +24,7 @@ class TestEndToEnd(object):
 
     def test_data_preprocessing(self):
         """tests data preprocessing routines"""
-        data = synth_ihdp()  # noqa F484
+        data = generate_non_random_dataset()  # noqa F484
 
     def test_init_causaltune(self):
         """tests if causaltune object can be instantiated without errors"""
@@ -38,7 +38,7 @@ class TestEndToEnd(object):
 
         from causaltune.shap import shap_values  # noqa F401
 
-        data = synth_ihdp()
+        data = generate_non_random_dataset()
         data.preprocess_dataset()
 
         cfg = SimpleParamService(
