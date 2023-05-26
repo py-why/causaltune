@@ -542,3 +542,50 @@ def generate_non_random_dataset(num_samples=1000):
     )
 
     return cd
+
+
+def synth_variance_reduction_experiment(n_samples=10000, n_x=100):
+    """Synthetic DGP taken from
+    Guo, Yongyi, et al. "Machine learning for variance reduction in online experiments."
+    Advances in Neural Information Processing Systems 34 (2021): 8637-8648.
+    https://proceedings.neurips.cc/paper/2021/file/488b084119a1c7a4950f00706ec7ea16-Paper.pdf
+
+    DGP:
+
+    Y_i = b(X_i) + T_i*tau(X_i) + u_i
+    with
+    b(X_i) = 10*sin(pi*X_{i0}X_{i1}) + 20*(X_{i2}-.5)^2 + 10*X_{i3} + 5*X_{i4}
+
+    and
+
+    tau(X_i) = X_{i1} + log(1+exp(X_{i2})),
+    T_i ~ Bernoulli(.5), u_i ~ Normal(0,25^2)
+
+    Args:
+        n_samples(int, optional): sample size. Defaults to 10000.
+        n_x (int, optional): number of covariates. At least 4. Defaults to 100.
+    Returns:
+        cd (CausalityDataset): data object for causal inference
+
+    """
+    assert n_x > 4
+
+    X = np.random.normal(0, 1, size=(n_samples, n_x))
+    b = (
+        10 * np.sin(np.pi * X[:, 0] * X[:, 1])
+        + 20 * (X[:, 2] - 0.5) ** 2
+        + 10 * X[:, 3]
+        + 5 * X[:, 4]
+    )
+    tau = X[:, 0] + np.log((1 + np.exp(X[:, 1])))
+    T = np.random.binomial(1, 0.5, size=(n_samples,))
+    u = np.random.normal(0, 25, size=(n_samples,))
+    Y = b + T * tau + u
+    df = pd.DataFrame(
+        np.array([Y, T, *X.T]).T,
+        columns=["Y", "T"] + [f"X{j}" for j in range(n_x)],
+    )
+
+    cd = CausalityDataset(data=df, outcomes=["Y"], treatment="T")
+
+    return cd

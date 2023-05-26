@@ -255,11 +255,11 @@ class CausalTune:
     def fit(
         self,
         data: Union[pd.DataFrame, CausalityDataset],
-        treatment: str = None,
-        outcome: str = None,
-        common_causes: List[str] = None,
-        effect_modifiers: List[str] = None,
-        instruments: List[str] = None,
+        treatment: Optional[str] = None,
+        outcome: Optional[str] = None,
+        common_causes: Optional[List[str]] = None,
+        effect_modifiers: Optional[List[str]] = None,
+        instruments: Optional[List[str]] = None,
         propensity_modifiers: Optional[List[str]] = None,
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
@@ -283,6 +283,9 @@ class CausalTune:
 
             @return: None
         """
+        if outcome is None and isinstance(data, CausalityDataset):
+            outcome = data.outcomes[0]
+
         if not isinstance(data, CausalityDataset):
             assert isinstance(data, pd.DataFrame)
             data = CausalityDataset(
@@ -314,7 +317,7 @@ class CausalTune:
         self.causal_model = CausalModel(
             data=self.train_df,
             treatment=data.treatment,
-            outcome=data.outcomes[0],
+            outcome=outcome,
             common_causes=data.common_causes + data.propensity_modifiers,
             effect_modifiers=data.effect_modifiers,
             instruments=data.instruments,
