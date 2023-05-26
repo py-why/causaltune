@@ -10,7 +10,7 @@ This notebook serves as a good starting when exploring CausalTune. It encompasse
 ### 2. [CausalityDataset setup](https://github.com/transferwise/auto-causality/blob/main/notebooks/CausalityDataset%20setup.ipynb)
 Causaltune models require work based on a CausalityDataset instance which includes all relevant data and information to build the causal graph. This notebook briefly outlines how to define a CausalityDataset.
 
-### 3. [AB testing](https://github.com/transferwise/auto-causality/blob/main/notebooks/AB_testing.ipynb)
+### 3. [AB testing](https://github.com/transferwise/auto-causality/blob/main/notebooks/AB%20testing.ipynb)
 
 A guide on how to use CausalTune for AB test evaluation.
 

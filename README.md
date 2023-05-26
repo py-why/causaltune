@@ -56,7 +56,7 @@ The automated search over the many powerful models from EconML and elsewhere all
 
 By enriching the results of a regular A/B/N test with customer features, and running CausalTune on the
 resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
-impact in the next iteration. CausalTune also serves as a variance reduction method leveraging the availability of any additional features. [Example notebook](https://github.com/transferwise/auto-causality/blob/main/notebooks/AB_testing.ipynb)
+impact in the next iteration. CausalTune also serves as a variance reduction method leveraging the availability of any additional features. [Example notebook](https://github.com/transferwise/auto-causality/blob/main/notebooks/AB%20testing.ipynb)
 
 ### 2. Continuous testing combined with exploitation: (Dynamic) uplift modelling
 
