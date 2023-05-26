@@ -277,7 +277,9 @@ class AutoCausality:
         """
         if isinstance(data, CausalityDataset):
             if len(data.outcomes) > 1:
-                assert outcome is not None, 'Multiple outcomes detected. Please specify outcome.'
+                assert (
+                    outcome is not None
+                ), "Multiple outcomes detected. Please specify outcome."
 
         if not isinstance(data, CausalityDataset):
             assert isinstance(data, pd.DataFrame)
@@ -307,13 +309,13 @@ class AutoCausality:
         )
 
         # dirty fix to use outcome param when multiple outcomes present
-        outcome = outcome if len(data.outcomes) > 1 else data.outcomes[0]        
+        outcome_ = outcome if len(data.outcomes) > 1 else data.outcomes[0]
 
         # smuggle propensity modifiers into common causes, filter later in component models
         self.causal_model = CausalModel(
             data=self.train_df,
             treatment=data.treatment,
-            outcome=outcome,
+            outcome=outcome_,
             common_causes=data.common_causes + data.propensity_modifiers,
             effect_modifiers=data.effect_modifiers,
             instruments=data.instruments,
@@ -634,7 +636,6 @@ class AutoCausality:
         return self.model.effect(df, *args, **kwargs)
 
     def effect_inference(self, df, *args, **kwargs):
-
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.apply_multitreatment = apply_multitreatment
@@ -651,7 +652,6 @@ class AutoCausality:
             )
 
     def effect_stderr(self, df, n_bootstrap_samples=5, n_jobs=1, *args, **kwargs):
-
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.effect_stderr = effect_stderr
