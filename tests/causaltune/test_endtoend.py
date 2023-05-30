@@ -52,7 +52,7 @@ class TestEndToEnd(object):
         # outcome = targets[0]
         ct = CausalTune(
             num_samples=len(estimator_list),
-            components_time_budget=25,
+            components_time_budget=10,
             estimator_list=estimator_list,  # "all",  #
             use_ray=False,
             verbose=3,
@@ -91,7 +91,7 @@ class TestEndToEnd(object):
         ct = CausalTune(
             estimator_list="all",
             num_samples=len(estimator_list),
-            components_time_budget=40,
+            components_time_budget=10,
         )
         ct.fit(data)
         # ct.fit(data, resume=True)
