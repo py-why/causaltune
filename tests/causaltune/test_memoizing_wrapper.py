@@ -8,7 +8,7 @@ class TestWrapper:
         m = MemoizingWrapper()
         data_df = generate_synthetic_data().data
         data_df = data_df[:100]
-        m.fit(data_df, data_df["y_factual"], time_budget=10, verbose=3)
+        m.fit(data_df, data_df["outcome"], time_budget=10, verbose=3)
 
 
 if __name__ == "__main__":
