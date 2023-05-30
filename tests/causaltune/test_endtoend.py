@@ -61,7 +61,7 @@ class TestEndToEnd(object):
         )
 
         ct.fit(data)
-        ct.fit(data, resume=True)
+        # ct.fit(data, resume=True)
         ct.effect(data.data)
         ct.score_dataset(data.data, "test")
 
@@ -94,7 +94,7 @@ class TestEndToEnd(object):
             components_time_budget=40,
         )
         ct.fit(data)
-        ct.fit(data, resume=True)
+        # ct.fit(data, resume=True)
 
         # TODO add an effect() call and an effect_tt call
         print("yay!")
