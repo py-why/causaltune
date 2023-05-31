@@ -1,4 +1,4 @@
-# Contributing to Auto-Causality
+# Contributing to causaltune
 
 When contributing to this repository, please first discuss the change you wish to make via issue, or any other method with the owners of this repository before making a change.
 
@@ -31,7 +31,7 @@ Pull requests are the best way to propose changes to the codebase (we use [GitHu
 ## Any contributions you make will be under the Apache License Version 2.0.
 In short, when you submit code changes, your submissions are understood to be under the same [Apache License Version 2.0](./LICENSE) that covers the project. Feel free to contact the maintainers if that's a concern.
 
-## Report bugs using GitHub's [issues](https://github.com/transferwise/auto-causality/issues)
+## Report bugs using GitHub's [issues](https://github.com/transferwise/causaltune/issues)
 We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/transferwise/pipelinewise/issues/new); it's that easy!
 
 ## Write bug reports with detail, background and setup

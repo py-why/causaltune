@@ -1,26 +1,26 @@
-# Auto-Causality: A library for automated Causal Inference model estimation and selection
+# CausalTune: A library for automated Causal Inference model estimation and selection
 
 
-**AutoCausality** is a library for automated tuning and selection for causal estimators.
+**CausalTune** is a library for automated tuning and selection for causal estimators.
 
 Its estimators are taken from [EconML](https://github.com/microsoft/EconML/) augmented by a couple of extra models
 (currently Transformed Outcome and a dummy model to be used as a baseline), all called in a uniform fashion via a
 [DoWhy](https://github.com/microsoft/DoWhy/) wrapper.
 
-Our contribution is enabling automatic estimator tuning
-and selection by out-of-sample scoring of causal estimators, notably using the [energy score](https://arxiv.org/abs/2212.10076).
-We use  [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
+Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the [energy score](https://arxiv.org/abs/2212.10076).
+We use [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
 
 We perform automated hyperparameter tuning of first stage models (for the treatment and outcome models)
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
 
 The estimators provide not only per-row treatment impact estimates, but also confidence intervals for these,
-using builtin EconML functionality for that where it is available and bootstrapping where it is not [example notebook](???).
+using builtin EconML functionality for that where it is available and bootstrapping where it is not (see [example notebook](https://github.com/transferwise/auto-causality/blob/main/notebooks/Standard%20errors.ipynb)).
 
 Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
-provided by the user do reflect all sources of confounding between the treatment and the outcome).
-The validation methods in auto-causality cannot catch such violations and therefore this is an important assumption.
+provided by the user do reflect all sources of confounding between the treatment and the outcome.
+
+The validation methods in CausalTune cannot catch such violations and therefore this is an important assumption.
 
 We also implement the [ERUPT](https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4)
 [calculation](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957) (also known as policy value),
@@ -30,19 +30,22 @@ though energy score performed better in our synthetic data experiments.
 
 <summary><strong><em>Table of Contents</em></strong></summary>
 
-- [What can this do for you?](#what-can-this-do-for-you)
-  - [Segment A/B tests by per-customer impact](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
-  - [Continuous testing](#2-continuous-testing-combined-with-exploitation)
-  - [Observational inference](#3-observational-inference)
-  - [Impact of customer choosing to use a feature (IV models)](#4-impact-of-customer-choosing-to-use-a-feature-iv-models)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Supported Models](#supported-models)
-- [Supported Metrics](#supported-metrics)
-- [Citation](#citation)
-- [For Developers](#for-developers)
-  - [Installation from source](#installation-from-source)
-  - [Tests](#testing)
+- [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
+- [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
+  - [What can this do for you?](#what-can-this-do-for-you)
+    - [1. Supercharge A/B tests by getting impact by customer, instead of just an average](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
+    - [2. Continuous testing combined with exploitation: (Dynamic) uplift modelling](#2-continuous-testing-combined-with-exploitation-dynamic-uplift-modelling)
+    - [3. Estimate the benefit of smarter (but still partially random) assignment compared to fully random without the need for an actual fully random test group](#3-estimate-the-benefit-of-smarter-but-still-partially-random-assignment-compared-to-fully-random-without-the-need-for-an-actual-fully-random-test-group)
+    - [4. Observational inference](#4-observational-inference)
+    - [5. IV models: Impact of customer choosing to use a feature](#5-iv-models-impact-of-customer-choosing-to-use-a-feature)
+  - [Installation](#installation)
+  - [Quick Start](#quick-start)
+  - [Supported Models](#supported-models)
+  - [Supported Metrics](#supported-metrics)
+  - [Citation](#citation)
+  - [For Developers](#for-developers)
+    - [Installation from source](#installation-from-source)
+    - [Testing](#testing)
 
 
 ## What can this do for you?
@@ -50,33 +53,32 @@ though energy score performed better in our synthetic data experiments.
 The automated search over the many powerful models from EconML and elsewhere allows you to easily do the following
 
 ### 1. Supercharge A/B tests by getting impact by customer, instead of just an average
-By enriching the results of a regular A/B/N test with customer features, and running auto-causality on the
-resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
-impact in the next iteration.
 
-### 2. Continuous testing combined with exploitation
-The per-customer impact estimates, even if noisy, can be used to implement
-per-customer Thompson sampling for new customers, biasing random treatment assignment towards ones we think
-are most likely to work. As we still control the per-customer propensity to treat, same methods as above can be
-applied to keep refining our impact estimates.
+By enriching the results of a regular A/B/N test with customer features, and running CausalTune on the
+resulting dataset, you can get impact estimates as a function of customer features, allowing precise targeting by
+impact in the next iteration. CausalTune also serves as a variance reduction method leveraging the availability of any additional features. [Example notebook](https://github.com/transferwise/auto-causality/blob/main/notebooks/AB%20testing.ipynb)
+
+### 2. Continuous testing combined with exploitation: (Dynamic) uplift modelling
+
+The per-customer impact estimates, even if noisy, can be used to implement per-customer Thompson sampling for new customers, biasing random treatment assignment towards ones we think are most likely to work. As we still control the per-customer propensity to treat, same methods as above can be applied to keep refining our impact estimates.
 
 Thus, there is no need to either wait for the test to gather enough data for significance, nor to ever end the
 test, before using its results to assign the most impactful treatment (based on our knowlede so far) to each customer.
 
-As in this case the propensity to treat is known for each customer, we [allow to explicitly supply it](Link to example notebook)
+As in this case the propensity to treat is known for each customer, we [allow to explicitly supply it](https://github.com/transferwise/auto-causality/blob/main/notebooks/Propensity%20Model%20Selection.ipynb)
 as a column to the estimators, instead of estimating it from the data like in other cases.
 
 ### 3. Estimate the benefit of smarter (but still partially random) assignment compared to fully random without the need for an actual fully random test group
+
 Previous section described using causal estimators to bias treatment assignment towards the choice we think is
-most likely to work best for a given
-customer.
+most likely to work best for a given customer.
 
 However, after the fact we would like to know the extra benefit of that compared to a fully random assignment.
-The ERUPT technique [sample notebook](???) re-weights the actual outcomes to produce an unbiased estimate of the average
-outcome that a fully random assignment would have yielded, with no actual additional group needed.
+The ERUPT technique [sample notebook](https://github.com/transferwise/auto-causality/blob/main/notebooks/ERUPT%20under%20simulated%20random%20assignment.ipynb) re-weights the actual outcomes to produce an unbiased estimate of the average outcome that a fully random assignment would have yielded, with no actual additional group needed.
 
 
 ### 4. Observational inference
+
 The traditional application of causal inference. For example, estimating the impact on
 volumes and churn likelihood of the time it takes us to answer a customer query. As the set of customers
 who have support queries is most likely not randomly sampled, confounding corrections are needed.
@@ -84,37 +86,41 @@ who have support queries is most likely not randomly sampled, confounding correc
 As with other usecases, the advanced causal inference models allow impact estimation as a function
 of customer features, rather than just averages, **under the assumption that all relevant confounders are observed**.
 
-To use this, just set `propensity_model` to an instance of the desired classifier when instantiating `AutoCausality`, or to `"auto"`
-if you want to use the FLAML classifier (the default setting is `"dummy"` which assumes random assigment and infers
-the assignment probability from the data). [Example notebook](???)
+To use this, just set `propensity_model` to an instance of the desired classifier when instantiating `CausalTune`, or to `"auto"` if you want to use the FLAML classifier (the default setting is `"dummy"` which assumes random assigment and infers
+the assignment probability from the data). [Example notebook](https://github.com/transferwise/auto-causality/blob/main/notebooks/Propensity%20Model%20Selection.ipynb)
 
 If you have reason to suppose unobserved confounders, such as customer intent (did the customer do a lot of volume
 because of the promotion, or did they sign up for the promotion because they intended to do lots of volume anyway?)
-consider looking for an instrumental variable instead.
+consider looking for an instrumental variable instead. 
+<!--
+Can we reformulate to (did the customer do a lot of volume because of the promotion or is the customer more likely
+to sign up for the promotion because they have a higher volume per se?) 
+-->
 
 Note that our derivation of energy score as a valid out-of-sample score for causal models is strictly speaking not
 applicable for this usecase, but still appears to work reasonably well in practice.
 
-### 5. Impact of customer choosing to use a feature (IV models)
-The case we're focussing on is making a feature or a promotion available to a customer, and trying to
+### 5. IV models: Impact of customer choosing to use a feature
+
+Instrumental variable (IV) estimation to avoid an estimation bias from unobserved confounders.
+
+A natural use case for IV models is making a feature or a promotion available to a customer, and trying to
 measure the impact of the customer actually choosing to use the feature (the impact of making the feature
 available can be solved with 1. and 2. above).
 
 Here we use feature availability as an instrumental variable (assuming its assignment to be strictly randomized),
-and search over IV models in EconML to estimate the
-impact of the customer choosing to use it. To score IV model fits out of sample, we again use the
-[energy score](https://arxiv.org/abs/2212.10076).
+and search over IV models in EconML to estimate the impact of the customer choosing to use it. To score IV model fits out of sample, we again use the [energy score](https://arxiv.org/abs/2212.10076). [Example notebook](https://github.com/transferwise/auto-causality/blob/main/notebooks/Comparing%20IV%20Estimators.ipynb)
 
-Please be aware we haven't yet extensively used the IV model fitting functionality internally,
-so if you run into any issues, please report them!
+Please be aware we have not yet extensively used the IV model fitting functionality internally, so if you run into any issues, please report them!
 
 ## Installation
 To install from source, see [For Developers](#for-developers) section below.
-TODO: make available as package on pypi
 
 
 **Requirements**
-AutoCausality requires the following libraries to work:
+CausalTune works with Python 3.8 and 3.9.
+
+It requires the following libraries to work:
 - NumPy
 - Pandas
 - EconML
@@ -127,24 +133,26 @@ pip install -r requirements.txt
 ```
 
 ## Quick Start
-The autocausality package can be used like a scikit-style estimator:
+
+The CausalTune package can be used like a scikit-style estimator:
 
 ```Python
-from auto_causality import AutoCausality
-from auto_causality.datasets import synth_ihdp
+from causaltune import CausalTune
+from causaltune.datasets import synth_ihdp
 
 # prepare dataset
 data = synth_ihdp()
 data.preprocess_dataset()
 
-# init autocausality object with chosen metric to optimise
-ac = AutoCausality(time_budget=10, metric='erupt')
 
-# run autocausality
-myresults = ac.fit(data)
+# init CausalTune object with chosen metric to optimise
+ct = CausalTune(time_budget=10, metric='erupt')
+
+# run CausalTune
+ct.fit(data)
 
 # return best estimator
-print(f"Best estimator: {ac.best_estimator}")
+print(f"Best estimator: {ct.best_estimator}")
 
 ```
 
@@ -172,19 +180,19 @@ The package supports the following causal estimators:
 We support a variety of different metrics that quantify the performance of a causal model:
 * Energy distance
 * ERUPT (Expected Response Under Proposed Treatments)
-* Qini coefficient
-* AUC (area under curve)
+* Qini coefficient and AUC (area under curve)
 * ATE (average treatment effect)
 
 ## Citation
-If you use AutoCausality in your research, please cite us as follows:
-Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **Auto-Causality: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/auto-causality. 2022. Version 0.x
+If you use CausalTune in your research, please cite us as follows:
+
+Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **CausalTune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/transferwise/causaltune. 2022. Version 0.x
 You can use the following BibTex entry:
 ```
-@misc{autocausality,
+@misc{CausalTune,
   author={Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev},
-  title={{Auto-Causality}: {A Python package for Automated Causal Inference model estimation and selection}},
-  howpublished={https://github.com/transferwise/auto-causality},
+  title={{CausalTune}: {A Python package for Automated Causal Inference model estimation and selection}},
+  howpublished={https://github.com/transferwise/causaltune},
   note={Version 0.x},
   year={2022}
 }

@@ -1,0 +1,11 @@
+// A simple causal graph
+digraph "causal-graph" {
+	edge [arrowsize=1]
+	X [label="Covariates
+(assumed to be 
+observable)"]
+	T [label=Treatment]
+	Y [label=Outcome]
+	X -> Y
+	T -> Y
+}

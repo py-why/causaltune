@@ -32,7 +32,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Your environment**
- - Version of auto-causality, e.g branch/commit #/release/tag
+ - Version of causaltune, e.g branch/commit #/release/tag
  - Source type and setup
  - Target type and setup
 
