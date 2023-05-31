@@ -15,7 +15,7 @@ with open("README.md") as f:
     long_description = f.read()
 
 setup(
-    name="CausalTune",
+    name="causaltune",
     version="0.1.0",
     description="AutoML for Causal Inference.",
     long_description=long_description,
@@ -38,5 +38,5 @@ setup(
         exclude=["tests*"],
     ),
     include_package_data=True,
-    keywords="CausalTune",
+    keywords="causaltune",
 )
