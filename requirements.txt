@@ -8,5 +8,5 @@ scikit_learn
 matplotlib
 dcor
 holidays
-setuptools==65.5.1
+setuptools==67.8.0
 
