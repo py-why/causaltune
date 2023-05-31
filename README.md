@@ -18,7 +18,7 @@ using builtin EconML functionality for that where it is available and bootstrapp
 
 Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
-provided by the user do reflect all sources of confounding between the treatment and the outcome.
+provided by the user do reflect all sources of confounding between the treatment and the outcome. See [here](https://github.com/transferwise/auto-causality/blob/main/notebooks/CausalityDataset%20setup.ipynb) for a detailed explanation of causal graphs that are supported by CausalTune.
 
 The validation methods in CausalTune cannot catch such violations and therefore this is an important assumption.
 
@@ -30,7 +30,6 @@ though energy score performed better in our synthetic data experiments.
 
 <summary><strong><em>Table of Contents</em></strong></summary>
 
-- [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
 - [CausalTune: A library for automated Causal Inference model estimation and selection](#causaltune-a-library-for-automated-causal-inference-model-estimation-and-selection)
   - [What can this do for you?](#what-can-this-do-for-you)
     - [1. Supercharge A/B tests by getting impact by customer, instead of just an average](#1-supercharge-ab-tests-by-getting-impact-by-customer-instead-of-just-an-average)
@@ -190,7 +189,7 @@ Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **C
 You can use the following BibTex entry:
 ```
 @misc{CausalTune,
-  author={Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev},
+  author={Timo Debono, Julian Teichgr\"aber, Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev},
   title={{CausalTune}: {A Python package for Automated Causal Inference model estimation and selection}},
   howpublished={https://github.com/transferwise/causaltune},
   note={Version 0.x},
