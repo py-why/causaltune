@@ -1,1 +1,1 @@
-collect_ignore = ["NIPS_submission"]
+collect_ignore = ["paper_submission"]
