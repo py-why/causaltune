@@ -250,6 +250,6 @@
 #         est_labels[0], loc="center left", bbox_to_anchor=(1.2, 0.5), frameon=False
 #     )
 # plt.tight_layout()
-# # plt.savefig(f"NIPS/paper_CATE_synth_scores.pdf",format="pdf")
+# # plt.savefig(f"paper/paper_CATE_synth_scores.pdf",format="pdf")
 # plt.show()
 # print("yahoo!")

@@ -1,4 +1,4 @@
-package_name = auto_causality
+package_name = causaltune
 coverage_target = 70
 max_line_length = 120
 

@@ -8,5 +8,5 @@ markers = [
 ]
 testpaths = [
     "tests",
-    #"notebooks"
+    "notebooks"
 ]

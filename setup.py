@@ -15,16 +15,15 @@ with open("README.md") as f:
     long_description = f.read()
 
 setup(
-    name="auto-causality",
+    name="causaltune",
     version="0.1.0",
     description="AutoML for Causal Inference.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Wise",
-    url="https://github.com/transferwise/auto-causality",
+    url="https://github.com/py-why/causaltune",
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
@@ -34,9 +33,9 @@ setup(
         "ray": _read_requirements_file("requirements-ray.txt"),
     },
     packages=find_packages(
-        include=["auto_causality", "auto_causality.*"],
+        include=["causaltune", "causaltune.*"],
         exclude=["tests*"],
     ),
     include_package_data=True,
-    keywords="auto-causality",
+    keywords="causaltune",
 )
