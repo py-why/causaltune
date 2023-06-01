@@ -19,7 +19,7 @@ It explores both variance reduction techniques leveraging additional features an
 
 ### 4. [ERUPT under simulated random assignment](https://github.com/transferwise/auto-causality/blob/main/notebooks/ERUPT%20under%20simulated%20random%20assignment.ipynb)
 
-This analysis walks the user through evaluating and conducting uplift modelling with the ERUPT metric. 
+This analysis walks the user through estimating effects of hypothetical assignment policies, different from the actual one, even after the experiment has completed.
 
 ### 5. [Propensity model selection](https://github.com/transferwise/auto-causality/blob/main/notebooks/Propensity%20Model%20Selection.ipynb)
 
