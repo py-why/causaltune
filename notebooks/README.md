@@ -35,7 +35,8 @@ Those include
 Standard errors are important for statistical inference. CausalTune allows for computation of standard errors of the best estimator as identified by CausalTune. The standard errors are computed with econml methods which includes analytical estimates for some estimators and bootstraps for others. 
 
 ### 7. [Comparing IV estimators](https://github.com/transferwise/auto-causality/blob/main/notebooks/Comparing%20IV%20Estimators.ipynb)
-CausalTune can compare instrumental variable (IV) estimators based on the energy distance. This notebooks shows how to run the estimator selection and how to compare IV estimators. 
+CausalTune can compare instrumental variable (IV) estimators based on the energy distance, in the special case where the instrumental variable controls access to a feature, and the treatment is the user choice of using this feature (if available to them). 
+This notebook shows how to run the estimator selection and how to compare IV estimators. 
 
 It also walks through how to interpret the energy distance and additional result visualisation.
 
