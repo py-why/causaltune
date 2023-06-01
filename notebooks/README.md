@@ -26,7 +26,7 @@ This analysis walks the user through evaluating and conducting uplift modelling 
 The estimators that CausalTune is based on (e.g. doubly robust learners, metalearners etc.) mostly require propensity score weighting. CausalTune therefore requires propensity score weights. This notebook displays the different methods that can be used to bild the propensity score weights.
 
 Those include 
-   - [Default:] use a dummy estimator.
+   - [Default:] use a dummy estimator that assumes random sampling and estimates treatment probabilities from the dataset,
    - Letting AutoML fit the propensity model,
    - supply a custom sklearn-compatible prediction model,
    - supply an array of custom propensities to treat.
