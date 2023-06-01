@@ -145,7 +145,7 @@ data.preprocess_dataset()
 
 
 # init CausalTune object with chosen metric to optimise
-ct = CausalTune(time_budget=10, metric='erupt')
+ct = CausalTune(time_budget=600, metric="energy_distance")
 
 # run CausalTune
 ct.fit(data)
