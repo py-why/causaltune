@@ -28,7 +28,7 @@ The estimators that CausalTune is based on (e.g. doubly robust learners, metalea
 Those include 
    - [Default:] use a dummy estimator that assumes random sampling and estimates treatment probabilities from the dataset,
    - Letting AutoML fit the propensity model,
-   - supply a custom sklearn-compatible prediction model,
+   - supply an sklearn-compatible classification model,
    - supply an array of custom propensities to treat.
 
 ### 6. [Standard errors](https://github.com/transferwise/auto-causality/blob/main/notebooks/Standard%20errors.ipynb)
