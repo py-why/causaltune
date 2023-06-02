@@ -544,7 +544,9 @@ def generate_non_random_dataset(num_samples=1000):
     return cd
 
 
-def synth_variance_reduction_experiment(n_samples=10000, n_x=100):
+def synth_variance_reduction_experiment(
+    n_samples=10000, n_x=100, const_te=0, noise=1, cate_scaler=1
+):
     """Synthetic DGP taken from
     Guo, Yongyi, et al. "Machine learning for variance reduction in online experiments."
     Advances in Neural Information Processing Systems 34 (2021): 8637-8648.
@@ -552,18 +554,23 @@ def synth_variance_reduction_experiment(n_samples=10000, n_x=100):
 
     DGP:
 
-    Y_i = b(X_i) + T_i*tau(X_i) + u_i
+    Y_i = b(X_i) + T_i*(const_te+tau(X_i)) + noise*u_i
     with
     b(X_i) = 10*sin(pi*X_{i0}X_{i1}) + 20*(X_{i2}-.5)^2 + 10*X_{i3} + 5*X_{i4}
 
     and
 
-    tau(X_i) = X_{i1} + log(1+exp(X_{i2})),
+    tau(X_i) = cate_scaler*(X_{i1} + log(1+exp(X_{i2})) - 0.805850803366056),
     T_i ~ Bernoulli(.5), u_i ~ Normal(0,25^2)
+
+    The DGP is set up in a way that there ATE = const_te.
 
     Args:
         n_samples(int, optional): sample size. Defaults to 10000.
         n_x (int, optional): number of covariates. At least 4. Defaults to 100.
+        const_te (float, optional): constant average treatment effect
+        noise (float, optional): exogeneous variance scaler
+        cate_scaler (float, optional): heterogeneous treatment effect scaler
     Returns:
         cd (CausalityDataset): data object for causal inference
 
@@ -577,10 +584,12 @@ def synth_variance_reduction_experiment(n_samples=10000, n_x=100):
         + 10 * X[:, 3]
         + 5 * X[:, 4]
     )
-    tau = X[:, 0] + np.log((1 + np.exp(X[:, 1])))
+    tau = cate_scaler * (
+        X[:, 0] + 0.5 * (np.log((1 + np.exp(X[:, 1]))) - 0.805850803366056)
+    )
     T = np.random.binomial(1, 0.5, size=(n_samples,))
-    u = np.random.normal(0, 25, size=(n_samples,))
-    Y = b + T * tau + u
+    u = noise * np.random.normal(0, 25, size=(n_samples,))
+    Y = b + T * (const_te + tau) + u
     df = pd.DataFrame(
         np.array([Y, T, *X.T]).T,
         columns=["Y", "T"] + [f"X{j}" for j in range(n_x)],
