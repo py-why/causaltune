@@ -544,7 +544,7 @@ def generate_non_random_dataset(num_samples=1000):
     return cd
 
 
-def synth_variance_reduction_experiment(
+def mlrate_experiment_synth_dgp(
     n_samples=10000, n_x=100, const_te=0, noise=1, cate_scaler=1
 ):
     """Synthetic DGP taken from
