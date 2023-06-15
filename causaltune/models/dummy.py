@@ -56,7 +56,7 @@ class DummyModel(DoWhyMethods):
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         mean_, _, _ = Scorer.naive_ate(X[self.treatment_name], X[self.outcome_name])
-        return np.ones(len(X)) * mean_ * (1 + 0.01 * np.random.normal(size=(len(X),)))
+        return np.ones(len(X)) * mean_ * (1 + 10e-5 * np.random.normal(size=(len(X),)))
 
 
 class PropensityScoreWeighter(DoWhyMethods):
@@ -129,7 +129,7 @@ class Dummy(MultivaluePSW):
 
     def effect(self, df: pd.DataFrame, **kwargs):
         effect = super(MultivaluePSW, self).effect(df, **kwargs)
-        return effect * (1 + 0.01 * np.random.normal(size=effect.shape))
+        return effect * (1 + 10e-5 * np.random.normal(size=effect.shape))
 
 
 class NaiveDummy(DoWhyWrapper):
