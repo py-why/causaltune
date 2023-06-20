@@ -1,7 +1,2 @@
-autoflake
-black==23.3.0
-flake8
-isort
-pytest
-pytest-cov
-nbmake
+#install extra dependencies from setup.py 'test'
+-e file:../causaltune[test]
