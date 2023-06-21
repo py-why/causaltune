@@ -43,6 +43,8 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../notebook_examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../causaltune.html">Public Module Reference</a></li>
 </ul>
@@ -248,16 +250,17 @@
         <span class="n">prune_min_categories</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
         <span class="n">prune_thresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.99</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Preprocesses input dataset for CausalTune by</span>
-<span class="sd">            converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocesses input dataset for CausalTune by</span>
+<span class="sd">        converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.</span>
 
-<span class="sd">        @param drop_first (bool): whether to drop the first dummy variable for each categorical feature (default False)</span>
-<span class="sd">        @param scale_floats (bool): whether to scale float features to have zero mean and unit variance (default False)</span>
-<span class="sd">        @param prune_min_categories (int): min number of categories to keep for each categorical feature (default 50)</span>
-<span class="sd">        @param prune_thresh (float): threshold for category frequency when pruning categories (default 0.99)</span>
+<span class="sd">        Args:</span>
+<span class="sd">            drop_first (bool): whether to drop the first dummy variable for each categorical feature (default False)</span>
+<span class="sd">            scale_floats (bool): whether to scale float features to have zero mean and unit variance (default False)</span>
+<span class="sd">            prune_min_categories (int): min number of categories to keep for each categorical feature (default 50)</span>
+<span class="sd">            prune_thresh (float): threshold for category frequency when pruning categories (default 0.99)</span>
 
-<span class="sd">        @return: None. Modifies self.data in-place by replacing it with the preprocessed dataframe.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None. Modifies self.data in-place by replacing it with the preprocessed dataframe.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>

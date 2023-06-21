@@ -20,7 +20,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Examples" href="notebook_examples.html" />
+    <link rel="next" title="What can this do for you?" href="whatcanthisdo.html" />
     <link rel="prev" title="Welcome to CausalTune’s documentation!" href="index.html" /> 
 </head>
 
@@ -45,7 +45,14 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#for-developers">For Developers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebook_examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="causaltune.html">Public Module Reference</a></li>
 </ul>
@@ -90,7 +97,30 @@ conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> <
 </pre></div>
 </div>
 </div>
-<p><strong>For Developers</strong></p>
+<section id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this heading"></a></h2>
+<p>The CausalTune package can be used like a scikit-style estimator:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">causaltune</span> <span class="kn">import</span> <span class="n">CausalTune</span>
+<span class="kn">from</span> <span class="nn">causaltune.datasets</span> <span class="kn">import</span> <span class="n">synth_ihdp</span>
+
+<span class="c1"># prepare dataset</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">synth_ihdp</span><span class="p">()</span>
+<span class="n">data</span><span class="o">.</span><span class="n">preprocess_dataset</span><span class="p">()</span>
+
+
+<span class="c1"># init CausalTune object with chosen metric to optimise</span>
+<span class="n">ct</span> <span class="o">=</span> <span class="n">CausalTune</span><span class="p">(</span><span class="n">time_budget</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;energy_distance&quot;</span><span class="p">)</span>
+
+<span class="c1"># run CausalTune</span>
+<span class="n">ct</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="c1"># return best estimator</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best estimator: </span><span class="si">{</span><span class="n">ct</span><span class="o">.</span><span class="n">best_estimator</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="for-developers">
+<h2>For Developers<a class="headerlink" href="#for-developers" title="Permalink to this heading"></a></h2>
 <p>Clone this repository and run the following command from the top-most folder of the repository.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
 </pre></div>
@@ -101,7 +131,9 @@ conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> <
 </pre></div>
 </div>
 </div></blockquote>
-<p><strong>Requirements</strong></p>
+</section>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
 <p>CausalTune requires the following packages:</p>
 <ul class="simple">
 <li><p>numpy</p></li>
@@ -120,13 +152,14 @@ conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> <
 </pre></div>
 </div>
 </section>
+</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Welcome to CausalTune’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="notebook_examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="whatcanthisdo.html" class="btn btn-neutral float-right" title="What can this do for you?" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

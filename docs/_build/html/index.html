@@ -45,6 +45,8 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebook_examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="causaltune.html">Public Module Reference</a></li>
 </ul>
@@ -79,18 +81,19 @@
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebook_examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="causaltune.html">Public Module Reference</a></li>
 </ul>
 </div>
 <p>Installation guidelines can be found at <a class="reference internal" href="getting_started.html"><span class="doc">Installation</span></a></p>
-<p>Date: Jun 21, 2023</p>
 <p><strong>CausalTune</strong> is a library for automated tuning and selection for causal estimators.</p>
 <p>Its estimators are taken from <a class="reference external" href="https://github.com/microsoft/EconML/">EconML</a> augmented by a couple of extra models
 (currently Transformed Outcome and a dummy model to be used as a baseline), all called in a uniform fashion via a
-[DoWhy](<a class="reference external" href="https://github.com/microsoft/DoWhy/">https://github.com/microsoft/DoWhy/</a>) wrapper.</p>
-<p>Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the [energy score](<a class="reference external" href="https://arxiv.org/abs/2212.10076">https://arxiv.org/abs/2212.10076</a>).
-We use [FLAML](<a class="reference external" href="https://github.com/microsoft/FLAML">https://github.com/microsoft/FLAML</a>) for hyperparameter optimisation.</p>
+<a class="reference external" href="https://github.com/microsoft/DoWhy/">DoWhy</a> wrapper.</p>
+<p>Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the <a class="reference external" href="https://arxiv.org/abs/2212.10076">energy_score</a>.
+We use <a class="reference external" href="https://github.com/microsoft/FLAML">FLAML</a> for hyperparameter optimisation.</p>
 <p>We perform automated hyperparameter tuning of first stage models (for the treatment and outcome models)
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).</p>
 <p>The estimators provide not only per-row treatment impact estimates, but also confidence intervals for these,
@@ -99,19 +102,16 @@ using builtin EconML functionality for that where it is available and bootstrapp
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
 provided by the user do reflect all sources of confounding between the treatment and the outcome. See [here](<a class="reference external" href="https://github.com/py-why/causaltune/blob/main/notebooks/CausalityDataset%20setup.ipynb">https://github.com/py-why/causaltune/blob/main/notebooks/CausalityDataset%20setup.ipynb</a>) for a detailed explanation of causal graphs that are supported by CausalTune.</p>
 <p>The validation methods in CausalTune cannot catch such violations and therefore this is an important assumption.</p>
-<p>We also implement the [ERUPT](<a class="reference external" href="https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4">https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4</a>)
-[calculation](<a class="reference external" href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957">https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957</a>) (also known as policy value),
+<p>We also implement the <a class="reference external" href="https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4">ERUPT</a>
+<a class="reference external" href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957">calculation</a> (also known as policy value),
 allowing after an (even partially) randomized test to estimate what the impact
 of other treatment assignment policies would have been. This can also be used as an alternative out-of-sample score,
 though energy score performed better in our synthetic data experiments.</p>
-</section>
-<section id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading"></a></h1>
 <ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
+<p>Date: Jun 21, 2023</p>
 </section>
 
 

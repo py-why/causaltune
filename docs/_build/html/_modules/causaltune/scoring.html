@@ -43,6 +43,8 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../notebook_examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../causaltune.html">Public Module Reference</a></li>
 </ul>
@@ -181,13 +183,14 @@
             <span class="p">)</span>
 
 <div class="viewcode-block" id="Scorer.ate"><a class="viewcode-back" href="../../causaltune.html#causaltune.scoring.Scorer.ate">[docs]</a>    <span class="k">def</span> <span class="nf">ate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.</span>
 
-<span class="sd">        @param df (pandas.DataFrame): input dataframe</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas.DataFrame): input dataframe</span>
 
-<span class="sd">        @return tuple: tuple containing the ATE, standard deviation of the estimate (or None if multi-treatment),</span>
-<span class="sd">            and sample size (or None if estimate has more than one dimension)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: tuple containing the ATE, standard deviation of the estimate (or None if multi-treatment),</span>
+<span class="sd">                and sample size (or None if estimate has more than one dimension)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -203,12 +206,13 @@
             <span class="k">return</span> <span class="n">estimate</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="Scorer.resolve_metric"><a class="viewcode-back" href="../../causaltune.html#causaltune.scoring.Scorer.resolve_metric">[docs]</a>    <span class="k">def</span> <span class="nf">resolve_metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Check if supplied metric is supported. If not, default to &#39;energy_distance&#39;.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if supplied metric is supported. If not, default to &#39;energy_distance&#39;.</span>
 
-<span class="sd">        @param metric (str): evaluation metric</span>
+<span class="sd">        Args:</span>
+<span class="sd">            metric (str): evaluation metric</span>
 
-<span class="sd">        @return str: metric/&#39;energy_distance&#39;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: metric/&#39;energy_distance&#39;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -226,14 +230,15 @@
 <div class="viewcode-block" id="Scorer.resolve_reported_metrics"><a class="viewcode-back" href="../../causaltune.html#causaltune.scoring.Scorer.resolve_reported_metrics">[docs]</a>    <span class="k">def</span> <span class="nf">resolve_reported_metrics</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">metrics_to_report</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">scoring_metric</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Check if supplied reporting metrics are valid.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if supplied reporting metrics are valid.</span>
 
-<span class="sd">        @param metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.</span>
-<span class="sd">            Possible options include &#39;ate&#39;, &#39;erupt&#39;, &#39;norm_erupt&#39;, &#39;qini&#39;, &#39;auc&#39;, and &#39;energy_distance&#39;.</span>
-<span class="sd">        @param scoring_metric (str): specified metric</span>
+<span class="sd">        Args:</span>
+<span class="sd">            metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.</span>
+<span class="sd">                Possible options include &#39;ate&#39;, &#39;erupt&#39;, &#39;norm_erupt&#39;, &#39;qini&#39;, &#39;auc&#39;, and &#39;energy_distance&#39;.</span>
+<span class="sd">            scoring_metric (str): specified metric</span>
 
-<span class="sd">        @return List[str]: list of valid metrics</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: list of valid metrics</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="n">supported_metrics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">problem</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivalue</span><span class="p">,</span> <span class="n">scores_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -255,15 +260,15 @@
         <span class="n">estimate</span><span class="p">:</span> <span class="n">CausalEstimate</span><span class="p">,</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculate energy distance score between treated and controls.</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate energy distance score between treated and controls.</span>
 <span class="sd">        For theoretical details, see Ramos-Carreño and Torrecilla (2023).</span>
 
-<span class="sd">        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
-<span class="sd">        @param df (pandas.DataFrame): input dataframe</span>
+<span class="sd">        Args:</span>
+<span class="sd">            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
+<span class="sd">            df (pandas.DataFrame): input dataframe</span>
 
-<span class="sd">        @return float: energy distance score</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: energy distance score</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -295,14 +300,15 @@
     <span class="k">def</span> <span class="nf">qini_make_score</span><span class="p">(</span>
         <span class="n">estimate</span><span class="p">:</span> <span class="n">CausalEstimate</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">cate_estimate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculate the Qini score, defined as the area between the Qini curves of a model and random.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the Qini score, defined as the area between the Qini curves of a model and random.</span>
 
-<span class="sd">        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
-<span class="sd">        @param df (pandas.DataFrame): input dataframe</span>
-<span class="sd">        @param cate_estimate (np.ndarray): array with cate estimates</span>
+<span class="sd">        Args:</span>
+<span class="sd">            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
+<span class="sd">            df (pandas.DataFrame): input dataframe</span>
+<span class="sd">            cate_estimate (np.ndarray): array with cate estimates</span>
 
-<span class="sd">        @return float: Qini score</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Qini score</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -323,14 +329,15 @@
     <span class="k">def</span> <span class="nf">auc_make_score</span><span class="p">(</span>
         <span class="n">estimate</span><span class="p">:</span> <span class="n">CausalEstimate</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">cate_estimate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculate the area under the uplift curve.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the area under the uplift curve.</span>
 
-<span class="sd">        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
-<span class="sd">        @param df (pandas.DataFrame): input dataframe</span>
-<span class="sd">        @param cate_estimate (np.ndarray): array with cate estimates</span>
+<span class="sd">        Args:</span>
+<span class="sd">            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
+<span class="sd">            df (pandas.DataFrame): input dataframe</span>
+<span class="sd">            cate_estimate (np.ndarray): array with cate estimates</span>
 
-<span class="sd">        @return float: area under the uplift curve</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: area under the uplift curve</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -367,19 +374,17 @@
     <span class="k">def</span> <span class="nf">r_make_score</span><span class="p">(</span>
         <span class="n">estimate</span><span class="p">:</span> <span class="n">CausalEstimate</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">cate_estimate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">r_scorer</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculate r_score.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate r_score.</span>
+<span class="sd">        For details refer to Nie and Wager (2017) and Schuler et al. (2018). Adaption from EconML implementation.</span>
 
-<span class="sd">        For details refer to Nie and Wager (2017) and Schuler et al. (2018).</span>
+<span class="sd">        Args:</span>
+<span class="sd">            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
+<span class="sd">            df (pandas.DataFrame): input dataframe</span>
+<span class="sd">            cate_estimate (np.ndarray): array with cate estimates</span>
+<span class="sd">            r_scorer: callable object used to compute the R-score</span>
 
-<span class="sd">        Adaption from EconML implementation.</span>
-
-<span class="sd">        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
-<span class="sd">        @param df (pandas.DataFrame): input dataframe</span>
-<span class="sd">        @param cate_estimate (np.ndarray): array with cate estimates</span>
-<span class="sd">        @param r_scorer: callable object used to compute the R-score</span>
-
-<span class="sd">        @return float: r_score</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: r_score</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -388,13 +393,14 @@
 
 <div class="viewcode-block" id="Scorer.naive_ate"><a class="viewcode-back" href="../../causaltune.html#causaltune.scoring.Scorer.naive_ate">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">naive_ate</span><span class="p">(</span><span class="n">treatment</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">outcome</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculate simple ATE.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate simple ATE.</span>
 
-<span class="sd">        @param treatment (pandas.Series): series of treatments</span>
-<span class="sd">        @param outcome (pandas.Series): series of outcomes</span>
+<span class="sd">        Args:</span>
+<span class="sd">            treatment (pandas.Series): series of treatments</span>
+<span class="sd">            outcome (pandas.Series): series of outcomes</span>
 
-<span class="sd">        @return: tuple of simple ATE, standard deviation, and sample size</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: tuple of simple ATE, standard deviation, and sample size</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -411,14 +417,15 @@
 <div class="viewcode-block" id="Scorer.group_ate"><a class="viewcode-back" href="../../causaltune.html#causaltune.scoring.Scorer.group_ate">[docs]</a>    <span class="k">def</span> <span class="nf">group_ate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute the average treatment effect (ATE) for different groups specified by a policy.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the average treatment effect (ATE) for different groups specified by a policy.</span>
 
-<span class="sd">        @param df (pandas.DataFrame): input dataframe, should contain columns for the treatment, outcome, and policy</span>
-<span class="sd">        @param policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values,</span>
-<span class="sd">            used to group the data</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas.DataFrame): input dataframe, should contain columns for the treatment, outcome, and policy</span>
+<span class="sd">            policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values,</span>
+<span class="sd">                used to group the data</span>
 
-<span class="sd">        @return: pandas.DataFrame of ATE, std, and size per policy</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pandas.DataFrame: ATE, std, and size per policy</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -440,18 +447,19 @@
         <span class="n">metrics_to_report</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">r_scorer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculate various performance metrics for a given causal estimate using a given DataFrame.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate various performance metrics for a given causal estimate using a given DataFrame.</span>
 
-<span class="sd">        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
-<span class="sd">        @param df (pandas.DataFrame): input dataframe</span>
-<span class="sd">        @param metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.</span>
-<span class="sd">            Possible options include &#39;ate&#39;, &#39;erupt&#39;, &#39;norm_erupt&#39;, &#39;qini&#39;, &#39;auc&#39;, and &#39;energy_distance&#39;.</span>
-<span class="sd">        @param r_scorer (Optional): callable object used to compute the R-score, default is None</span>
+<span class="sd">        Args:</span>
+<span class="sd">            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate</span>
+<span class="sd">            df (pandas.DataFrame): input dataframe</span>
+<span class="sd">            metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.</span>
+<span class="sd">                Possible options include &#39;ate&#39;, &#39;erupt&#39;, &#39;norm_erupt&#39;, &#39;qini&#39;, &#39;auc&#39;, and &#39;energy_distance&#39;.</span>
+<span class="sd">            r_scorer (Optional): callable object used to compute the R-score, default is None</span>
 
-<span class="sd">        @return dict: dictionary containing the evaluation metrics specified in metrics_to_report.</span>
-<span class="sd">            The values key in the dictionary contains the input DataFrame with additional columns for</span>
-<span class="sd">            the propensity scores, the policy, the normalized policy, and the weights, if applicable.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: dictionary containing the evaluation metrics specified in metrics_to_report.</span>
+<span class="sd">                The values key in the dictionary contains the input DataFrame with additional columns for</span>
+<span class="sd">                the propensity scores, the policy, the normalized policy, and the weights, if applicable.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">out</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -543,13 +551,14 @@
     <span class="k">def</span> <span class="nf">best_score_by_estimator</span><span class="p">(</span>
         <span class="n">scores</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Obtain best score for each estimator.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtain best score for each estimator.</span>
 
-<span class="sd">        @param scores (Dict[str, dict]): CausalTune.scores dictionary</span>
-<span class="sd">        @param metric (str): metric of interest</span>
+<span class="sd">        Args:</span>
+<span class="sd">            scores (Dict[str, dict]): CausalTune.scores dictionary</span>
+<span class="sd">            metric (str): metric of interest</span>
 
-<span class="sd">        @return Dict[str, dict]: dictionary containing best score by estimator</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, dict]: dictionary containing best score by estimator</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 

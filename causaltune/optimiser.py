@@ -641,17 +641,13 @@ class CausalTune:
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
-                estimator: self.tune_results[estimator].best_config
+        estimator: self.tune_results[estimator].best_config
 
-                Args:
-                    estimator_name (str): the estimator's name.
+        Args:
+            estimator_name (str): the estimator's name.
 
-                Returns:
-        <<<<<<< HEAD
-                    (dowhy.causal_estimator.CausalEstimate): the best model for estimator_name.
-        =======
-                    dowhy.causal_estimator.CausalEstimate: the best model for estimator_name.
-        >>>>>>> 73b0d263389a6a12eaab60efc9552fe4c8b83694
+        Returns:
+            (dowhy.causal_estimator.CausalEstimate): the best model for estimator_name.
         """
         # Note that this returns the trained Econml estimator, whose attributes include
         # fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc.

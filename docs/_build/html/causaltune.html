@@ -45,9 +45,11 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebook_examples.html">Examples</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Public Module Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-causaltune.optimiser">causaltune.optimiser module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#causaltune-optimiser-module">causaltune.optimiser module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#causaltune.optimiser.CausalTune"><code class="docutils literal notranslate"><span class="pre">CausalTune</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#causaltune.optimiser.CausalTune.best_config"><code class="docutils literal notranslate"><span class="pre">CausalTune.best_config</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#causaltune.optimiser.CausalTune.best_config_per_estimator"><code class="docutils literal notranslate"><span class="pre">CausalTune.best_config_per_estimator</span></code></a></li>
@@ -93,7 +95,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#causaltune.scoring.supported_metrics"><code class="docutils literal notranslate"><span class="pre">supported_metrics()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-causaltune.data_utils">causaltune.data_utils module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#causaltune-data-utils-module">causaltune.data_utils module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset"><code class="docutils literal notranslate"><span class="pre">CausalityDataset</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset.common_causes"><code class="docutils literal notranslate"><span class="pre">CausalityDataset.common_causes</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset.data"><code class="docutils literal notranslate"><span class="pre">CausalityDataset.data</span></code></a></li>
@@ -164,9 +166,10 @@
              
   <section id="public-module-reference">
 <h1>Public Module Reference<a class="headerlink" href="#public-module-reference" title="Permalink to this heading"></a></h1>
-<section id="module-causaltune.optimiser">
-<span id="causaltune-optimiser-module"></span><h2>causaltune.optimiser module<a class="headerlink" href="#module-causaltune.optimiser" title="Permalink to this heading"></a></h2>
-<dl class="py class">
+<section id="causaltune-optimiser-module">
+<h2>causaltune.optimiser module<a class="headerlink" href="#causaltune-optimiser-module" title="Permalink to this heading"></a></h2>
+<p>The main class of the package is CausalTune within the optimiser module.</p>
+<span class="target" id="module-causaltune.optimiser"></span><dl class="py class">
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.optimiser.</span></span><span class="sig-name descname"><span class="pre">CausalTune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'energy_distance'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_to_report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_budget</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ray</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimator_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propensity_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dummy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_task</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'regression'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_pred_time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_njobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_time_budget</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">try_init_configs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resources_per_trial</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_experimental_estimators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_all_estimators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/optimiser.html#CausalTune"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.optimiser.CausalTune" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -273,8 +276,12 @@ Only implemented for EconML estimators so far</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>NormalInferenceResults):
-EconML results object for inference assuming a normal distribution.</p>
+<dd class="field-even"><p><dl class="simple">
+<dt>NormalInferenceResults):</dt><dd><p>EconML results object for inference assuming a normal distribution.
+from EconML: NormalInferenceResults:</p>
+</dd>
+</dl>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(from EconML</p>
@@ -296,6 +303,9 @@ Computes analytical standard errors if available and boostraps otherwise.</p>
 <li><p><strong>df</strong> (<em>pd.DataFrame</em>) – data to run inference on</p></li>
 <li><p><strong>n_bootstrap_samples</strong> (<em>int</em><em>, </em><em>optional</em>) – number of runs if standard errors are boostrapped. Defaults to 5.</p></li>
 <li><p><strong>n_jobs</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of bootstrap estimates to run in parallel. Defaults to 1.</p></li>
+<li><p><strong>df</strong> – data to run inference on</p></li>
+<li><p><strong>n_bootstrap_samples</strong> – number of runs if standard errors are boostrapped. Defaults to 5.</p></li>
+<li><p><strong>n_jobs</strong> – Number of bootstrap estimates to run in parallel. Defaults to 1.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -303,6 +313,12 @@ Computes analytical standard errors if available and boostraps otherwise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(np.ndarray)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>standard error for each data point from df</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -358,7 +374,11 @@ Computes analytical standard errors if available and boostraps otherwise.</p>
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune.model">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#causaltune.optimiser.CausalTune.model" title="Permalink to this definition"></a></dt>
 <dd><p>Return the <em>trained</em> best estimator</p>
-<p>&#64;return CausalEstimator</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CausalEstimator</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -413,9 +433,19 @@ Computes analytical standard errors if available and boostraps otherwise.</p>
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.ate">
 <span class="sig-name descname"><span class="pre">ate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.ate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.ate" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.</p>
-<p>&#64;param df (pandas.DataFrame): input dataframe</p>
-<dl class="simple">
-<dt>&#64;return tuple: tuple containing the ATE, standard deviation of the estimate (or None if multi-treatment),</dt><dd><p>and sample size (or None if estimate has more than one dimension)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas.DataFrame</em>) – input dataframe</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>tuple containing the ATE, standard deviation of the estimate (or None if multi-treatment),</dt><dd><p>and sample size (or None if estimate has more than one dimension)</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -424,57 +454,109 @@ Computes analytical standard errors if available and boostraps otherwise.</p>
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.auc_make_score">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">auc_make_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CausalEstimate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cate_estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.auc_make_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.auc_make_score" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the area under the uplift curve.</p>
-<p>&#64;param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-&#64;param df (pandas.DataFrame): input dataframe
-&#64;param cate_estimate (np.ndarray): array with cate estimates</p>
-<p>&#64;return float: area under the uplift curve</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>estimate</strong> (<em>dowhy.causal_estimator.CausalEstimate</em>) – causal estimate to evaluate</p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – input dataframe</p></li>
+<li><p><strong>cate_estimate</strong> (<em>np.ndarray</em>) – array with cate estimates</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>area under the uplift curve</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.best_score_by_estimator">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">best_score_by_estimator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.best_score_by_estimator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.best_score_by_estimator" title="Permalink to this definition"></a></dt>
 <dd><p>Obtain best score for each estimator.</p>
-<p>&#64;param scores (Dict[str, dict]): CausalTune.scores dictionary
-&#64;param metric (str): metric of interest</p>
-<p>&#64;return Dict[str, dict]: dictionary containing best score by estimator</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scores</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>dict</em><em>]</em>) – CausalTune.scores dictionary</p></li>
+<li><p><strong>metric</strong> (<em>str</em>) – metric of interest</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dictionary containing best score by estimator</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, dict]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.energy_distance_score">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">energy_distance_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CausalEstimate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.energy_distance_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.energy_distance_score" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate energy distance score between treated and controls.</p>
-<p>For theoretical details, see Ramos-Carreño and Torrecilla (2023).</p>
-<p>&#64;param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-&#64;param df (pandas.DataFrame): input dataframe</p>
-<p>&#64;return float: energy distance score</p>
+<dd><p>Calculate energy distance score between treated and controls.
+For theoretical details, see Ramos-Carreño and Torrecilla (2023).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>estimate</strong> (<em>dowhy.causal_estimator.CausalEstimate</em>) – causal estimate to evaluate</p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – input dataframe</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>energy distance score</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.group_ate">
 <span class="sig-name descname"><span class="pre">group_ate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.group_ate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.group_ate" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the average treatment effect (ATE) for different groups specified by a policy.</p>
-<p>&#64;param df (pandas.DataFrame): input dataframe, should contain columns for the treatment, outcome, and policy
-&#64;param policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values,</p>
-<blockquote>
-<div><p>used to group the data</p>
-</div></blockquote>
-<p>&#64;return: pandas.DataFrame of ATE, std, and size per policy</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – input dataframe, should contain columns for the treatment, outcome, and policy</p></li>
+<li><p><strong>policy</strong> (<em>Union</em><em>[</em><em>pd.DataFrame</em><em>, </em><em>np.ndarray</em><em>]</em>) – policy column in df or an array of the policy values,
+used to group the data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>ATE, std, and size per policy</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.make_scores">
 <span class="sig-name descname"><span class="pre">make_scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CausalEstimate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics_to_report</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_scorer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.make_scores"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.make_scores" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate various performance metrics for a given causal estimate using a given DataFrame.</p>
-<p>&#64;param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-&#64;param df (pandas.DataFrame): input dataframe
-&#64;param metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.</p>
-<blockquote>
-<div><p>Possible options include ‘ate’, ‘erupt’, ‘norm_erupt’, ‘qini’, ‘auc’, and ‘energy_distance’.</p>
-</div></blockquote>
-<p>&#64;param r_scorer (Optional): callable object used to compute the R-score, default is None</p>
-<dl class="simple">
-<dt>&#64;return dict: dictionary containing the evaluation metrics specified in metrics_to_report.</dt><dd><p>The values key in the dictionary contains the input DataFrame with additional columns for
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>estimate</strong> (<em>dowhy.causal_estimator.CausalEstimate</em>) – causal estimate to evaluate</p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – input dataframe</p></li>
+<li><p><strong>metrics_to_report</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – list of strings specifying the evaluation metrics to compute.
+Possible options include ‘ate’, ‘erupt’, ‘norm_erupt’, ‘qini’, ‘auc’, and ‘energy_distance’.</p></li>
+<li><p><strong>r_scorer</strong> (<em>Optional</em>) – callable object used to compute the R-score, default is None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>dictionary containing the evaluation metrics specified in metrics_to_report.</dt><dd><p>The values key in the dictionary contains the input DataFrame with additional columns for
 the propensity scores, the policy, the normalized policy, and the weights, if applicable.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -483,32 +565,64 @@ the propensity scores, the policy, the normalized policy, and the weights, if ap
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.naive_ate">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">naive_ate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.naive_ate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.naive_ate" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate simple ATE.</p>
-<p>&#64;param treatment (pandas.Series): series of treatments
-&#64;param outcome (pandas.Series): series of outcomes</p>
-<p>&#64;return: tuple of simple ATE, standard deviation, and sample size</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>treatment</strong> (<em>pandas.Series</em>) – series of treatments</p></li>
+<li><p><strong>outcome</strong> (<em>pandas.Series</em>) – series of outcomes</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple of simple ATE, standard deviation, and sample size</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.qini_make_score">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">qini_make_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CausalEstimate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cate_estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.qini_make_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.qini_make_score" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the Qini score, defined as the area between the Qini curves of a model and random.</p>
-<p>&#64;param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-&#64;param df (pandas.DataFrame): input dataframe
-&#64;param cate_estimate (np.ndarray): array with cate estimates</p>
-<p>&#64;return float: Qini score</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>estimate</strong> (<em>dowhy.causal_estimator.CausalEstimate</em>) – causal estimate to evaluate</p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – input dataframe</p></li>
+<li><p><strong>cate_estimate</strong> (<em>np.ndarray</em>) – array with cate estimates</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Qini score</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.r_make_score">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">r_make_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CausalEstimate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cate_estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_scorer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.r_make_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.r_make_score" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate r_score.</p>
-<p>For details refer to Nie and Wager (2017) and Schuler et al. (2018).</p>
-<p>Adaption from EconML implementation.</p>
-<p>&#64;param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-&#64;param df (pandas.DataFrame): input dataframe
-&#64;param cate_estimate (np.ndarray): array with cate estimates
-&#64;param r_scorer: callable object used to compute the R-score</p>
-<p>&#64;return float: r_score</p>
+<dd><p>Calculate r_score.
+For details refer to Nie and Wager (2017) and Schuler et al. (2018). Adaption from EconML implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>estimate</strong> (<em>dowhy.causal_estimator.CausalEstimate</em>) – causal estimate to evaluate</p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – input dataframe</p></li>
+<li><p><strong>cate_estimate</strong> (<em>np.ndarray</em>) – array with cate estimates</p></li>
+<li><p><strong>r_scorer</strong> – callable object used to compute the R-score</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>r_score</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -520,20 +634,38 @@ the propensity scores, the policy, the normalized policy, and the weights, if ap
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.resolve_metric">
 <span class="sig-name descname"><span class="pre">resolve_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.resolve_metric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.resolve_metric" title="Permalink to this definition"></a></dt>
 <dd><p>Check if supplied metric is supported. If not, default to ‘energy_distance’.</p>
-<p>&#64;param metric (str): evaluation metric</p>
-<p>&#64;return str: metric/’energy_distance’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>metric</strong> (<em>str</em>) – evaluation metric</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>metric/’energy_distance’</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.scoring.Scorer.resolve_reported_metrics">
 <span class="sig-name descname"><span class="pre">resolve_reported_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics_to_report</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scoring_metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/causaltune/scoring.html#Scorer.resolve_reported_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.scoring.Scorer.resolve_reported_metrics" title="Permalink to this definition"></a></dt>
 <dd><p>Check if supplied reporting metrics are valid.</p>
-<dl class="simple">
-<dt>&#64;param metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.</dt><dd><p>Possible options include ‘ate’, ‘erupt’, ‘norm_erupt’, ‘qini’, ‘auc’, and ‘energy_distance’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics_to_report</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>None</em><em>]</em>) – list of strings specifying the evaluation metrics to compute.
+Possible options include ‘ate’, ‘erupt’, ‘norm_erupt’, ‘qini’, ‘auc’, and ‘energy_distance’.</p></li>
+<li><p><strong>scoring_metric</strong> (<em>str</em>) – specified metric</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of valid metrics</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
 </dd>
 </dl>
-<p>&#64;param scoring_metric (str): specified metric</p>
-<p>&#64;return List[str]: list of valid metrics</p>
 </dd></dl>
 
 </dd></dl>
@@ -544,9 +676,10 @@ the propensity scores, the policy, the normalized policy, and the weights, if ap
 <dd></dd></dl>
 
 </section>
-<section id="module-causaltune.data_utils">
-<span id="causaltune-data-utils-module"></span><h2>causaltune.data_utils module<a class="headerlink" href="#module-causaltune.data_utils" title="Permalink to this heading"></a></h2>
-<dl class="py class">
+<section id="causaltune-data-utils-module">
+<h2>causaltune.data_utils module<a class="headerlink" href="#causaltune-data-utils-module" title="Permalink to this heading"></a></h2>
+<p>This module contains the CausalityDataset class which is used to define the data model.</p>
+<span class="target" id="module-causaltune.data_utils"></span><dl class="py class">
 <dt class="sig sig-object py" id="causaltune.data_utils.CausalityDataset">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.data_utils.</span></span><span class="sig-name descname"><span class="pre">CausalityDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcomes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">common_causes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propensity_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instruments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/data_utils.html#CausalityDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.data_utils.CausalityDataset" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -578,15 +711,21 @@ the propensity scores, the policy, the normalized policy, and the weights, if ap
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.data_utils.CausalityDataset.preprocess_dataset">
 <span class="sig-name descname"><span class="pre">preprocess_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drop_first</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_floats</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prune_min_categories</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prune_thresh</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.99</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/data_utils.html#CausalityDataset.preprocess_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.data_utils.CausalityDataset.preprocess_dataset" title="Permalink to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Preprocesses input dataset for CausalTune by</dt><dd><p>converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.</p>
+<dd><p>Preprocesses input dataset for CausalTune by
+converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>drop_first</strong> (<em>bool</em>) – whether to drop the first dummy variable for each categorical feature (default False)</p></li>
+<li><p><strong>scale_floats</strong> (<em>bool</em>) – whether to scale float features to have zero mean and unit variance (default False)</p></li>
+<li><p><strong>prune_min_categories</strong> (<em>int</em>) – min number of categories to keep for each categorical feature (default 50)</p></li>
+<li><p><strong>prune_thresh</strong> (<em>float</em>) – threshold for category frequency when pruning categories (default 0.99)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None. Modifies self.data in-place by replacing it with the preprocessed dataframe.</p>
 </dd>
 </dl>
-<p>&#64;param drop_first (bool): whether to drop the first dummy variable for each categorical feature (default False)
-&#64;param scale_floats (bool): whether to scale float features to have zero mean and unit variance (default False)
-&#64;param prune_min_categories (int): min number of categories to keep for each categorical feature (default 50)
-&#64;param prune_thresh (float): threshold for category frequency when pruning categories (default 0.99)</p>
-<p>&#64;return: None. Modifies self.data in-place by replacing it with the preprocessed dataframe.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -627,7 +766,7 @@ the propensity scores, the policy, the normalized policy, and the weights, if ap
 <dl class="py function">
 <dt class="sig sig-object py" id="causaltune.datasets.amazon_reviews">
 <span class="sig-prename descclassname"><span class="pre">causaltune.datasets.</span></span><span class="sig-name descname"><span class="pre">amazon_reviews</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rating</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pos'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset" title="causaltune.data_utils.CausalityDataset"><span class="pre">CausalityDataset</span></a></span></span><a class="reference internal" href="_modules/causaltune/datasets.html#amazon_reviews"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.datasets.amazon_reviews" title="Permalink to this definition"></a></dt>
-<dd><p>loads amazon reviews dataset
+<dd><p>Loads amazon reviews dataset
 The dataset describes the impact of positive (or negative) reviews for products on Amazon on sales.
 The authors distinguish between items with more than three reviews (treated) and less than three
 reviews (untreated). As the rating given by reviews might impact sales, they divide the dataset
@@ -661,13 +800,13 @@ organization={ACM}</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="causaltune.datasets.generate_non_random_dataset">
 <span class="sig-prename descclassname"><span class="pre">causaltune.datasets.</span></span><span class="sig-name descname"><span class="pre">generate_non_random_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/datasets.html#generate_non_random_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.datasets.generate_non_random_dataset" title="Permalink to this definition"></a></dt>
-<dd><p>Synthetic dataset with non-uniform propensities to treat</p>
+<dd><p>Generates synthetic dataset with non-uniform propensities to treat.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>num_samples</strong> (<em>int</em><em>, </em><em>optional</em>) – number of independent samples. Defaults to 1000.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>data object for causal inference</p>
+<dd class="field-even"><p>data object</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#causaltune.data_utils.CausalityDataset" title="causaltune.data_utils.CausalityDataset">CausalityDataset</a></p>
@@ -701,7 +840,7 @@ organization={ACM}</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="causaltune.datasets.generate_synthetic_data">
 <span class="sig-prename descclassname"><span class="pre">causaltune.datasets.</span></span><span class="sig-name descname"><span class="pre">generate_synthetic_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_covariates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'isotropic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear_confounder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noisy_outcomes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_instrument</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset" title="causaltune.data_utils.CausalityDataset"><span class="pre">CausalityDataset</span></a></span></span><a class="reference internal" href="_modules/causaltune/datasets.html#generate_synthetic_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.datasets.generate_synthetic_data" title="Permalink to this definition"></a></dt>
-<dd><p>generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.
+<dd><p>Generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.
 Supports RCT (unconfounded) and observational (confounded) data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -758,7 +897,7 @@ outcome and instrument variables and</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="causaltune.datasets.lalonde_nsw">
 <span class="sig-prename descclassname"><span class="pre">causaltune.datasets.</span></span><span class="sig-name descname"><span class="pre">lalonde_nsw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset" title="causaltune.data_utils.CausalityDataset"><span class="pre">CausalityDataset</span></a></span></span><a class="reference internal" href="_modules/causaltune/datasets.html#lalonde_nsw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.datasets.lalonde_nsw" title="Permalink to this definition"></a></dt>
-<dd><p>loads the Lalonde NSW dataset
+<dd><p>Loads the Lalonde NSW dataset
 The dataset described the impact of a job training programme on the real earnings
 of individuals several years later.
 The data consists of the treatment indicator (training yes no), covariates (age, race,
@@ -819,7 +958,7 @@ T_i ~ Bernoulli(.5), u_i ~ Normal(0,25^2)</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="causaltune.datasets.nhefs">
 <span class="sig-prename descclassname"><span class="pre">causaltune.datasets.</span></span><span class="sig-name descname"><span class="pre">nhefs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset" title="causaltune.data_utils.CausalityDataset"><span class="pre">CausalityDataset</span></a></span></span><a class="reference internal" href="_modules/causaltune/datasets.html#nhefs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.datasets.nhefs" title="Permalink to this definition"></a></dt>
-<dd><p>loads the NHEFS dataset
+<dd><p>Loads the NHEFS dataset
 The dataset describes the impact of quitting smoke on weight gain over a period of 11 years
 The data consists of the treatment (quit smoking yes no), the outcome (change in weight) and
 a series of covariates of which we include a subset of 9 (see below).</p>
@@ -838,7 +977,7 @@ Hernán MA, Robins JM (2020). Causal Inference: What If. Boca Raton: Chapman &am
 <dl class="py function">
 <dt class="sig sig-object py" id="causaltune.datasets.synth_acic">
 <span class="sig-prename descclassname"><span class="pre">causaltune.datasets.</span></span><span class="sig-name descname"><span class="pre">synth_acic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset" title="causaltune.data_utils.CausalityDataset"><span class="pre">CausalityDataset</span></a></span></span><a class="reference internal" href="_modules/causaltune/datasets.html#synth_acic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.datasets.synth_acic" title="Permalink to this definition"></a></dt>
-<dd><p>loads data from ACIC Causal Inference Challenge 2016
+<dd><p>Loads data from ACIC Causal Inference Challenge 2016
 The dataset consists of 58 covariates, a binary treatment and a continuous response.
 There are 10 simulated pairs of treatment and response, which can be selected
 with the condition argument supplied to this function.</p>
@@ -874,7 +1013,7 @@ publisher={Institute of Mathematical Statistics}</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="causaltune.datasets.synth_ihdp">
 <span class="sig-prename descclassname"><span class="pre">causaltune.datasets.</span></span><span class="sig-name descname"><span class="pre">synth_ihdp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#causaltune.data_utils.CausalityDataset" title="causaltune.data_utils.CausalityDataset"><span class="pre">CausalityDataset</span></a></span></span><a class="reference internal" href="_modules/causaltune/datasets.html#synth_ihdp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.datasets.synth_ihdp" title="Permalink to this definition"></a></dt>
-<dd><p>loads IHDP dataset
+<dd><p>Loads IHDP dataset
 The Infant Health and Development Program (IHDP) dataset contains data on the impact of visits by specialists
 on the cognitive development of children. The dataset consists of 25 covariates describing various features
 of these children and their mothers, a binary treatment variable (visit/no visit) and a continuous outcome.</p>
@@ -891,11 +1030,14 @@ year={2011}</p>
 </div></blockquote>
 <p>}</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dataset for causal inference with cols “treatment”, “y_factual” and covariates “x1” to “x25”</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>return_df</strong> (<em>bool</em>) – whether or not to return dataset as pd.DataFrame</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pd.DataFrame</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dataset for causal inference with cols “treatment”, “y_factual” and covariates “x1” to “x25”</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
 </dd></dl>
@@ -910,36 +1052,61 @@ year={2011}</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.visualizer.Visualizer.plot_group_ate">
 <span class="sig-name descname"><span class="pre">plot_group_ate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scorer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#causaltune.scoring.Scorer" title="causaltune.scoring.Scorer"><span class="pre">Scorer</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scores_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/causaltune/visualizer.html#Visualizer.plot_group_ate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.visualizer.Visualizer.plot_group_ate" title="Permalink to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Plot out-of sample difference of outcomes between treated and untreated</dt><dd><p>for the points where model predicts positive vs negative impact.</p>
+<dd><p>Plot out-of sample difference of outcomes between treated and untreated
+for the points where model predicts positive vs negative impact.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scorer</strong> (<em>CausalTune.scorer</em>) – scorer from CausalTune</p></li>
+<li><p><strong>scores_dict</strong> (<em>Dict</em>) – scores dict from fitted CausalTune object</p></li>
+<li><p><strong>estimator</strong> (<em>str</em>) – name of estimator to use</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dataframe of policy groups and average effect</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
 </dd>
 </dl>
-<p>&#64;param scorer (CausalTune.scorer): scorer from CausalTune
-&#64;param scores_dict (Dict): scores dict from fitted CausalTune object
-&#64;param estimator (str): name of estimator to use</p>
-<p>&#64;return pandas.DataFrame: dataframe of policy groups and average effect</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.visualizer.Visualizer.plot_metrics_by_estimator">
 <span class="sig-name descname"><span class="pre">plot_metrics_by_estimator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scores_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('norm_erupt',</span> <span class="pre">'ate')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(7,</span> <span class="pre">5)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/causaltune/visualizer.html#Visualizer.plot_metrics_by_estimator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.visualizer.Visualizer.plot_metrics_by_estimator" title="Permalink to this definition"></a></dt>
 <dd><p>Plot metrics by estimator.</p>
-<p>&#64;param scores_dict (Dict): scores dict from fitted CausalTune object
-&#64;param figtitle (str): specifying plot title, defaults to “”
-&#64;param metrics (Tuple[str, str]): specifying metrics, defaults to (‘norm_erupt’, ‘ate’)
-&#64;param figsize (Tuple[int, int]): specifying plot size, defaults to (7,5)</p>
-<p>&#64;return: None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scores_dict</strong> (<em>Dict</em>) – scores dict from fitted CausalTune object</p></li>
+<li><p><strong>figtitle</strong> (<em>str</em>) – specifying plot title, defaults to “”</p></li>
+<li><p><strong>metrics</strong> (<em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – specifying metrics, defaults to (‘norm_erupt’, ‘ate’)</p></li>
+<li><p><strong>figsize</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>]</em>) – specifying plot size, defaults to (7,5)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.visualizer.Visualizer.plot_shap">
 <span class="sig-name descname"><span class="pre">plot_shap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CausalEstimate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shaps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/causaltune/visualizer.html#Visualizer.plot_shap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.visualizer.Visualizer.plot_shap" title="Permalink to this definition"></a></dt>
 <dd><p>Plot Shapley values for given estimator.</p>
-<p>&#64;param estimate (CausalEstimate): dowhy causal estimate
-&#64;param df (pandas.DataFrame): dataframe for shapley calculation
-&#64;param shaps (np.ndarray): pre-computed shapley values, if None, compute shapley values. Defaults to None.
-&#64;param figtitle (str): plot title</p>
-<p>&#64;return: None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>estimate</strong> (<em>CausalEstimate</em>) – dowhy causal estimate</p></li>
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – dataframe for shapley calculation</p></li>
+<li><p><strong>shaps</strong> (<em>np.ndarray</em>) – pre-computed shapley values, if None, compute shapley values. Defaults to None.</p></li>
+<li><p><strong>figtitle</strong> (<em>str</em>) – plot title</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

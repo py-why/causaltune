@@ -1,7 +1,6 @@
 Installation
 ^^^^^^^^^^^^
 
-
 Install the latest release from PyPi:
 
 .. code:: shell
@@ -19,7 +18,35 @@ Install the latest release from PyPi:
         pip install causaltune
         conda install -c conda-forge lightgbm
 
-**For Developers**
+
+
+Quick Start
+--------------
+
+The CausalTune package can be used like a scikit-style estimator:
+
+.. code-block:: python
+    
+    from causaltune import CausalTune
+    from causaltune.datasets import synth_ihdp
+
+    # prepare dataset
+    data = synth_ihdp()
+    data.preprocess_dataset()
+
+
+    # init CausalTune object with chosen metric to optimise
+    ct = CausalTune(time_budget=600, metric="energy_distance")
+
+    # run CausalTune
+    ct.fit(data)
+
+    # return best estimator
+    print(f"Best estimator: {ct.best_estimator}")
+
+
+For Developers
+----------------
 
 Clone this repository and run the following command from the top-most folder of the repository.
 
@@ -33,7 +60,8 @@ This project uses pytest for testing. To run tests locally after installing the 
     
     python setup.py pytest
 
-**Requirements**
+Requirements
+---------------
 
 CausalTune requires the following packages:
 

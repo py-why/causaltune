@@ -43,6 +43,8 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../notebook_examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../causaltune.html">Public Module Reference</a></li>
 </ul>
@@ -185,10 +187,18 @@
 <span class="sd">        Args:</span>
 <span class="sd">            data_df (pandas.DataFrame): dataset to perform causal inference on</span>
 <span class="sd">            metric (str): metric to optimise.</span>
+<span class="sd">            data_df (pandas.DataFrame): dataset to perform causal inference on</span>
+<span class="sd">            metric (str): metric to optimise.</span>
 <span class="sd">                Defaults to &quot;erupt&quot; for CATE, &quot;energy_distance&quot; for IV</span>
+<span class="sd">            metrics_to_report (list): additional metrics to compute and report.</span>
 <span class="sd">            metrics_to_report (list): additional metrics to compute and report.</span>
 <span class="sd">                Defaults to [&quot;qini&quot;,&quot;auc&quot;,&quot;ate&quot;,&quot;erupt&quot;, &quot;norm_erupt&quot;] for CATE</span>
 <span class="sd">                or [&quot;energy_distance&quot;] for IV</span>
+<span class="sd">            time_budget (float): a number of the time budget in seconds. -1 if no limit.</span>
+<span class="sd">            num_samples (int): max number of iterations.</span>
+<span class="sd">            verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.</span>
+<span class="sd">            use_ray (bool): use Ray backend (requires ray to be installed).</span>
+<span class="sd">            estimator_list (list): a list of strings for estimator names,</span>
 <span class="sd">            time_budget (float): a number of the time budget in seconds. -1 if no limit.</span>
 <span class="sd">            num_samples (int): max number of iterations.</span>
 <span class="sd">            verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.</span>
@@ -199,20 +209,32 @@
 <span class="sd">            train_size (float): Fraction of data used for training set. Defaults to 0.8.</span>
 <span class="sd">            test_size (float): Optional size of test dataset. Defaults to None.</span>
 <span class="sd">            propensity_model (Union[str, Any]): &#39;dummy&#39; for dummy classifier, &#39;auto&#39; for AutoML, or an</span>
+<span class="sd">            train_size (float): Fraction of data used for training set. Defaults to 0.8.</span>
+<span class="sd">            test_size (float): Optional size of test dataset. Defaults to None.</span>
+<span class="sd">            propensity_model (Union[str, Any]): &#39;dummy&#39; for dummy classifier, &#39;auto&#39; for AutoML, or an</span>
 <span class="sd">                sklearn-style classifier</span>
+<span class="sd">            components_task (str): task for component models. Defaults to &quot;regression&quot;.</span>
+<span class="sd">            components_verbose (int): verbosity of component model HPO (hyper parameter optimisation).</span>
 <span class="sd">            components_task (str): task for component models. Defaults to &quot;regression&quot;.</span>
 <span class="sd">            components_verbose (int): verbosity of component model HPO (hyper parameter optimisation).</span>
 <span class="sd">                range (0,3). Defaults to 0.</span>
 <span class="sd">            components_pred_time_limit (float): prediction time limit for component models</span>
 <span class="sd">            components_njobs (int): number of concurrent jobs for component model optimisation.</span>
+<span class="sd">            components_pred_time_limit (float): prediction time limit for component models</span>
+<span class="sd">            components_njobs (int): number of concurrent jobs for component model optimisation.</span>
 <span class="sd">                Defaults to -1 (all available cores).</span>
 <span class="sd">            components_time_budget (float): time budget for HPO of component models in seconds.</span>
+<span class="sd">            components_time_budget (float): time budget for HPO of component models in seconds.</span>
 <span class="sd">                Defaults to overall time budget / 2.</span>
+<span class="sd">            try_init_configs (bool): try list of good performing estimators before continuing with HPO.</span>
 <span class="sd">            try_init_configs (bool): try list of good performing estimators before continuing with HPO.</span>
 <span class="sd">                Defaults to False.</span>
 <span class="sd">            resources_per_trial: computational resources per trial, defaults in constructor to {&quot;cpu&quot;: 0.5}</span>
 <span class="sd">            include_experimental_estimators (bool): Include experimental causal estimators. Whether an estimator</span>
+<span class="sd">            resources_per_trial: computational resources per trial, defaults in constructor to {&quot;cpu&quot;: 0.5}</span>
+<span class="sd">            include_experimental_estimators (bool): Include experimental causal estimators. Whether an estimator</span>
 <span class="sd">                is experimental can be seen in SimpleParamsService in scoring.py</span>
+<span class="sd">            store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False</span>
 <span class="sd">            store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False</span>
 
 <span class="sd">            Returns:</span>
@@ -688,7 +710,8 @@
     <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the *trained* best estimator</span>
 
-<span class="sd">        @return CausalEstimator</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            CausalEstimator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">best_result</span><span class="p">[</span><span class="s2">&quot;estimator&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">estimator</span>
 
@@ -741,6 +764,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (np.ndarray): predicted treatment effect for each datapoint</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">effect</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
@@ -755,7 +779,8 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (from EconML: NormalInferenceResults):</span>
-<span class="sd">            EconML results object for inference assuming a normal distribution.</span>
+<span class="sd">                EconML results object for inference assuming a normal distribution.</span>
+<span class="sd">                from EconML: NormalInferenceResults:</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -785,6 +810,13 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            (np.ndarray): standard error for each data point from df</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df (pd.DataFrame): data to run inference on</span>
+<span class="sd">            n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.</span>
+<span class="sd">            n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: standard error for each data point from df</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="s2">&quot;Econml&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)):</span>

@@ -11,12 +11,12 @@ Welcome to CausalTune's documentation!
    :glob:
 
    getting_started
+   whatcanthisdo
+   howitworks
    notebook_examples
    causaltune
 
 Installation guidelines can be found at :doc:`getting_started`
-
-Date: |today|
 
 **CausalTune** is a library for automated tuning and selection for causal estimators.
 
@@ -52,9 +52,8 @@ though energy score performed better in our synthetic data experiments.
 .. _ERUPT: https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4
 .. _energy_score: https://arxiv.org/abs/2212.10076
 
-Indices and tables
-==================
-
-* :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Date: |today|
+

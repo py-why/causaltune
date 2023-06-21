@@ -43,6 +43,8 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../notebook_examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../causaltune.html">Public Module Reference</a></li>
 </ul>
@@ -117,15 +119,16 @@
         <span class="n">shaps</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">figtitle</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Plot Shapley values for given estimator.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot Shapley values for given estimator.</span>
 
-<span class="sd">        @param estimate (CausalEstimate): dowhy causal estimate</span>
-<span class="sd">        @param df (pandas.DataFrame): dataframe for shapley calculation</span>
-<span class="sd">        @param shaps (np.ndarray): pre-computed shapley values, if None, compute shapley values. Defaults to None.</span>
-<span class="sd">        @param figtitle (str): plot title</span>
+<span class="sd">        Args:</span>
+<span class="sd">            estimate (CausalEstimate): dowhy causal estimate</span>
+<span class="sd">            df (pandas.DataFrame): dataframe for shapley calculation</span>
+<span class="sd">            shaps (np.ndarray): pre-computed shapley values, if None, compute shapley values. Defaults to None.</span>
+<span class="sd">            figtitle (str): plot title</span>
 
-<span class="sd">        @return: None</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
@@ -148,15 +151,16 @@
         <span class="n">metrics</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;norm_erupt&quot;</span><span class="p">,</span> <span class="s2">&quot;ate&quot;</span><span class="p">),</span>
         <span class="n">figsize</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Plot metrics by estimator.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot metrics by estimator.</span>
 
-<span class="sd">        @param scores_dict (Dict): scores dict from fitted CausalTune object</span>
-<span class="sd">        @param figtitle (str): specifying plot title, defaults to &quot;&quot;</span>
-<span class="sd">        @param metrics (Tuple[str, str]): specifying metrics, defaults to (&#39;norm_erupt&#39;, &#39;ate&#39;)</span>
-<span class="sd">        @param figsize (Tuple[int, int]): specifying plot size, defaults to (7,5)</span>
+<span class="sd">        Args:</span>
+<span class="sd">            scores_dict (Dict): scores dict from fitted CausalTune object</span>
+<span class="sd">            figtitle (str): specifying plot title, defaults to &quot;&quot;</span>
+<span class="sd">            metrics (Tuple[str, str]): specifying metrics, defaults to (&#39;norm_erupt&#39;, &#39;ate&#39;)</span>
+<span class="sd">            figsize (Tuple[int, int]): specifying plot size, defaults to (7,5)</span>
 
-<span class="sd">        @return: None</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">colors</span> <span class="o">=</span> <span class="p">(</span>
@@ -212,15 +216,16 @@
 <div class="viewcode-block" id="Visualizer.plot_group_ate"><a class="viewcode-back" href="../../causaltune.html#causaltune.visualizer.Visualizer.plot_group_ate">[docs]</a>    <span class="k">def</span> <span class="nf">plot_group_ate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">scorer</span><span class="p">:</span> <span class="n">Scorer</span><span class="p">,</span> <span class="n">scores_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">estimator</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Plot out-of sample difference of outcomes between treated and untreated</span>
-<span class="sd">            for the points where model predicts positive vs negative impact.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot out-of sample difference of outcomes between treated and untreated</span>
+<span class="sd">        for the points where model predicts positive vs negative impact.</span>
 
-<span class="sd">        @param scorer (CausalTune.scorer): scorer from CausalTune</span>
-<span class="sd">        @param scores_dict (Dict): scores dict from fitted CausalTune object</span>
-<span class="sd">        @param estimator (str): name of estimator to use</span>
+<span class="sd">        Args:</span>
+<span class="sd">            scorer (CausalTune.scorer): scorer from CausalTune</span>
+<span class="sd">            scores_dict (Dict): scores dict from fitted CausalTune object</span>
+<span class="sd">            estimator (str): name of estimator to use</span>
 
-<span class="sd">        @return pandas.DataFrame: dataframe of policy groups and average effect</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pandas.DataFrame: dataframe of policy groups and average effect</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 

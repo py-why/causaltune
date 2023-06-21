@@ -43,6 +43,8 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../whatcanthisdo.html">What can this do for you?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../howitworks.html">Model selection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../notebook_examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../causaltune.html">Public Module Reference</a></li>
 </ul>
@@ -120,7 +122,7 @@
 
 
 <div class="viewcode-block" id="nhefs"><a class="viewcode-back" href="../../causaltune.html#causaltune.datasets.nhefs">[docs]</a><span class="k">def</span> <span class="nf">nhefs</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">CausalityDataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;loads the NHEFS dataset</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads the NHEFS dataset</span>
 <span class="sd">    The dataset describes the impact of quitting smoke on weight gain over a period of 11 years</span>
 <span class="sd">    The data consists of the treatment (quit smoking yes no), the outcome (change in weight) and</span>
 <span class="sd">    a series of covariates of which we include a subset of 9 (see below).</span>
@@ -160,7 +162,7 @@
 
 
 <div class="viewcode-block" id="lalonde_nsw"><a class="viewcode-back" href="../../causaltune.html#causaltune.datasets.lalonde_nsw">[docs]</a><span class="k">def</span> <span class="nf">lalonde_nsw</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">CausalityDataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;loads the Lalonde NSW dataset</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads the Lalonde NSW dataset</span>
 <span class="sd">    The dataset described the impact of a job training programme on the real earnings</span>
 <span class="sd">    of individuals several years later.</span>
 <span class="sd">    The data consists of the treatment indicator (training yes no), covariates (age, race,</span>
@@ -196,7 +198,7 @@
 
 
 <div class="viewcode-block" id="amazon_reviews"><a class="viewcode-back" href="../../causaltune.html#causaltune.datasets.amazon_reviews">[docs]</a><span class="k">def</span> <span class="nf">amazon_reviews</span><span class="p">(</span><span class="n">rating</span><span class="o">=</span><span class="s2">&quot;pos&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CausalityDataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;loads amazon reviews dataset</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads amazon reviews dataset</span>
 <span class="sd">    The dataset describes the impact of positive (or negative) reviews for products on Amazon on sales.</span>
 <span class="sd">    The authors distinguish between items with more than three reviews (treated) and less than three</span>
 <span class="sd">    reviews (untreated). As the rating given by reviews might impact sales, they divide the dataset</span>
@@ -258,7 +260,7 @@
 
 
 <div class="viewcode-block" id="synth_ihdp"><a class="viewcode-back" href="../../causaltune.html#causaltune.datasets.synth_ihdp">[docs]</a><span class="k">def</span> <span class="nf">synth_ihdp</span><span class="p">(</span><span class="n">return_df</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CausalityDataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;loads IHDP dataset</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads IHDP dataset</span>
 <span class="sd">    The Infant Health and Development Program (IHDP) dataset contains data on the impact of visits by specialists</span>
 <span class="sd">    on the cognitive development of children. The dataset consists of 25 covariates describing various features</span>
 <span class="sd">    of these children and their mothers, a binary treatment variable (visit/no visit) and a continuous outcome.</span>
@@ -274,9 +276,13 @@
 <span class="sd">        year={2011}</span>
 <span class="sd">    }</span>
 
+<span class="sd">    Args:</span>
+<span class="sd">        return_df (bool): whether or not to return dataset as pd.DataFrame</span>
+
 <span class="sd">    Returns:</span>
 <span class="sd">        pd.DataFrame: dataset for causal inference with cols &quot;treatment&quot;, &quot;y_factual&quot; and covariates &quot;x1&quot; to &quot;x25&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="c1"># load raw data</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
         <span class="s2">&quot;https://raw.githubusercontent.com/AMLab-Amsterdam/CEVAE/master/datasets/IHDP/csv/ihdp_npci_1.csv&quot;</span><span class="p">,</span>
@@ -301,7 +307,7 @@
 
 
 <div class="viewcode-block" id="synth_acic"><a class="viewcode-back" href="../../causaltune.html#causaltune.datasets.synth_acic">[docs]</a><span class="k">def</span> <span class="nf">synth_acic</span><span class="p">(</span><span class="n">condition</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CausalityDataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;loads data from ACIC Causal Inference Challenge 2016</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads data from ACIC Causal Inference Challenge 2016</span>
 <span class="sd">    The dataset consists of 58 covariates, a binary treatment and a continuous response.</span>
 <span class="sd">    There are 10 simulated pairs of treatment and response, which can be selected</span>
 <span class="sd">    with the condition argument supplied to this function.</span>
@@ -412,7 +418,7 @@
     <span class="n">effect_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">add_instrument</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CausalityDataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.</span>
 <span class="sd">    Supports RCT (unconfounded) and observational (confounded) data.</span>
 
 <span class="sd">    Args:</span>
@@ -425,7 +431,6 @@
 <span class="sd">        add_instrument (bool, optional): include instrumental variable (yes/no). Defaults to False</span>
 <span class="sd">        effect_size (Union[int, None]): if provided, constant effect size (ATE). if None, generate CATE.</span>
 <span class="sd">            Defaults to None.</span>
-
 
 <span class="sd">    Returns:</span>
 <span class="sd">        CausalityDataset: columns for covariates, treatment assignment, outcome and true treatment effect</span>
@@ -572,13 +577,13 @@
 
 
 <div class="viewcode-block" id="generate_non_random_dataset"><a class="viewcode-back" href="../../causaltune.html#causaltune.datasets.generate_non_random_dataset">[docs]</a><span class="k">def</span> <span class="nf">generate_non_random_dataset</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Synthetic dataset with non-uniform propensities to treat</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates synthetic dataset with non-uniform propensities to treat.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        num_samples (int, optional): number of independent samples. Defaults to 1000.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        CausalityDataset: data object for causal inference</span>
+<span class="sd">        CausalityDataset: data object</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">num_samples</span> <span class="o">=</span> <span class="n">num_samples</span>
 
@@ -645,6 +650,7 @@
 <span class="sd">        const_te (float, optional): constant average treatment effect</span>
 <span class="sd">        noise (float, optional): exogeneous variance scaler</span>
 <span class="sd">        cate_scaler (float, optional): heterogeneous treatment effect scaler</span>
+
 <span class="sd">    Returns:</span>
 <span class="sd">        cd (CausalityDataset): data object for causal inference</span>
 
