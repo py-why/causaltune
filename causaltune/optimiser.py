@@ -109,37 +109,37 @@ class CausalTune:
         """Constructor.
 
         Args:
-            @param data_df (pandas.DataFrame): dataset to perform causal inference on
-            @param metric (str): metric to optimise.
+            data_df (pandas.DataFrame): dataset to perform causal inference on
+            metric (str): metric to optimise.
                 Defaults to "erupt" for CATE, "energy_distance" for IV
-            @param metrics_to_report (list): additional metrics to compute and report.
+            metrics_to_report (list): additional metrics to compute and report.
                 Defaults to ["qini","auc","ate","erupt", "norm_erupt"] for CATE
                 or ["energy_distance"] for IV
-            @param time_budget (float): a number of the time budget in seconds. -1 if no limit.
-            @param num_samples (int): max number of iterations.
-            @param verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
-            @param use_ray (bool): use Ray backend (requires ray to be installed).
-            @param estimator_list (list): a list of strings for estimator names,
+            time_budget (float): a number of the time budget in seconds. -1 if no limit.
+            num_samples (int): max number of iterations.
+            verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.
+            use_ray (bool): use Ray backend (requires ray to be installed).
+            estimator_list (list): a list of strings for estimator names,
              or "auto" for a recommended subset, "all" for all, or a list of substrings of estimator names
                e.g. ```['dml', 'CausalForest']```
-            @param train_size (float): Fraction of data used for training set. Defaults to 0.8.
-            @param test_size (float): Optional size of test dataset. Defaults to None.
-            @param propensity_model (Union[str, Any]): 'dummy' for dummy classifier, 'auto' for AutoML, or an
+            train_size (float): Fraction of data used for training set. Defaults to 0.8.
+            test_size (float): Optional size of test dataset. Defaults to None.
+            propensity_model (Union[str, Any]): 'dummy' for dummy classifier, 'auto' for AutoML, or an
                 sklearn-style classifier
-            @param components_task (str): task for component models. Defaults to "regression".
-            @param components_verbose (int): verbosity of component model HPO (hyper parameter optimisation).
+            components_task (str): task for component models. Defaults to "regression".
+            components_verbose (int): verbosity of component model HPO (hyper parameter optimisation).
                 range (0,3). Defaults to 0.
-            @param components_pred_time_limit (float): prediction time limit for component models
-            @param components_njobs (int): number of concurrent jobs for component model optimisation.
+            components_pred_time_limit (float): prediction time limit for component models
+            components_njobs (int): number of concurrent jobs for component model optimisation.
                 Defaults to -1 (all available cores).
-            @param components_time_budget (float): time budget for HPO of component models in seconds.
+            components_time_budget (float): time budget for HPO of component models in seconds.
                 Defaults to overall time budget / 2.
-            @param try_init_configs (bool): try list of good performing estimators before continuing with HPO.
+            try_init_configs (bool): try list of good performing estimators before continuing with HPO.
                 Defaults to False.
-            @param resources_per_trial: computational resources per trial, defaults in constructor to {"cpu": 0.5}
-            @param include_experimental_estimators (bool): Include experimental causal estimators. Whether an estimator
+            resources_per_trial: computational resources per trial, defaults in constructor to {"cpu": 0.5}
+            include_experimental_estimators (bool): Include experimental causal estimators. Whether an estimator
                 is experimental can be seen in SimpleParamsService in scoring.py
-            @param store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False
+            store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False
 
             Returns:
                 None
@@ -622,9 +622,11 @@ class CausalTune:
         """Return the best model found for a particular estimator.
         estimator: self.tune_results[estimator].best_config
 
-        @param estimator_name (str): the estimator's name.
+        Args:
+            estimator_name (str): the estimator's name.
 
-        @return (dowhy.causal_estimator.CausalEstimate): the best model for estimator_name.
+        Returns:
+            (dowhy.causal_estimator.CausalEstimate): the best model for estimator_name.
         """
         # Note that this returns the trained Econml estimator, whose attributes include
         # fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc.
@@ -633,14 +635,16 @@ class CausalTune:
     @property
     def best_config(self):
         """
-        @return (dict): the best configuration
+        Returns:
+            (dict): the best configuration
         """
         return self.results.best_config
 
     @property
     def best_config_per_estimator(self):
         """
-        @return (dict): all estimators' best configuration."""
+        Returns:
+            (dict): all estimators' best configuration."""
         return {e: s["config"] for e, s in self.scores.values()}
 
     @property
@@ -651,14 +655,18 @@ class CausalTune:
     @property
     def best_score(self):
         """
-        @return (float):  the best score found."""
+        Returns:
+            (float):  the best score found."""
         return self.results.best_result[self.metric]
 
     def effect(self, df, *args, **kwargs):
         """Heterogeneous Treatment Effects for data df
 
-        @param df (pd.DataFrame): data to predict treatment effect for
-        @return (np.ndarray): predicted treatment effect for each datapoint
+        Args:
+            df (pd.DataFrame): data to predict treatment effect for
+
+        Returns:
+            (np.ndarray): predicted treatment effect for each datapoint
         """
         return self.model.effect(df, *args, **kwargs)
 
@@ -666,10 +674,13 @@ class CausalTune:
         """Inference (uncertainty) results produced by best estimator
         Only implemented for EconML estimators so far
 
-        @param df (pd.DataFrame): data to run inference on
-        @param args: passed through to underlying estimator
-        @param kwargs: passed through to underlying estimator
-        @return (from EconML: NormalInferenceResults):
+        Args:
+            df (pd.DataFrame): data to run inference on
+            args: passed through to underlying estimator
+            kwargs: passed through to underlying estimator
+
+        Returns:
+            (from EconML: NormalInferenceResults):
             EconML results object for inference assuming a normal distribution.
 
         """
@@ -693,11 +704,13 @@ class CausalTune:
         """Compute standard errors for best causal estimator
             Currently implemented for EconML estimators.
             Computes analytical standard errors if available and boostraps otherwise.
+        Args:
+            df (pd.DataFrame): data to run inference on
+            n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.
+            n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.
 
-        @param df (pd.DataFrame): data to run inference on
-        @param n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.
-        @param n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.
-        @return (np.ndarray): standard error for each data point from df
+        Returns:
+            (np.ndarray): standard error for each data point from df
         """
 
         if "Econml" in str(type(self.model)):

@@ -189,30 +189,26 @@ print<span class="o">(</span>f<span class="s2">&quot;Best estimator: {ct.best_es
 <dl class="py property">
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune.best_config">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">best_config</span></span><a class="headerlink" href="#causaltune.optimiser.CausalTune.best_config" title="Permalink to this definition"></a></dt>
-<dd><p>the best configuration</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>&#64;return (dict)</p>
-</dd>
-</dl>
+<dd><p>Returns:
+(dict): the best configuration</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune.best_config_per_estimator">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">best_config_per_estimator</span></span><a class="headerlink" href="#causaltune.optimiser.CausalTune.best_config_per_estimator" title="Permalink to this definition"></a></dt>
-<dd><p>all estimators’ best configuration.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>&#64;return (dict)</p>
-</dd>
-</dl>
+<dd><p>Returns:
+(dict): all estimators’ best configuration.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune.best_estimator">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">best_estimator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#causaltune.optimiser.CausalTune.best_estimator" title="Permalink to this definition"></a></dt>
 <dd><p>A string indicating the best estimator found</p>
-<p>&#64;return: None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -220,19 +216,24 @@ print<span class="o">(</span>f<span class="s2">&quot;Best estimator: {ct.best_es
 <span class="sig-name descname"><span class="pre">best_model_for_estimator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">estimator_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/optimiser.html#CausalTune.best_model_for_estimator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.optimiser.CausalTune.best_model_for_estimator" title="Permalink to this definition"></a></dt>
 <dd><p>Return the best model found for a particular estimator.
 estimator: self.tune_results[estimator].best_config</p>
-<p>&#64;param estimator_name (str): the estimator’s name.</p>
-<p>&#64;return (dowhy.causal_estimator.CausalEstimate): the best model for estimator_name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>estimator_name</strong> (<em>str</em>) – the estimator’s name.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the best model for estimator_name.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(dowhy.causal_estimator.CausalEstimate)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune.best_score">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">best_score</span></span><a class="headerlink" href="#causaltune.optimiser.CausalTune.best_score" title="Permalink to this definition"></a></dt>
-<dd><p>the best score found.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>&#64;return (float)</p>
-</dd>
-</dl>
+<dd><p>Returns:
+(float):  the best score found.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -245,8 +246,17 @@ estimator: self.tune_results[estimator].best_config</p>
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune.effect">
 <span class="sig-name descname"><span class="pre">effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/optimiser.html#CausalTune.effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.optimiser.CausalTune.effect" title="Permalink to this definition"></a></dt>
 <dd><p>Heterogeneous Treatment Effects for data df</p>
-<p>&#64;param df (pd.DataFrame): data to predict treatment effect for
-&#64;return (np.ndarray): predicted treatment effect for each datapoint</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pd.DataFrame</em>) – data to predict treatment effect for</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>predicted treatment effect for each datapoint</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(np.ndarray)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -254,13 +264,22 @@ estimator: self.tune_results[estimator].best_config</p>
 <span class="sig-name descname"><span class="pre">effect_inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/optimiser.html#CausalTune.effect_inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.optimiser.CausalTune.effect_inference" title="Permalink to this definition"></a></dt>
 <dd><p>Inference (uncertainty) results produced by best estimator
 Only implemented for EconML estimators so far</p>
-<p>&#64;param df (pd.DataFrame): data to run inference on
-&#64;param args: passed through to underlying estimator
-&#64;param kwargs: passed through to underlying estimator
-&#64;return (from EconML: NormalInferenceResults):</p>
-<blockquote>
-<div><p>EconML results object for inference assuming a normal distribution.</p>
-</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – data to run inference on</p></li>
+<li><p><strong>args</strong> – passed through to underlying estimator</p></li>
+<li><p><strong>kwargs</strong> – passed through to underlying estimator</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>NormalInferenceResults):
+EconML results object for inference assuming a normal distribution.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(from EconML</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -271,10 +290,21 @@ Only implemented for EconML estimators so far</p>
 Computes analytical standard errors if available and boostraps otherwise.</p>
 </dd>
 </dl>
-<p>&#64;param df (pd.DataFrame): data to run inference on
-&#64;param n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.
-&#64;param n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.
-&#64;return (np.ndarray): standard error for each data point from df</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – data to run inference on</p></li>
+<li><p><strong>n_bootstrap_samples</strong> (<em>int</em><em>, </em><em>optional</em>) – number of runs if standard errors are boostrapped. Defaults to 5.</p></li>
+<li><p><strong>n_jobs</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of bootstrap estimates to run in parallel. Defaults to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>standard error for each data point from df</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(np.ndarray)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -335,16 +365,28 @@ Computes analytical standard errors if available and boostraps otherwise.</p>
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune.score_dataset">
 <span class="sig-name descname"><span class="pre">score_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/optimiser.html#CausalTune.score_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.optimiser.CausalTune.score_dataset" title="Permalink to this definition"></a></dt>
 <dd><p>After fitting, generate scores for an additional dataset, add them to the scores dict.</p>
-<p>&#64;param df (pandas.DataFrame): input dataframe
-&#64;param dataset_name (str): dictionary key</p>
-<p>&#64;return: None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.DataFrame</em>) – input dataframe</p></li>
+<li><p><strong>dataset_name</strong> (<em>str</em>) – dictionary key</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="causaltune.optimiser.CausalTune.update_summary_scores">
 <span class="sig-name descname"><span class="pre">update_summary_scores</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/optimiser.html#CausalTune.update_summary_scores"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.optimiser.CausalTune.update_summary_scores" title="Permalink to this definition"></a></dt>
 <dd><p>Stores scores for metric of interest for each estimator</p>
-<p>&#64;return: None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

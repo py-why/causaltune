@@ -22,10 +22,10 @@ Date: |today|
 
 Its estimators are taken from EconML_ augmented by a couple of extra models
 (currently Transformed Outcome and a dummy model to be used as a baseline), all called in a uniform fashion via a
-[DoWhy](https://github.com/microsoft/DoWhy/) wrapper.
+DoWhy_ wrapper.
 
-Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the [energy score](https://arxiv.org/abs/2212.10076).
-We use [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
+Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the energy_score_.
+We use FLAML_ for hyperparameter optimisation.
 
 We perform automated hyperparameter tuning of first stage models (for the treatment and outcome models)
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
@@ -39,13 +39,18 @@ provided by the user do reflect all sources of confounding between the treatment
 
 The validation methods in CausalTune cannot catch such violations and therefore this is an important assumption.
 
-We also implement the [ERUPT](https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4)
-[calculation](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957) (also known as policy value),
+We also implement the ERUPT_
+calculation_ (also known as policy value),
 allowing after an (even partially) randomized test to estimate what the impact
 of other treatment assignment policies would have been. This can also be used as an alternative out-of-sample score,
 though energy score performed better in our synthetic data experiments.
 
 .. _EconML: https://github.com/microsoft/EconML/
+.. _FLAML: https://github.com/microsoft/FLAML
+.. _DoWhy: https://github.com/microsoft/DoWhy/
+.. _calculation: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957
+.. _ERUPT: https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4
+.. _energy_score: https://arxiv.org/abs/2212.10076
 
 Indices and tables
 ==================

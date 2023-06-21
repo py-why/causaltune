@@ -183,39 +183,40 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            @param data_df (pandas.DataFrame): dataset to perform causal inference on</span>
-<span class="sd">            @param metric (str): metric to optimise.</span>
+<span class="sd">            data_df (pandas.DataFrame): dataset to perform causal inference on</span>
+<span class="sd">            metric (str): metric to optimise.</span>
 <span class="sd">                Defaults to &quot;erupt&quot; for CATE, &quot;energy_distance&quot; for IV</span>
-<span class="sd">            @param metrics_to_report (list): additional metrics to compute and report.</span>
+<span class="sd">            metrics_to_report (list): additional metrics to compute and report.</span>
 <span class="sd">                Defaults to [&quot;qini&quot;,&quot;auc&quot;,&quot;ate&quot;,&quot;erupt&quot;, &quot;norm_erupt&quot;] for CATE</span>
 <span class="sd">                or [&quot;energy_distance&quot;] for IV</span>
-<span class="sd">            @param time_budget (float): a number of the time budget in seconds. -1 if no limit.</span>
-<span class="sd">            @param num_samples (int): max number of iterations.</span>
-<span class="sd">            @param verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.</span>
-<span class="sd">            @param use_ray (bool): use Ray backend (requires ray to be installed).</span>
-<span class="sd">            @param estimator_list (list): a list of strings for estimator names,</span>
+<span class="sd">            time_budget (float): a number of the time budget in seconds. -1 if no limit.</span>
+<span class="sd">            num_samples (int): max number of iterations.</span>
+<span class="sd">            verbose (int):  controls verbosity, higher means more messages. range (0,3). Defaults to 0.</span>
+<span class="sd">            use_ray (bool): use Ray backend (requires ray to be installed).</span>
+<span class="sd">            estimator_list (list): a list of strings for estimator names,</span>
 <span class="sd">             or &quot;auto&quot; for a recommended subset, &quot;all&quot; for all, or a list of substrings of estimator names</span>
 <span class="sd">               e.g. ```[&#39;dml&#39;, &#39;CausalForest&#39;]```</span>
-<span class="sd">            @param train_size (float): Fraction of data used for training set. Defaults to 0.8.</span>
-<span class="sd">            @param test_size (float): Optional size of test dataset. Defaults to None.</span>
-<span class="sd">            @param propensity_model (Union[str, Any]): &#39;dummy&#39; for dummy classifier, &#39;auto&#39; for AutoML, or an</span>
+<span class="sd">            train_size (float): Fraction of data used for training set. Defaults to 0.8.</span>
+<span class="sd">            test_size (float): Optional size of test dataset. Defaults to None.</span>
+<span class="sd">            propensity_model (Union[str, Any]): &#39;dummy&#39; for dummy classifier, &#39;auto&#39; for AutoML, or an</span>
 <span class="sd">                sklearn-style classifier</span>
-<span class="sd">            @param components_task (str): task for component models. Defaults to &quot;regression&quot;.</span>
-<span class="sd">            @param components_verbose (int): verbosity of component model HPO (hyper parameter optimisation).</span>
+<span class="sd">            components_task (str): task for component models. Defaults to &quot;regression&quot;.</span>
+<span class="sd">            components_verbose (int): verbosity of component model HPO (hyper parameter optimisation).</span>
 <span class="sd">                range (0,3). Defaults to 0.</span>
-<span class="sd">            @param components_pred_time_limit (float): prediction time limit for component models</span>
-<span class="sd">            @param components_njobs (int): number of concurrent jobs for component model optimisation.</span>
+<span class="sd">            components_pred_time_limit (float): prediction time limit for component models</span>
+<span class="sd">            components_njobs (int): number of concurrent jobs for component model optimisation.</span>
 <span class="sd">                Defaults to -1 (all available cores).</span>
-<span class="sd">            @param components_time_budget (float): time budget for HPO of component models in seconds.</span>
+<span class="sd">            components_time_budget (float): time budget for HPO of component models in seconds.</span>
 <span class="sd">                Defaults to overall time budget / 2.</span>
-<span class="sd">            @param try_init_configs (bool): try list of good performing estimators before continuing with HPO.</span>
+<span class="sd">            try_init_configs (bool): try list of good performing estimators before continuing with HPO.</span>
 <span class="sd">                Defaults to False.</span>
-<span class="sd">            @param resources_per_trial: computational resources per trial, defaults in constructor to {&quot;cpu&quot;: 0.5}</span>
-<span class="sd">            @param include_experimental_estimators (bool): Include experimental causal estimators. Whether an estimator</span>
+<span class="sd">            resources_per_trial: computational resources per trial, defaults in constructor to {&quot;cpu&quot;: 0.5}</span>
+<span class="sd">            include_experimental_estimators (bool): Include experimental causal estimators. Whether an estimator</span>
 <span class="sd">                is experimental can be seen in SimpleParamsService in scoring.py</span>
-<span class="sd">            @param store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False</span>
+<span class="sd">            store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False</span>
 
-<span class="sd">            @return: None</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="n">time_budget</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">components_time_budget</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -546,7 +547,8 @@
 <div class="viewcode-block" id="CausalTune.update_summary_scores"><a class="viewcode-back" href="../../causaltune.html#causaltune.optimiser.CausalTune.update_summary_scores">[docs]</a>    <span class="k">def</span> <span class="nf">update_summary_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores scores for metric of interest for each estimator</span>
 
-<span class="sd">        @return: None</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="n">Scorer</span><span class="o">.</span><span class="n">best_score_by_estimator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">results</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">)</span>
         <span class="c1"># now inject the separately saved model objects</span>
@@ -561,10 +563,12 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs Hyperparameter Optimisation for a</span>
 <span class="sd">        causal inference estimator</span>
 
-<span class="sd">        @param config (dict): dictionary with search space for</span>
-<span class="sd">            all tunable parameters</span>
+<span class="sd">        Args:</span>
+<span class="sd">            config (dict): dictionary with search space for</span>
+<span class="sd">                all tunable parameters</span>
 
-<span class="sd">        @return (dict): values of metrics after optimisation</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict): values of metrics after optimisation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># estimate effect with current config</span>
 
@@ -661,10 +665,12 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        After fitting, generate scores for an additional dataset, add them to the scores dict.</span>
 
-<span class="sd">        @param df (pandas.DataFrame): input dataframe</span>
-<span class="sd">        @param dataset_name (str): dictionary key</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas.DataFrame): input dataframe</span>
+<span class="sd">            dataset_name (str): dictionary key</span>
 
-<span class="sd">        @return: None.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">scr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">scr</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">][</span><span class="n">dataset_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_metrics</span><span class="p">(</span><span class="n">scr</span><span class="p">[</span><span class="s2">&quot;estimator&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">)</span></div>
@@ -673,7 +679,8 @@
     <span class="k">def</span> <span class="nf">best_estimator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A string indicating the best estimator found</span>
 
-<span class="sd">        @return: None</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">best_result</span><span class="p">[</span><span class="s2">&quot;estimator_name&quot;</span><span class="p">]</span>
 
@@ -689,9 +696,11 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the best model found for a particular estimator.</span>
 <span class="sd">        estimator: self.tune_results[estimator].best_config</span>
 
-<span class="sd">        @param estimator_name (str): the estimator&#39;s name.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            estimator_name (str): the estimator&#39;s name.</span>
 
-<span class="sd">        @return (dowhy.causal_estimator.CausalEstimate): the best model for estimator_name.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (dowhy.causal_estimator.CausalEstimate): the best model for estimator_name.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Note that this returns the trained Econml estimator, whose attributes include</span>
         <span class="c1"># fitted  models for E[T | X, W], for E[Y | X, W], CATE model, etc.</span>
@@ -700,14 +709,16 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">best_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        @return (dict): the best configuration</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict): the best configuration</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">best_config</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">best_config_per_estimator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        @return (dict): all estimators&#39; best configuration.&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict): all estimators&#39; best configuration.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">e</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">values</span><span class="p">()}</span>
 
     <span class="nd">@property</span>
@@ -718,14 +729,18 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">best_score</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        @return (float):  the best score found.&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (float):  the best score found.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">best_result</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">metric</span><span class="p">]</span>
 
 <div class="viewcode-block" id="CausalTune.effect"><a class="viewcode-back" href="../../causaltune.html#causaltune.optimiser.CausalTune.effect">[docs]</a>    <span class="k">def</span> <span class="nf">effect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Heterogeneous Treatment Effects for data df</span>
 
-<span class="sd">        @param df (pd.DataFrame): data to predict treatment effect for</span>
-<span class="sd">        @return (np.ndarray): predicted treatment effect for each datapoint</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df (pd.DataFrame): data to predict treatment effect for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (np.ndarray): predicted treatment effect for each datapoint</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">effect</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
@@ -733,10 +748,13 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Inference (uncertainty) results produced by best estimator</span>
 <span class="sd">        Only implemented for EconML estimators so far</span>
 
-<span class="sd">        @param df (pd.DataFrame): data to run inference on</span>
-<span class="sd">        @param args: passed through to underlying estimator</span>
-<span class="sd">        @param kwargs: passed through to underlying estimator</span>
-<span class="sd">        @return (from EconML: NormalInferenceResults):</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df (pd.DataFrame): data to run inference on</span>
+<span class="sd">            args: passed through to underlying estimator</span>
+<span class="sd">            kwargs: passed through to underlying estimator</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (from EconML: NormalInferenceResults):</span>
 <span class="sd">            EconML results object for inference assuming a normal distribution.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -760,11 +778,13 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute standard errors for best causal estimator</span>
 <span class="sd">            Currently implemented for EconML estimators.</span>
 <span class="sd">            Computes analytical standard errors if available and boostraps otherwise.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            df (pd.DataFrame): data to run inference on</span>
+<span class="sd">            n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.</span>
+<span class="sd">            n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.</span>
 
-<span class="sd">        @param df (pd.DataFrame): data to run inference on</span>
-<span class="sd">        @param n_bootstrap_samples (int, optional): number of runs if standard errors are boostrapped. Defaults to 5.</span>
-<span class="sd">        @param n_jobs (int, optional): Number of bootstrap estimates to run in parallel. Defaults to 1.</span>
-<span class="sd">        @return (np.ndarray): standard error for each data point from df</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (np.ndarray): standard error for each data point from df</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="s2">&quot;Econml&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)):</span>

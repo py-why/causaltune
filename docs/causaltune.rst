@@ -1,8 +1,12 @@
 Public Module Reference
 ==================
 
+
+
 causaltune.optimiser module
 ---------------------------
+
+The main class of the package is CausalTune within the optimiser module.
 
 .. automodule:: causaltune.optimiser
    :members:
@@ -19,6 +23,8 @@ causaltune.scoring module
 
 causaltune.data\_utils module
 -----------------------------
+
+This module contains the CausalityDataset class which is used to define the data model.
 
 .. automodule:: causaltune.data_utils
    :members:
