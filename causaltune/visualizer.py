@@ -43,15 +43,16 @@ class Visualizer:
         shaps: np.ndarray = None,
         figtitle: str = "",
     ) -> None:
-        """
-        Plot Shapley values for given estimator.
+        """Plot Shapley values for given estimator.
 
-        @param estimate (CausalEstimate): dowhy causal estimate
-        @param df (pandas.DataFrame): dataframe for shapley calculation
-        @param shaps (np.ndarray): pre-computed shapley values, if None, compute shapley values. Defaults to None.
-        @param figtitle (str): plot title
+        Args:
+            estimate (CausalEstimate): dowhy causal estimate
+            df (pandas.DataFrame): dataframe for shapley calculation
+            shaps (np.ndarray): pre-computed shapley values, if None, compute shapley values. Defaults to None.
+            figtitle (str): plot title
 
-        @return: None
+        Returns:
+            None
 
         """
         assert not isinstance(
@@ -74,15 +75,16 @@ class Visualizer:
         metrics: Tuple[str, str] = ("norm_erupt", "ate"),
         figsize: Tuple[int, int] = (7, 5),
     ) -> None:
-        """
-        Plot metrics by estimator.
+        """Plot metrics by estimator.
 
-        @param scores_dict (Dict): scores dict from fitted CausalTune object
-        @param figtitle (str): specifying plot title, defaults to ""
-        @param metrics (Tuple[str, str]): specifying metrics, defaults to ('norm_erupt', 'ate')
-        @param figsize (Tuple[int, int]): specifying plot size, defaults to (7,5)
+        Args:
+            scores_dict (Dict): scores dict from fitted CausalTune object
+            figtitle (str): specifying plot title, defaults to ""
+            metrics (Tuple[str, str]): specifying metrics, defaults to ('norm_erupt', 'ate')
+            figsize (Tuple[int, int]): specifying plot size, defaults to (7,5)
 
-        @return: None
+        Returns:
+            None
         """
 
         colors = (
@@ -138,15 +140,16 @@ class Visualizer:
     def plot_group_ate(
         self, scorer: Scorer, scores_dict: Dict, estimator: str
     ) -> pd.DataFrame:
-        """
-        Plot out-of sample difference of outcomes between treated and untreated
-            for the points where model predicts positive vs negative impact.
+        """Plot out-of sample difference of outcomes between treated and untreated
+        for the points where model predicts positive vs negative impact.
 
-        @param scorer (CausalTune.scorer): scorer from CausalTune
-        @param scores_dict (Dict): scores dict from fitted CausalTune object
-        @param estimator (str): name of estimator to use
+        Args:
+            scorer (CausalTune.scorer): scorer from CausalTune
+            scores_dict (Dict): scores dict from fitted CausalTune object
+            estimator (str): name of estimator to use
 
-        @return pandas.DataFrame: dataframe of policy groups and average effect
+        Returns:
+            pandas.DataFrame: dataframe of policy groups and average effect
 
         """
 

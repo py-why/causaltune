@@ -130,7 +130,10 @@ class SimpleParamService:
             return [est for est, cfg in cfgs.items() if not cfg.experimental]
 
     def search_space(self, estimator_list: Iterable[str]):
-        """constructs search space with estimators and their respective configs
+        """Constructs search space with estimators and their respective configs
+
+        Args:
+            estimator_list (Iterable[str]): estimators to consider
 
         Returns:
             dict: hierarchical search space
@@ -147,13 +150,17 @@ class SimpleParamService:
         return {"estimator": tune.choice(search_space)}
 
     def default_configs(self, estimator_list: Iterable[str]):
-        """creates list with initial configs to try before moving
+        """Creates list with initial configs to try before moving
         on to hierarchical HPO.
         The list has been identified by evaluating performance of all
         learners on a range of datasets (and metrics).
         Each entry is a dictionary with a learner and its best-performing
         hyper params
         TODO: identify best_performers for list below
+
+        Args:
+            estimator_list (Iterable[str]): estimators to consider
+
         Returns:
             list: list of dicts with promising initial configs
         """

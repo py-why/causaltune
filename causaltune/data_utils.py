@@ -174,16 +174,17 @@ class CausalityDataset:
         prune_min_categories: int = 50,
         prune_thresh: float = 0.99,
     ):
-        """
-        Preprocesses input dataset for CausalTune by
-            converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.
+        """Preprocesses input dataset for CausalTune by
+        converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.
 
-        @param drop_first (bool): whether to drop the first dummy variable for each categorical feature (default False)
-        @param scale_floats (bool): whether to scale float features to have zero mean and unit variance (default False)
-        @param prune_min_categories (int): min number of categories to keep for each categorical feature (default 50)
-        @param prune_thresh (float): threshold for category frequency when pruning categories (default 0.99)
+        Args:
+            drop_first (bool): whether to drop the first dummy variable for each categorical feature (default False)
+            scale_floats (bool): whether to scale float features to have zero mean and unit variance (default False)
+            prune_min_categories (int): min number of categories to keep for each categorical feature (default 50)
+            prune_thresh (float): threshold for category frequency when pruning categories (default 0.99)
 
-        @return: None. Modifies self.data in-place by replacing it with the preprocessed dataframe.
+        Returns:
+            None. Modifies self.data in-place by replacing it with the preprocessed dataframe.
         """
 
         self.data[self.treatment] = self.data[self.treatment].astype(int)
