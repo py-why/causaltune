@@ -185,7 +185,7 @@ We support a variety of different metrics that quantify the performance of a cau
 ## Citation
 If you use CausalTune in your research, please cite us as follows:
 
-Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **CausalTune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/py-why/causaltune. 2022. Version 0.x
+Timo Debono, Julian Teichgräber, Timo Flesch, Edward Zhang, Guy Durant, Wen Hao Kho, Mark Harley, Egor Kraev. **CausalTune: A Python package for Automated Causal Inference model estimation and selection.** https://github.com/py-why/causaltune. 2022. Version 0.x
 You can use the following BibTex entry:
 ```
 @misc{CausalTune,
