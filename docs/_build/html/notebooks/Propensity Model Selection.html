@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propensity Score Weighting in CausalTune &mdash; CausalTune 2022 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Random assignment, binary CATE example" href="Random%20assignment%2C%20binary%20CATE%20example.html" />
+    <link rel="prev" title="ERUPT under simulated random assignment" href="ERUPT%20under%20simulated%20random%20assignment.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            CausalTune
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../notebook_examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="AB%20testing.html">AB Testing with CausalTune</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CausalityDataset%20setup.html">Setting up the data and causal model: CausalityDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Comparing%20IV%20Estimators.html">Comparing IV Estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERUPT%20under%20simulated%20random%20assignment.html">ERUPT under simulated random assignment</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Propensity Score Weighting in CausalTune</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Generate-Data">Generate Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#1.-DEFAULT:-Dummy-propensity-model">1. DEFAULT: Dummy propensity model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#2.-Propensity-model-estimation-via-AutoML">2. Propensity model estimation via AutoML</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#3.-Propensity-model-estimation-with-a-custom-model">3. Propensity model estimation with a custom model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#4.-Supplying-individual-treatment-propensities">4. Supplying individual treatment propensities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Random%20assignment%2C%20binary%20CATE%20example.html">Random assignment, binary CATE example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Standard%20errors.html">Standard errors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../causaltune.html">Public Module Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CausalTune</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../notebook_examples.html">Examples</a></li>
+      <li class="breadcrumb-item active">Propensity Score Weighting in CausalTune</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/Propensity Model Selection.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Propensity-Score-Weighting-in-CausalTune">
+<h1>Propensity Score Weighting in CausalTune<a class="headerlink" href="#Propensity-Score-Weighting-in-CausalTune" title="Permalink to this heading"></a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os
+import sys
+import pandas as pd
+import numpy as np
+import warnings
+
+from scipy.stats import betabinom
+
+from sklearn.ensemble import RandomForestClassifier
+
+root_path = root_path = os.path.realpath(&#39;../..&#39;)
+try:
+    import causaltune
+except ModuleNotFoundError:
+    sys.path.append(os.path.join(root_path, &quot;causaltune&quot;))
+
+from causaltune import CausalTune
+from causaltune.data_utils import CausalityDataset
+from causaltune.datasets import generate_non_random_dataset
+
+warnings.filterwarnings(&quot;ignore&quot;)
+
+%load_ext autoreload
+%autoreload 2
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+&lt;frozen importlib._bootstrap&gt;:228: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+</pre></div></div>
+</div>
+<p>CausalTune effect estimation consists of multiple models that can / need to be fitted.</p>
+<ol class="arabic simple">
+<li><p>Propensity model to estimate treatment propensities from features <span class="math notranslate nohighlight">\(\mathbb{E}[T|X,W]\)</span>.</p></li>
+<li><p>Outcome model to estimate outcomes from features <span class="math notranslate nohighlight">\(\mathbb{E}[Y|X,W]\)</span></p></li>
+<li><p>The final causal inference estimator which requires additional hyperparamter tuning.</p></li>
+</ol>
+<p>In this notebook, we focu on the Propensity Score Weighting (1.).</p>
+<p>There are four options to finding a propensity model.</p>
+<ol class="arabic simple">
+<li><p><strong>[Default:] use a dummy estimator.</strong></p>
+<ul class="simple">
+<li><p>natural option for a computationally easy model / when perfect randomisation of the treatment is given</p></li>
+</ul>
+</li>
+<li><p><strong>Letting AutoML fit the propoensity model,</strong></p>
+<ul class="simple">
+<li><p>has all the advantages of using an elaborate propensity weighting model</p></li>
+</ul>
+</li>
+<li><p><strong>supply a custom sklearn-compatible prediction model,</strong></p>
+<ul class="simple">
+<li><p>for more flexibility in terms of propensity prediction model</p></li>
+</ul>
+</li>
+<li><p><strong>supply an array of custom propensities to treat.</strong></p>
+<ul class="simple">
+<li><p>can be used, e.g. with custom propensities to treat based on an optimisation procedure such as Thompson sampling when there is an expected benefit from treating some subjects with higher propensity than others</p></li>
+</ul>
+</li>
+</ol>
+<section id="Generate-Data">
+<h2>Generate Data<a class="headerlink" href="#Generate-Data" title="Permalink to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>cd = generate_non_random_dataset()
+cd.preprocess_dataset()
+</pre></div>
+</div>
+</div>
+<p>In this synthetic dataset, the <strong>true (constant) treatment effect</strong> is <span class="math notranslate nohighlight">\(0.2\)</span>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># CausalTune configuration
+components_time_budget = 40
+train_size = 0.7
+
+target = cd.outcomes[0]
+</pre></div>
+</div>
+</div>
+</section>
+<section id="1.-DEFAULT:-Dummy-propensity-model">
+<h2>1. DEFAULT: Dummy propensity model<a class="headerlink" href="#1.-DEFAULT:-Dummy-propensity-model" title="Permalink to this heading"></a></h2>
+<p>The dummy propensity model identifies a constant propensity to treat given by $:nbsphinx-math:<cite>frac{text{Treatment Group Size}}{text{Total Sample Size}}</cite> $.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ct = CausalTune(
+    propensity_model=&#39;dummy&#39;,
+    components_time_budget=components_time_budget,
+    metric=&quot;energy_distance&quot;,
+    train_size=train_size,
+    verbose=0
+)
+ct.fit(data=cd, outcome=target)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks
+Initial configs: [{&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.NaiveDummy&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.Dummy&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.SLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.DomainAdaptationLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dr.ForestDRLearner&#39;, &#39;min_propensity&#39;: 1e-06, &#39;n_estimators&#39;: 100, &#39;min_samples_split&#39;: 5, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;subforest_size&#39;: 4}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dml.CausalForestDML&#39;, &#39;drate&#39;: True, &#39;n_estimators&#39;: 100, &#39;criterion&#39;: &#39;mse&#39;, &#39;min_samples_split&#39;: 10, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;fit_intercept&#39;: True, &#39;subforest_size&#39;: 4}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.TransformedOutcome&#39;}}]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(f&#39;Propensity model: {ct.propensity_model}&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Propensity model: DummyClassifier()
+</pre></div></div>
+</div>
+<p>Difference in means estimate (naive ATE):</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(f&#39;{ct.scorer.naive_ate(cd.data[cd.treatment], cd.data[target])[0]:.5f}&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.30755
+</pre></div></div>
+</div>
+<p>CausalTune ATE estimate:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(f&#39;{ct.effect(ct.test_df).mean():.5f}&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.26557
+</pre></div></div>
+</div>
+</section>
+<section id="2.-Propensity-model-estimation-via-AutoML">
+<h2>2. Propensity model estimation via AutoML<a class="headerlink" href="#2.-Propensity-model-estimation-via-AutoML" title="Permalink to this heading"></a></h2>
+<p>The propensity score weighting estimation via AutoML is as simple as selecting <code class="docutils literal notranslate"><span class="pre">propensity_model='auto'</span></code>.</p>
+<p>The computational intensity can then be adapted via supplying a <code class="docutils literal notranslate"><span class="pre">components_budget_time</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ct = CausalTune(
+    propensity_model=&#39;auto&#39;,
+    components_time_budget=components_time_budget,
+    metric=&quot;energy_distance&quot;,
+    train_size=train_size,
+    verbose=0
+)
+ct.fit(data=cd, outcome=target)
+print(f&#39;Estimated ATE: {ct.effect(ct.test_df).mean():.5f}&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks
+Initial configs: [{&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.NaiveDummy&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.Dummy&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.SLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.DomainAdaptationLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dr.ForestDRLearner&#39;, &#39;min_propensity&#39;: 1e-06, &#39;n_estimators&#39;: 100, &#39;min_samples_split&#39;: 5, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;subforest_size&#39;: 4}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dml.CausalForestDML&#39;, &#39;drate&#39;: True, &#39;n_estimators&#39;: 100, &#39;criterion&#39;: &#39;mse&#39;, &#39;min_samples_split&#39;: 10, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;fit_intercept&#39;: True, &#39;subforest_size&#39;: 4}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.TransformedOutcome&#39;}}]
+Estimated ATE: 0.34498
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(f&#39;Propensity model: {ct.propensity_model}&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Propensity model: AutoML(append_log=False, auto_augment=True, custom_hp={},
+       cv_score_agg_func=None, early_stop=False, ensemble=False,
+       estimator_list=&#39;auto&#39;, eval_method=&#39;holdout&#39;, fit_kwargs_by_estimator={},
+       hpo_method=&#39;auto&#39;, keep_search_state=False, learner_selector=&#39;sample&#39;,
+       log_file_name=&#39;&#39;, log_training_metric=False, log_type=&#39;better&#39;,
+       max_iter=None, mem_thres=4294967296, metric=&#39;auto&#39;,
+       metric_constraints=[(&#39;pred_time&#39;, &#39;&lt;=&#39;, 1e-05)], min_sample_size=10000,
+       model_history=False, n_concurrent_trials=1, n_jobs=-1, n_splits=5,
+       pred_time_limit=1e-05, preserve_checkpoint=True, retrain_full=True,
+       sample=True, skip_transform=False, split_ratio=0.30000000000000004, ...)
+</pre></div></div>
+</div>
+</section>
+<section id="3.-Propensity-model-estimation-with-a-custom-model">
+<h2>3. Propensity model estimation with a custom model<a class="headerlink" href="#3.-Propensity-model-estimation-with-a-custom-model" title="Permalink to this heading"></a></h2>
+<p>A custom propensity model that has an sklearn-style <code class="docutils literal notranslate"><span class="pre">fit</span></code> and <code class="docutils literal notranslate"><span class="pre">predict_proba</span></code> method can be supplied as a propensity model.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>propensity_model = RandomForestClassifier()
+
+ct = CausalTune(
+    propensity_model=propensity_model,
+    components_time_budget=components_time_budget,
+    metric=&quot;energy_distance&quot;,
+    train_size=train_size,
+)
+ct.fit(data=cd, outcome=target)
+print(f&#39;Estimated ATE: {ct.effect(ct.test_df).mean():.5f}&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks
+Initial configs: [{&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.NaiveDummy&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.Dummy&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.SLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.DomainAdaptationLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dr.ForestDRLearner&#39;, &#39;min_propensity&#39;: 1e-06, &#39;n_estimators&#39;: 100, &#39;min_samples_split&#39;: 5, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;subforest_size&#39;: 4}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dml.CausalForestDML&#39;, &#39;drate&#39;: True, &#39;n_estimators&#39;: 100, &#39;criterion&#39;: &#39;mse&#39;, &#39;min_samples_split&#39;: 10, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;fit_intercept&#39;: True, &#39;subforest_size&#39;: 4}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.TransformedOutcome&#39;}}]
+Estimated ATE: 0.24008
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(f&#39;Propensity model: {ct.propensity_model}&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Propensity model: RandomForestClassifier()
+</pre></div></div>
+</div>
+</section>
+<section id="4.-Supplying-individual-treatment-propensities">
+<h2>4. Supplying individual treatment propensities<a class="headerlink" href="#4.-Supplying-individual-treatment-propensities" title="Permalink to this heading"></a></h2>
+<p>In some settings such as uplift modelling, the experiment / study is based on heterogeneous treatment propensities known to the researcher / experimenter. An array of treatment propensities can be directly supplied to CausalTune in the data instantiation of the <code class="docutils literal notranslate"><span class="pre">CausalityDataset</span></code>. This can, e.g. be done by</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>cd = CausalityDataset(
+    ...
+    propensity_modifiers=[&lt;individual_treatment_propensity_column_name&gt;]
+    ...
+)
+</pre></div>
+</div>
+<p>and then using the <code class="docutils literal notranslate"><span class="pre">passthrough_model</span></code> as follows</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from causaltune.models.passthrough import passthrough_model
+
+print(cd.data.head())
+print(f&#39;True propensities to treat: {cd.propensity_modifiers}&#39;)
+
+propensity_model=passthrough_model(
+    cd.propensity_modifiers, include_control=False
+    )
+
+ct = CausalTune(
+    propensity_model=propensity_model,
+    components_time_budget=components_time_budget,
+    metric=&quot;energy_distance&quot;,
+    train_size=train_size,
+    verbose=0
+)
+ct.fit(data=cd, outcome=target)
+print(f&#39;Estimated ATE: {ct.effect(ct.test_df).mean():.5f}&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+   T         Y  random        X1        X2        X3        X4        X5  \
+0  0 -1.000312     0.0  0.259595 -0.994360  0.122632 -0.308056  2.110752
+1  0  2.342408     1.0 -0.357165 -1.626471  0.768395  0.239236  0.874304
+2  0 -1.087664     0.0 -0.780095 -1.917028 -0.156848  0.437076  0.516383
+3  1  0.398676     1.0 -0.951582 -0.433123  1.299038  0.193750  1.311885
+4  0  0.897118     1.0 -0.341460 -1.668032 -0.340667  0.548328  1.646835
+
+   propensity
+0    0.273852
+1    0.148065
+2    0.136952
+3    0.213419
+4    0.188777
+True propensities to treat: [&#39;propensity&#39;]
+Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks
+Initial configs: [{&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.NaiveDummy&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.Dummy&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.SLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.DomainAdaptationLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dr.ForestDRLearner&#39;, &#39;min_propensity&#39;: 1e-06, &#39;n_estimators&#39;: 100, &#39;min_samples_split&#39;: 5, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;subforest_size&#39;: 4}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dml.CausalForestDML&#39;, &#39;drate&#39;: True, &#39;n_estimators&#39;: 100, &#39;criterion&#39;: &#39;mse&#39;, &#39;min_samples_split&#39;: 10, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;fit_intercept&#39;: True, &#39;subforest_size&#39;: 4}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.causaltune.models.TransformedOutcome&#39;}}]
+Estimated ATE: 0.27060
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ERUPT%20under%20simulated%20random%20assignment.html" class="btn btn-neutral float-left" title="ERUPT under simulated random assignment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Random%20assignment%2C%20binary%20CATE%20example.html" class="btn btn-neutral float-right" title="Random assignment, binary CATE example" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Wise Payments Limited, PyWhy Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

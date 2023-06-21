@@ -8,13 +8,18 @@ SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
 
+
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile
+.PHONY: help Makefile clean_copy_paste_ipynb
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
+# copy paste jupyter notebooks	
+	mkdir -p $(SOURCEDIR)/notebooks
+	rm -f $(SOURCEDIR)/notebooks/*.ipynb
+	cp $(SOURCEDIR)/../notebooks/*.ipynb "$(SOURCEDIR)/notebooks"
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

@@ -67,19 +67,19 @@ class CausalTune:
     metric for estimator selection.
 
     Example:
-    ```python
 
-    cd = CausalityDataset(data=df, treatment='T', outcomes=['Y'])
-    cd.preprocess_dataset()
+    .. code-block:: shell
 
-    estimator_list = [".LinearDML","LinearDRLearner","metalearners"]
-    ct = CausalTune(time_budget=10, estimator_list=estimator_list)
+        cd = CausalityDataset(data=df, treatment='T', outcomes=['Y'])
+        cd.preprocess_dataset()
 
-    ct.fit(cd)
+        estimator_list = [".LinearDML","LinearDRLearner","metalearners"]
+        ct = CausalTune(time_budget=10, estimator_list=estimator_list)
 
-    print(f"Best estimator: {ct.best_estimator}")
+        ct.fit(cd)
 
-    ```
+        print(f"Best estimator: {ct.best_estimator}")
+
     """
 
     def __init__(
@@ -141,7 +141,8 @@ class CausalTune:
                 is experimental can be seen in SimpleParamsService in scoring.py
             @param store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False
 
-            @return: None
+            Returns:
+                None
         """
         assert (
             time_budget is not None or components_time_budget is not None
@@ -270,18 +271,19 @@ class CausalTune:
         - Otherwise, only its component models are optimised
 
         Args:
-            @param data (pandas.DataFrame): dataset for causal inference
-            @param treatment (str): name of treatment variable
-            @param outcome (str): name of outcome variable
-            @param common_causes (List[str]): list of names of common causes
-            @param effect_modifiers (List[str]): list of names of effect modifiers
-            @param instruments (List[str]): list of names of instrumental variables
-            @param propensity_modifiers (List[str]): list of names of propensity modifiers
-            @param estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
-            @param resume (Optional[bool]): set to True to continue previous fit
-            @param time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
+            data (pandas.DataFrame): dataset for causal inference
+            treatment (str): name of treatment variable
+            outcome (str): name of outcome variable
+            common_causes (List[str]): list of names of common causes
+            effect_modifiers (List[str]): list of names of effect modifiers
+            instruments (List[str]): list of names of instrumental variables
+            propensity_modifiers (List[str]): list of names of propensity modifiers
+            estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
+            resume (Optional[bool]): set to True to continue previous fit
+            time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
 
-            @return: None
+        Returns:
+            None
         """
         if outcome is None and isinstance(data, CausalityDataset):
             outcome = data.outcomes[0]
@@ -471,7 +473,8 @@ class CausalTune:
     def update_summary_scores(self):
         """Stores scores for metric of interest for each estimator
 
-        @return: None
+        Returns:
+            None
         """
         self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
         # now inject the separately saved model objects
@@ -486,10 +489,12 @@ class CausalTune:
         """Performs Hyperparameter Optimisation for a
         causal inference estimator
 
-        @param config (dict): dictionary with search space for
-            all tunable parameters
+        Args:
+            config (dict): dictionary with search space for
+                all tunable parameters
 
-        @return (dict): values of metrics after optimisation
+        Returns:
+            (dict): values of metrics after optimisation
         """
         # estimate effect with current config
 
@@ -586,10 +591,12 @@ class CausalTune:
         """
         After fitting, generate scores for an additional dataset, add them to the scores dict.
 
-        @param df (pandas.DataFrame): input dataframe
-        @param dataset_name (str): dictionary key
+        Args:
+            df (pandas.DataFrame): input dataframe
+            dataset_name (str): dictionary key
 
-        @return: None.
+        Returns:
+            None.
         """
         for scr in self.scores.values():
             scr["scores"][dataset_name] = self._compute_metrics(scr["estimator"], df)
@@ -598,7 +605,8 @@ class CausalTune:
     def best_estimator(self) -> str:
         """A string indicating the best estimator found
 
-        @return: None
+        Returns:
+            None
         """
         return self.results.best_result["estimator_name"]
 

@@ -5,12 +5,47 @@
 
 Welcome to CausalTune's documentation!
 ======================================
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
+   :glob:
 
-   modules
+   getting_started
+   notebook_examples
+   causaltune
+
+Installation guidelines can be found at :doc:`getting_started`
+
+Date: |today|
+
+**CausalTune** is a library for automated tuning and selection for causal estimators.
+
+Its estimators are taken from EconML_ augmented by a couple of extra models
+(currently Transformed Outcome and a dummy model to be used as a baseline), all called in a uniform fashion via a
+[DoWhy](https://github.com/microsoft/DoWhy/) wrapper.
+
+Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the [energy score](https://arxiv.org/abs/2212.10076).
+We use [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
+
+We perform automated hyperparameter tuning of first stage models (for the treatment and outcome models)
+as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
+
+The estimators provide not only per-row treatment impact estimates, but also confidence intervals for these,
+using builtin EconML functionality for that where it is available and bootstrapping where it is not (see [example notebook](https://github.com/py-why/causaltune/blob/main/notebooks/Standard%20errors.ipynb)).
+
+Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
+So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
+provided by the user do reflect all sources of confounding between the treatment and the outcome. See [here](https://github.com/py-why/causaltune/blob/main/notebooks/CausalityDataset%20setup.ipynb) for a detailed explanation of causal graphs that are supported by CausalTune.
+
+The validation methods in CausalTune cannot catch such violations and therefore this is an important assumption.
+
+We also implement the [ERUPT](https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4)
+[calculation](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957) (also known as policy value),
+allowing after an (even partially) randomized test to estimate what the impact
+of other treatment assignment policies would have been. This can also be used as an alternative out-of-sample score,
+though energy score performed better in our synthetic data experiments.
+
+.. _EconML: https://github.com/microsoft/EconML/
 
 Indices and tables
 ==================

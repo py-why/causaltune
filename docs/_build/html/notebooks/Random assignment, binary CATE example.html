@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Random assignment, binary CATE example &mdash; CausalTune 2022 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Standard errors" href="Standard%20errors.html" />
+    <link rel="prev" title="Propensity Score Weighting in CausalTune" href="Propensity%20Model%20Selection.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            CausalTune
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../notebook_examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="AB%20testing.html">AB Testing with CausalTune</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CausalityDataset%20setup.html">Setting up the data and causal model: CausalityDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Comparing%20IV%20Estimators.html">Comparing IV Estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERUPT%20under%20simulated%20random%20assignment.html">ERUPT under simulated random assignment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Propensity%20Model%20Selection.html">Propensity Score Weighting in CausalTune</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Random assignment, binary CATE example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Model-fitting-&amp;-scoring">Model fitting &amp; scoring</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Custom-outcome-model">Custom outcome model</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Standard%20errors.html">Standard errors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../causaltune.html">Public Module Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CausalTune</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../notebook_examples.html">Examples</a></li>
+      <li class="breadcrumb-item active">Random assignment, binary CATE example</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/Random assignment, binary CATE example.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Random-assignment,-binary-CATE-example">
+<h1>Random assignment, binary CATE example<a class="headerlink" href="#Random-assignment,-binary-CATE-example" title="Permalink to this heading"></a></h1>
+<p>This is a fully worked-out notebook showing how you would apply <code class="docutils literal notranslate"><span class="pre">CausalTune</span></code> to a dataset.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%load_ext autoreload
+%autoreload 2
+import os, sys
+import warnings
+warnings.filterwarnings(&#39;ignore&#39;) # suppress sklearn deprecation warnings for now..
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+
+# the below checks for whether we run dowhy, causaltune, and FLAML from source
+root_path = root_path = os.path.realpath(&#39;../..&#39;)
+try:
+    import causaltune
+except ModuleNotFoundError:
+    sys.path.append(os.path.join(root_path, &quot;causaltune&quot;))
+
+try:
+    import dowhy
+except ModuleNotFoundError:
+    sys.path.append(os.path.join(root_path, &quot;dowhy&quot;))
+
+try:
+    import flaml
+except ModuleNotFoundError:
+    sys.path.append(os.path.join(root_path, &quot;FLAML&quot;))
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># this makes the notebook expand to full width of the browser window
+from IPython.core.display import display, HTML
+display(HTML(&quot;&lt;style&gt;.container { width:100% !important; }&lt;/style&gt;&quot;))
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<style>.container { width:100% !important; }</style></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">%%</span><span class="nx">javascript</span>
+
+<span class="c1">// turn off scrollable windows for large output</span>
+<span class="nx">IPython</span><span class="p">.</span><span class="nx">OutputArea</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">_should_scroll</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kd">function</span><span class="p">(</span><span class="nx">lines</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="output_javascript"></div>
+<script type="text/javascript">
+var element = document.currentScript.previousSibling.previousSibling;
+
+// turn off scrollable windows for large output
+IPython.OutputArea.prototype._should_scroll = function(lines) {
+    return false;
+}
+
+</script></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from causaltune import CausalTune
+from causaltune.datasets import synth_ihdp
+from causaltune.data_utils import CausalityDataset
+</pre></div>
+</div>
+</div>
+<section id="Model-fitting-&amp;-scoring">
+<h2>Model fitting &amp; scoring<a class="headerlink" href="#Model-fitting-&-scoring" title="Permalink to this heading"></a></h2>
+<p>Here we fit a (selection of) model(s) to the data and score them with the energy distance metric on held-out data.</p>
+<p>We import an example dataset and pre-process it. The pre-processing fills in the NaNs and one-hot-encodes all categorical and int variables.</p>
+<p>If you don’t want an int variable to be one-hot-encoded, please cast it to float before preprocessing.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># load toy dataset
+df = synth_ihdp(return_df=True)
+display(df.head())
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>treatment</th>
+      <th>y_factual</th>
+      <th>x1</th>
+      <th>x2</th>
+      <th>x3</th>
+      <th>x4</th>
+      <th>x5</th>
+      <th>x6</th>
+      <th>x7</th>
+      <th>x8</th>
+      <th>...</th>
+      <th>x16</th>
+      <th>x17</th>
+      <th>x18</th>
+      <th>x19</th>
+      <th>x20</th>
+      <th>x21</th>
+      <th>x22</th>
+      <th>x23</th>
+      <th>x24</th>
+      <th>x25</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>5.599916</td>
+      <td>-0.528603</td>
+      <td>-0.343455</td>
+      <td>1.128554</td>
+      <td>0.161703</td>
+      <td>-0.316603</td>
+      <td>1.295216</td>
+      <td>1</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0</td>
+      <td>6.875856</td>
+      <td>-1.736945</td>
+      <td>-1.802002</td>
+      <td>0.383828</td>
+      <td>2.244320</td>
+      <td>-0.629189</td>
+      <td>1.295216</td>
+      <td>0</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0</td>
+      <td>2.996273</td>
+      <td>-0.807451</td>
+      <td>-0.202946</td>
+      <td>-0.360898</td>
+      <td>-0.879606</td>
+      <td>0.808706</td>
+      <td>-0.526556</td>
+      <td>0</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0</td>
+      <td>1.366206</td>
+      <td>0.390083</td>
+      <td>0.596582</td>
+      <td>-1.850350</td>
+      <td>-0.879606</td>
+      <td>-0.004017</td>
+      <td>-0.857787</td>
+      <td>0</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0</td>
+      <td>1.963538</td>
+      <td>-1.045229</td>
+      <td>-0.602710</td>
+      <td>0.011465</td>
+      <td>0.161703</td>
+      <td>0.683672</td>
+      <td>-0.360940</td>
+      <td>1</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 27 columns</p>
+</div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># split-off a hold-out set
+hold_out = df.sample(frac=0.2)
+train = df.drop(hold_out.index)
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># apply standard pre-processing to train set
+cd = CausalityDataset(data=train, treatment=&#39;treatment&#39;, outcomes=[&#39;y_factual&#39;])
+cd.preprocess_dataset()
+</pre></div>
+</div>
+</div>
+<p>Inspecting the dataset below, we can see that the causal inference problem is defined by a binary <code class="docutils literal notranslate"><span class="pre">treatment</span></code>, a continuous outcome <code class="docutils literal notranslate"><span class="pre">y_factual</span></code>, and a range of covariates <code class="docutils literal notranslate"><span class="pre">x_{i}</span></code>. The <code class="docutils literal notranslate"><span class="pre">random</span></code> column is added to bypass a DoWhy bug.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># inspect the preprocessed dataset
+display(cd.data.head())
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>treatment</th>
+      <th>y_factual</th>
+      <th>random</th>
+      <th>x1</th>
+      <th>x2</th>
+      <th>x3</th>
+      <th>x4</th>
+      <th>x5</th>
+      <th>x6</th>
+      <th>x7</th>
+      <th>...</th>
+      <th>x16</th>
+      <th>x17</th>
+      <th>x18</th>
+      <th>x19</th>
+      <th>x20</th>
+      <th>x21</th>
+      <th>x22</th>
+      <th>x23</th>
+      <th>x24</th>
+      <th>x25</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>5.599916</td>
+      <td>1.0</td>
+      <td>-0.528603</td>
+      <td>-0.343455</td>
+      <td>1.128554</td>
+      <td>0.161703</td>
+      <td>-0.316603</td>
+      <td>1.295216</td>
+      <td>1.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0</td>
+      <td>1.366206</td>
+      <td>1.0</td>
+      <td>0.390083</td>
+      <td>0.596582</td>
+      <td>-1.850350</td>
+      <td>-0.879606</td>
+      <td>-0.004017</td>
+      <td>-0.857787</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0</td>
+      <td>1.963538</td>
+      <td>0.0</td>
+      <td>-1.045228</td>
+      <td>-0.602710</td>
+      <td>0.011465</td>
+      <td>0.161703</td>
+      <td>0.683672</td>
+      <td>-0.360940</td>
+      <td>1.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0</td>
+      <td>4.762090</td>
+      <td>0.0</td>
+      <td>0.467901</td>
+      <td>-0.202946</td>
+      <td>-0.733261</td>
+      <td>0.161703</td>
+      <td>0.058500</td>
+      <td>1.957678</td>
+      <td>1.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0</td>
+      <td>6.594044</td>
+      <td>1.0</td>
+      <td>0.513295</td>
+      <td>0.596582</td>
+      <td>0.756191</td>
+      <td>1.203011</td>
+      <td>-0.066534</td>
+      <td>2.620141</td>
+      <td>1.0</td>
+      <td>...</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 28 columns</p>
+</div></div>
+</div>
+<p>Fitting the model is as simple as calling <code class="docutils literal notranslate"><span class="pre">CausalTune.fit()</span></code>, with the only required parameter apart from the data being the amount of time you want to give the optimizer, either for the whole run (<code class="docutils literal notranslate"><span class="pre">time_budget</span></code>) or per FLAML component model (<code class="docutils literal notranslate"><span class="pre">components_time_budget</span></code>), or both.</p>
+<p>If you want to use specific estimators, comment in the <code class="docutils literal notranslate"><span class="pre">estimator_list</span></code> below to include any estimators whose full name contains any of the elements of <code class="docutils literal notranslate"><span class="pre">estimator_list</span></code>.</p>
+<p>The other allowed values are <code class="docutils literal notranslate"><span class="pre">all</span></code> and <code class="docutils literal notranslate"><span class="pre">auto</span></code>, the default is <code class="docutils literal notranslate"><span class="pre">auto</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># training configs
+
+# choose estimators of interest
+estimator_list = [
+            # &quot;Dummy&quot;,
+            # &quot;SparseLinearDML&quot;,
+            # &quot;ForestDRLearner&quot;,
+            # &quot;TransformedOutcome&quot;,
+            &quot;CausalForestDML&quot;,
+            # &quot;.LinearDML&quot;,
+            # &quot;DomainAdaptationLearner&quot;,
+            &quot;SLearner&quot;,
+            &quot;XLearner&quot;,
+            # &quot;TLearner&quot;,
+            # &quot;Ortho&quot;
+    ]
+
+# set evaluation metric
+metric = &quot;energy_distance&quot;
+
+# it&#39;s best to specify either time_budget or components_time_budget,
+# and let the other one be inferred; time in seconds
+time_budget = None
+components_time_budget = 10
+
+# specify training set size
+train_size = 0.7
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ct = CausalTune(
+    estimator_list=estimator_list,
+    metric=metric,
+    verbose=0,
+    components_verbose=0,
+    time_budget=time_budget,
+    components_time_budget=components_time_budget,
+    train_size=train_size
+)
+
+
+# run causaltune
+ct.fit(data=cd, outcome=cd.outcomes[0])
+
+print(&#39;---------------------&#39;)
+# return best estimator
+print(f&quot;Best estimator: {ct.best_estimator}&quot;)
+# config of best estimator:
+print(f&quot;Best config: {ct.best_config}&quot;)
+# best score:
+print(f&quot;Best score: {ct.best_score}&quot;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks
+Initial configs: [{&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.SLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.XLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dml.CausalForestDML&#39;, &#39;drate&#39;: True, &#39;n_estimators&#39;: 100, &#39;criterion&#39;: &#39;mse&#39;, &#39;min_samples_split&#39;: 10, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;fit_intercept&#39;: True, &#39;subforest_size&#39;: 4}}]
+---------------------
+Best estimator: backdoor.econml.metalearners.XLearner
+Best config: {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.XLearner&#39;}}
+Best score: 0.22739775773260096
+</pre></div></div>
+</div>
+<p>After running a fit, you also have the option resume it without losing past results, for example if you want to search over extra estimators. To do so, simply pass <code class="docutils literal notranslate"><span class="pre">resume=True</span></code> to the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method as shown below:</p>
+<p><code class="docutils literal notranslate"><span class="pre">ct.fit(data=cd,outcome=cd.outcomes[0],resume=True)</span></code></p>
+<p>We will now score all estimators on the hold-out test set and save the results per estimator in <code class="docutils literal notranslate"><span class="pre">ct.scores['test']</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>cd_hold_out = CausalityDataset(data=hold_out, treatment=&#39;treatment&#39;, outcomes=[&#39;y_factual&#39;])
+cd_hold_out.preprocess_dataset()
+
+ct.score_dataset(df=cd_hold_out.data, dataset_name=&#39;test&#39;)
+</pre></div>
+</div>
+</div>
+<p>Below we demonstrate some basic plotting functionality that comes with <code class="docutils literal notranslate"><span class="pre">CausalTune</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from causaltune.visualizer import Visualizer
+
+viz = Visualizer(
+    test_df=cd_hold_out.data,
+    treatment_col_name=cd.treatment,
+    outcome_col_name=cd.outcomes[0]
+)
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%matplotlib inline
+
+# plotting metrics by estimator
+
+figtitle = f&#39;{viz.outcome_col_name}&#39;
+figsize = (7,5)
+metrics = (&#39;energy_distance&#39;, &#39;ate&#39;)
+
+viz.plot_metrics_by_estimator(
+    scores_dict=ct.scores,
+    metrics=metrics,
+    figtitle=figtitle,
+    figsize=figsize
+)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Random_assignment%2C_binary_CATE_example_19_0.png" src="../_images/notebooks_Random_assignment%2C_binary_CATE_example_19_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%matplotlib inline
+
+# plotting shapley feature importances
+# sampling from test_df as calculation can take a while
+# optional: supply pre-computed shapley values by passing them as shaps=your_array
+
+use_df = cd_hold_out.data.sample(100)
+est = ct.model
+figtitle = &#39;Shapley feature importances&#39;
+
+viz.plot_shap(
+    estimate=est,
+    df=use_df,
+    figtitle=figtitle
+)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Permutation explainer: 101it [00:17,  4.20it/s]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Random_assignment%2C_binary_CATE_example_20_1.png" src="../_images/notebooks_Random_assignment%2C_binary_CATE_example_20_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%matplotlib inline
+
+# plotting out-of sample difference of outcomes between treated and untreated
+# for the points where model predicts positive vs negative impact
+
+viz.plot_group_ate(
+    scorer=ct.scorer,
+    scores_dict=ct.scores,
+    estimator=ct.best_estimator
+)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_Random_assignment%2C_binary_CATE_example_21_0.png" src="../_images/notebooks_Random_assignment%2C_binary_CATE_example_21_0.png" />
+</div>
+</div>
+<section id="Custom-outcome-model">
+<h3>Custom outcome model<a class="headerlink" href="#Custom-outcome-model" title="Permalink to this heading"></a></h3>
+<p>We also allow the user to supply a custom outcome model during training. The below example demonstrates how to use a simple linear model as outcome model. We use the same training dataset as above.</p>
+<p>Note that you can pass any arbitrary object that has <code class="docutils literal notranslate"><span class="pre">fit()</span></code> and <code class="docutils literal notranslate"><span class="pre">predict()</span></code> methods implemented to <code class="docutils literal notranslate"><span class="pre">outcome_model</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from sklearn.linear_model import LinearRegression
+
+ct = CausalTune(
+    outcome_model=LinearRegression(),
+    estimator_list=estimator_list,
+    metric=metric,
+    verbose=0,
+    components_verbose=0,
+    time_budget=time_budget,
+    components_time_budget=components_time_budget,
+    train_size=train_size
+)
+
+
+# run causaltune
+ct.fit(data=cd, outcome=cd.outcomes[0])
+
+print(&#39;---------------------&#39;)
+# return best estimator
+print(f&quot;Best estimator: {ct.best_estimator}&quot;)
+# config of best estimator:
+print(f&quot;Best config: {ct.best_config}&quot;)
+# best score:
+print(f&quot;Best score: {ct.best_score}&quot;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks
+Initial configs: [{&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.SLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.XLearner&#39;}}, {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.dml.CausalForestDML&#39;, &#39;drate&#39;: True, &#39;n_estimators&#39;: 100, &#39;criterion&#39;: &#39;mse&#39;, &#39;min_samples_split&#39;: 10, &#39;min_samples_leaf&#39;: 5, &#39;min_weight_fraction_leaf&#39;: 0.0, &#39;max_features&#39;: &#39;auto&#39;, &#39;min_impurity_decrease&#39;: 0.0, &#39;max_samples&#39;: 0.45, &#39;min_balancedness_tol&#39;: 0.45, &#39;honest&#39;: True, &#39;fit_intercept&#39;: True, &#39;subforest_size&#39;: 4}}]
+---------------------
+Best estimator: backdoor.econml.metalearners.XLearner
+Best config: {&#39;estimator&#39;: {&#39;estimator_name&#39;: &#39;backdoor.econml.metalearners.XLearner&#39;}}
+Best score: 0.2086960231613526
+</pre></div></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Propensity%20Model%20Selection.html" class="btn btn-neutral float-left" title="Propensity Score Weighting in CausalTune" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Standard%20errors.html" class="btn btn-neutral float-right" title="Standard errors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Wise Payments Limited, PyWhy Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

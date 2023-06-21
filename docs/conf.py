@@ -3,7 +3,7 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import sphinx_readable_theme
+# import sphinx_readable_theme
 import os
 import sys
 
@@ -35,6 +35,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "readable"
-html_theme_path = [sphinx_readable_theme.get_html_theme_path()]
+html_theme = "sphinx_rtd_theme"
+# html_theme_path = [sphinx_readable_theme.get_html_theme_path()]
 html_static_path = ["_static"]
