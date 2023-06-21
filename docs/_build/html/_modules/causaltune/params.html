@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>causaltune.params &#8212; CausalTune 2022 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/readable.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>
+  
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CausalTune 2022 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">causaltune.params</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for causaltune.params</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">flaml</span> <span class="kn">import</span> <span class="n">tune</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">econml.inference</span> <span class="kn">import</span> <span class="n">BootstrapInference</span>  <span class="c1"># noqa F401</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">linear_model</span>
+
+
+<div class="viewcode-block" id="EstimatorConfig"><a class="viewcode-back" href="../../causaltune.html#causaltune.params.EstimatorConfig">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">EstimatorConfig</span><span class="p">:</span>
+    <span class="n">init_params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">fit_params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">search_space</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">defaults</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">supports_multivalue</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">experimental</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">inference</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bootstrap&quot;</span></div>
+
+
+<div class="viewcode-block" id="SimpleParamService"><a class="viewcode-back" href="../../causaltune.html#causaltune.params.SimpleParamService">[docs]</a><span class="k">class</span> <span class="nc">SimpleParamService</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">propensity_model</span><span class="p">,</span>
+        <span class="n">outcome_model</span><span class="p">,</span>
+        <span class="n">multivalue</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">final_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_bootstrap_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">include_experimental</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">propensity_model</span> <span class="o">=</span> <span class="n">propensity_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outcome_model</span> <span class="o">=</span> <span class="n">outcome_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_model</span> <span class="o">=</span> <span class="n">final_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">include_experimental</span> <span class="o">=</span> <span class="n">include_experimental</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_bootstrap_samples</span> <span class="o">=</span> <span class="n">n_bootstrap_samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multivalue</span> <span class="o">=</span> <span class="n">multivalue</span>
+
+<div class="viewcode-block" id="SimpleParamService.estimator_names_from_patterns"><a class="viewcode-back" href="../../causaltune.html#causaltune.params.SimpleParamService.estimator_names_from_patterns">[docs]</a>    <span class="k">def</span> <span class="nf">estimator_names_from_patterns</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">problem</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">patterns</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sequence</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">data_rows</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">def</span> <span class="nf">problem_match</span><span class="p">(</span><span class="n">est_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">problem</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">est_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">problem</span>
+
+        <span class="k">if</span> <span class="n">patterns</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data_rows</span> <span class="o">&lt;=</span> <span class="mi">1000</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names</span> <span class="k">if</span> <span class="n">problem_match</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">problem</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Excluding OrthoForests as they can have problems with large datasets&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="p">[</span>
+                    <span class="n">e</span>
+                    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;OrthoForest&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">e</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">problem_match</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">problem</span><span class="p">))</span>
+                <span class="p">]</span>
+
+        <span class="k">elif</span> <span class="n">patterns</span> <span class="o">==</span> <span class="s2">&quot;cheap_inference&quot;</span><span class="p">:</span>
+            <span class="n">cfgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configs</span><span class="p">()</span>
+            <span class="n">ests</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">est</span>
+                <span class="k">for</span> <span class="n">est</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names</span>
+                <span class="k">if</span> <span class="n">cfgs</span><span class="p">[</span><span class="n">est</span><span class="p">]</span><span class="o">.</span><span class="n">inference</span> <span class="o">!=</span> <span class="s2">&quot;bootstrap&quot;</span> <span class="ow">and</span> <span class="n">problem_match</span><span class="p">(</span><span class="n">est</span><span class="p">,</span> <span class="n">problem</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="n">data_rows</span> <span class="o">&lt;=</span> <span class="mi">1000</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ests</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Excluding OrthoForests as they can have problems with large datasets&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">ests</span> <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;OrthoForest&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">e</span><span class="p">)]</span>
+
+        <span class="k">elif</span> <span class="n">patterns</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">problem</span> <span class="o">==</span> <span class="s2">&quot;backdoor&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivalue</span><span class="p">:</span>
+                    <span class="n">patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;LinearDML&quot;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># These are the ones we&#39;ve seen best results from, empirically,</span>
+                    <span class="c1"># plus dummy for baseline, and SLearner as that&#39;s the simplest possible</span>
+                    <span class="n">patterns</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="s2">&quot;Dummy&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;NewDummy&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;SLearner&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;DomainAdaptationLearner&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;TransformedOutcome&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;CausalForestDML&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;ForestDRLearner&quot;</span><span class="p">,</span>
+                    <span class="p">]</span>
+
+            <span class="k">elif</span> <span class="n">problem</span> <span class="o">==</span> <span class="s2">&quot;iv&quot;</span><span class="p">:</span>
+                <span class="n">patterns</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;DMLIV&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;LinearDRIV&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;OrthoIV&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;SparseLinearDRIV&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;LinearIntentToTreatDRIV&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names_from_patterns</span><span class="p">(</span><span class="n">problem</span><span class="p">,</span> <span class="n">patterns</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid estimator list, must be &#39;auto&#39;, &#39;all&#39;, or a list of strings&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">out</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">est</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">patterns</span>
+                <span class="k">for</span> <span class="n">est</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_names</span>
+                <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">est</span> <span class="ow">and</span> <span class="n">problem_match</span><span class="p">(</span><span class="n">est</span><span class="p">,</span> <span class="n">problem</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">out</span><span class="p">)))</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">estimator_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cfgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configs</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multivalue</span><span class="p">:</span>
+            <span class="n">cfgs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cfgs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">supports_multivalue</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_experimental</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">cfgs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">est</span> <span class="k">for</span> <span class="n">est</span><span class="p">,</span> <span class="n">cfg</span> <span class="ow">in</span> <span class="n">cfgs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">cfg</span><span class="o">.</span><span class="n">experimental</span><span class="p">]</span>
+
+<div class="viewcode-block" id="SimpleParamService.search_space"><a class="viewcode-back" href="../../causaltune.html#causaltune.params.SimpleParamService.search_space">[docs]</a>    <span class="k">def</span> <span class="nf">search_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimator_list</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;constructs search space with estimators and their respective configs</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: hierarchical search space</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">search_space</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;estimator_name&quot;</span><span class="p">:</span> <span class="n">est</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">est_params</span><span class="o">.</span><span class="n">search_space</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">est</span><span class="p">,</span> <span class="n">est_params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configs</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">est</span> <span class="ow">in</span> <span class="n">estimator_list</span>
+        <span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;estimator&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">search_space</span><span class="p">)}</span></div>
+
+<div class="viewcode-block" id="SimpleParamService.default_configs"><a class="viewcode-back" href="../../causaltune.html#causaltune.params.SimpleParamService.default_configs">[docs]</a>    <span class="k">def</span> <span class="nf">default_configs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimator_list</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;creates list with initial configs to try before moving</span>
+<span class="sd">        on to hierarchical HPO.</span>
+<span class="sd">        The list has been identified by evaluating performance of all</span>
+<span class="sd">        learners on a range of datasets (and metrics).</span>
+<span class="sd">        Each entry is a dictionary with a learner and its best-performing</span>
+<span class="sd">        hyper params</span>
+<span class="sd">        TODO: identify best_performers for list below</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list: list of dicts with promising initial configs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;estimator&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;estimator_name&quot;</span><span class="p">:</span> <span class="n">est</span><span class="p">,</span> <span class="o">**</span><span class="n">est_params</span><span class="o">.</span><span class="n">defaults</span><span class="p">}}</span>
+            <span class="k">for</span> <span class="n">est</span><span class="p">,</span> <span class="n">est_params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configs</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">est</span> <span class="ow">in</span> <span class="n">estimator_list</span>
+        <span class="p">]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initial configs:&quot;</span><span class="p">,</span> <span class="n">points</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">points</span></div>
+
+<div class="viewcode-block" id="SimpleParamService.method_params"><a class="viewcode-back" href="../../causaltune.html#causaltune.params.SimpleParamService.method_params">[docs]</a>    <span class="k">def</span> <span class="nf">method_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">estimator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configs</span><span class="p">()[</span><span class="n">estimator</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">_configs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">EstimatorConfig</span><span class="p">]:</span>
+        <span class="n">propensity_model</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">propensity_model</span><span class="p">)</span>
+        <span class="n">outcome_model</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_bootstrap_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># TODO Egor please look into this</span>
+            <span class="c1"># bootstrap is causing recursion errors (see notes below)</span>
+            <span class="c1"># bootstrap = BootstrapInference(</span>
+            <span class="c1">#     n_bootstrap_samples=self.n_bootstrap_samples, n_jobs=self.n_jobs</span>
+            <span class="c1"># )</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">final_model</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outcome_model</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">final_model</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_model</span><span class="p">)</span>
+
+        <span class="n">configs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">:</span><span class="n">EstimatorConfig</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;backdoor.causaltune.models.NaiveDummy&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(),</span>
+            <span class="s2">&quot;backdoor.causaltune.models.Dummy&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;propensity_model&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">},</span>
+                <span class="n">experimental</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.propensity_score_weighting&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;propensity_model&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">},</span>
+                <span class="n">experimental</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.metalearners.SLearner&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;overall_model&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.metalearners.TLearner&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;models&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.metalearners.XLearner&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;propensity_model&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;models&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.metalearners.DomainAdaptationLearner&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;propensity_model&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;models&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;final_models&quot;</span><span class="p">:</span> <span class="n">final_model</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.dr.ForestDRLearner&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_propensity&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_regression&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="c1"># putting these here for now, until default values can be reconciled with search space</span>
+                    <span class="s2">&quot;mc_iters&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;min_propensity&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">loguniform</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1e-1</span><span class="p">),</span>
+                    <span class="c1"># &quot;mc_iters&quot;: tune.randint(0, 10), # is this worth searching over?</span>
+                    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+                    <span class="c1"># &quot;max_depth&quot;: is tune.choice([None, tune.randint(2, 1000)]) the right syntax?</span>
+                    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+                    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+                    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+                    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;log2&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]),</span>
+                    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+                    <span class="s2">&quot;max_samples&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+                    <span class="s2">&quot;min_balancedness_tol&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+                    <span class="s2">&quot;honest&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="s2">&quot;subforest_size&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;min_propensity&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+                    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>  <span class="c1"># this is 1000 by default?</span>
+                    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                    <span class="s2">&quot;max_samples&quot;</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span>
+                    <span class="s2">&quot;min_balancedness_tol&quot;</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span>
+                    <span class="s2">&quot;honest&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;subforest_size&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">inference</span><span class="o">=</span><span class="s2">&quot;blb&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.dr.LinearDRLearner&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_propensity&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_regression&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;mc_iters&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;fit_cate_intercept&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="s2">&quot;min_propensity&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">loguniform</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1e-1</span><span class="p">),</span>
+                    <span class="c1"># &quot;mc_iters&quot;: tune.randint(0, 10),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;fit_cate_intercept&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;min_propensity&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">inference</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.dr.SparseLinearDRLearner&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_propensity&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_regression&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;mc_iters&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;fit_cate_intercept&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="s2">&quot;n_alphas&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">lograndint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span>
+                    <span class="s2">&quot;n_alphas_cov&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">lograndint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                    <span class="s2">&quot;min_propensity&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">loguniform</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1e-1</span><span class="p">),</span>
+                    <span class="c1"># &quot;mc_iters&quot;: tune.randint(0, 10),</span>
+                    <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">qloguniform</span><span class="p">(</span><span class="mf">1e-7</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1e-7</span><span class="p">),</span>
+                    <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">qlograndint</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100000</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">]),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;fit_cate_intercept&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;n_alphas&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;n_alphas_cov&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;min_propensity&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+                    <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">,</span>
+                    <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">inference</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.dml.LinearDML&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_t&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_y&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;discrete_treatment&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="c1"># it runs out of memory fast if the below is not set</span>
+                    <span class="s2">&quot;linear_first_stages&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;mc_iters&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;fit_cate_intercept&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="c1"># &quot;mc_iters&quot;: tune.randint(0, 10),</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">]),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;fit_cate_intercept&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">inference</span><span class="o">=</span><span class="s2">&quot;statsmodels&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.dml.SparseLinearDML&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_t&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_y&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;discrete_treatment&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="c1"># it runs out of memory fast if the below is not set</span>
+                    <span class="s2">&quot;linear_first_stages&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;mc_iters&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;fit_cate_intercept&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="c1"># &quot;mc_iters&quot;: tune.randint(0, 10),</span>
+                    <span class="s2">&quot;n_alphas&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">lograndint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span>
+                    <span class="s2">&quot;n_alphas_cov&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">lograndint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                    <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">qloguniform</span><span class="p">(</span><span class="mf">1e-7</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1e-7</span><span class="p">),</span>
+                    <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">qlograndint</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100000</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">]),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;fit_cate_intercept&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;n_alphas&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;n_alphas_cov&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">,</span>
+                    <span class="s2">&quot;max_iter&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">inference</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.dml.CausalForestDML&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_t&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_y&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="c1"># &quot;max_depth&quot;: self.max_depth,</span>
+                    <span class="c1"># &quot;n_estimators&quot;: self.n_estimators,</span>
+                    <span class="s2">&quot;discrete_treatment&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="c1"># &quot;inference&quot;: False,</span>
+                    <span class="s2">&quot;mc_iters&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;min_var_fraction_leaf&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="c1"># &quot;mc_iters&quot;: tune.randint(0, 10),</span>
+                    <span class="s2">&quot;drate&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>
+                    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;mse&quot;</span><span class="p">,</span> <span class="s2">&quot;het&quot;</span><span class="p">]),</span>
+                    <span class="c1"># &quot;max_depth&quot;: tune.randint(2, 1000),</span>
+                    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+                    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+                    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+                    <span class="c1"># &quot;min_var_fraction_leaf&quot;: tune.uniform(0, 1),</span>
+                    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;log2&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]),</span>
+                    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+                    <span class="s2">&quot;max_samples&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+                    <span class="s2">&quot;min_balancedness_tol&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+                    <span class="s2">&quot;honest&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="c1"># &quot;inference&quot;: tune.choice([0, 1]),</span>
+                    <span class="s2">&quot;fit_intercept&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="c1"># Difficult as needs to be a factor of &#39;n_estimators&#39;</span>
+                    <span class="s2">&quot;subforest_size&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="c1"># &quot;mc_iters&quot;: tune.randint(0, 10),</span>
+                    <span class="s2">&quot;drate&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;n_estimators&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                    <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="s2">&quot;mse&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;min_samples_split&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                    <span class="s2">&quot;min_weight_fraction_leaf&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                    <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;min_impurity_decrease&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                    <span class="s2">&quot;max_samples&quot;</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span>
+                    <span class="s2">&quot;min_balancedness_tol&quot;</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span>
+                    <span class="s2">&quot;honest&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="c1"># &quot;inference&quot;: tune.choice([0, 1]),</span>
+                    <span class="s2">&quot;fit_intercept&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;subforest_size&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">inference</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.causaltune.models.TransformedOutcome&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;propensity_model&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;outcome_model&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="c1"># leaving out DML and NonParamDML as they&#39;re base classes for the 3</span>
+            <span class="c1"># above</span>
+            <span class="c1">#</span>
+            <span class="c1"># This one breaks when running, need to figure out why</span>
+            <span class="c1"># &quot;backdoor.econml.dr.DRLearner&quot;: {</span>
+            <span class="c1">#     &quot;init_params&quot;: {</span>
+            <span class="c1">#         &quot;model_propensity&quot;: propensity_model,</span>
+            <span class="c1">#         &quot;model_regression&quot;: outcome_model,</span>
+            <span class="c1">#         &quot;model_final&quot;: final_model,</span>
+            <span class="c1">#     },</span>
+            <span class="c1">#     &quot;fit_params&quot;: {},</span>
+            <span class="c1"># },</span>
+            <span class="s2">&quot;backdoor.econml.orf.DROrthoForest&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;propensity_model&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_Y&quot;</span><span class="p">:</span> <span class="n">linear_model</span><span class="o">.</span><span class="n">Ridge</span><span class="p">(</span>
+                        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.01</span>
+                    <span class="p">),</span>  <span class="c1"># WeightedLasso(alpha=0.01),  #</span>
+                    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span>
+                    <span class="c1"># &quot;max_depth&quot;: self.max_depth,</span>
+                    <span class="c1"># &quot;n_trees&quot;: self.n_estimators,</span>
+                    <span class="c1"># &quot;min_leaf_size&quot;: self.min_leaf_size,</span>
+                    <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;loky&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;n_trees&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">750</span><span class="p">),</span>
+                    <span class="s2">&quot;min_leaf_size&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
+                    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span>
+                    <span class="s2">&quot;subsample_ratio&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                    <span class="c1"># &quot;bootstrap&quot;: tune.choice([0, 1]),</span>
+                    <span class="s2">&quot;lambda_reg&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;n_trees&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+                    <span class="s2">&quot;min_leaf_size&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;subsample_ratio&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+                    <span class="s2">&quot;lambda_reg&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">experimental</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># OrthoForest estimators are notoriously slow</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">inference</span><span class="o">=</span><span class="s2">&quot;blb&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;backdoor.econml.orf.DMLOrthoForest&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_T&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_Y&quot;</span><span class="p">:</span> <span class="n">linear_model</span><span class="o">.</span><span class="n">Ridge</span><span class="p">(</span>
+                        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.01</span>
+                    <span class="p">),</span>  <span class="c1"># WeightedLasso(alpha=0.01),  #</span>
+                    <span class="s2">&quot;discrete_treatment&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span>
+                    <span class="c1"># &quot;max_depth&quot;: self.max_depth,</span>
+                    <span class="c1"># &quot;n_trees&quot;: self.n_estimators,</span>
+                    <span class="c1"># &quot;min_leaf_size&quot;: self.min_leaf_size,</span>
+                    <span class="c1"># Loky was running out of disk space for some reason</span>
+                    <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;threading&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;n_trees&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">750</span><span class="p">),</span>
+                    <span class="s2">&quot;min_leaf_size&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
+                    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span>
+                    <span class="s2">&quot;subsample_ratio&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                    <span class="c1"># &quot;bootstrap&quot;: tune.choice([0, 1]),</span>
+                    <span class="s2">&quot;lambda_reg&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;n_trees&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+                    <span class="s2">&quot;min_leaf_size&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;subsample_ratio&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+                    <span class="c1"># &quot;bootstrap&quot;: tune.choice([0, 1]),</span>
+                    <span class="s2">&quot;lambda_reg&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">experimental</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># OrthoForest estimators are notoriously slow</span>
+                <span class="n">supports_multivalue</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">inference</span><span class="o">=</span><span class="s2">&quot;blb&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;iv.econml.iv.dr.LinearDRIV&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_y_xw&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_t_xw&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;iv.econml.iv.dml.OrthoIV&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_y_xw&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_t_xw&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">]),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;iv.econml.iv.dml.DMLIV&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_y_xw&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_t_xw&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">]),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;mc_agg&quot;</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;iv.econml.iv.dr.SparseLinearDRIV&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_y_xw&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                    <span class="s2">&quot;model_t_xw&quot;</span><span class="p">:</span> <span class="n">propensity_model</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="s2">&quot;opt_reweighted&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                    <span class="s2">&quot;cov_clip&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">quniform</span><span class="p">(</span><span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;opt_reweighted&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;cov_clip&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;iv.econml.iv.dr.LinearIntentToTreatDRIV&quot;</span><span class="p">:</span> <span class="n">EstimatorConfig</span><span class="p">(</span>
+                <span class="n">init_params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;model_y_xw&quot;</span><span class="p">:</span> <span class="n">outcome_model</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">search_space</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;cov_clip&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">quniform</span><span class="p">(</span><span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
+                    <span class="s2">&quot;opt_reweighted&quot;</span><span class="p">:</span> <span class="n">tune</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                <span class="p">},</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;cov_clip&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+                    <span class="s2">&quot;opt_reweighted&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">configs</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation index</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    &copy; Copyright 2023, Wise Payments Limited, PyWhy Contributors.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.
+  </div>
+  
+  </body>
+</html>

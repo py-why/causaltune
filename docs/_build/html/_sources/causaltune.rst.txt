@@ -1,0 +1,109 @@
+causaltune package
+==================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   causaltune.models
+
+Submodules
+----------
+
+causaltune.data\_utils module
+-----------------------------
+
+.. automodule:: causaltune.data_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.datasets module
+--------------------------
+
+.. automodule:: causaltune.datasets
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.erupt module
+-----------------------
+
+.. automodule:: causaltune.erupt
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.memoizer module
+--------------------------
+
+.. automodule:: causaltune.memoizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.optimiser module
+---------------------------
+
+.. automodule:: causaltune.optimiser
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.params module
+------------------------
+
+.. automodule:: causaltune.params
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.r\_score module
+--------------------------
+
+.. automodule:: causaltune.r_score
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.scoring module
+-------------------------
+
+.. automodule:: causaltune.scoring
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.shap module
+----------------------
+
+.. automodule:: causaltune.shap
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.utils module
+-----------------------
+
+.. automodule:: causaltune.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+causaltune.visualizer module
+----------------------------
+
+.. automodule:: causaltune.visualizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: causaltune
+   :members:
+   :undoc-members:
+   :show-inheritance:

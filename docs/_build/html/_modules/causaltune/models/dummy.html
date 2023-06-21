@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>causaltune.models.dummy &#8212; CausalTune 2022 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/readable.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>
+  
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CausalTune 2022 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">causaltune.models.dummy</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for causaltune.models.dummy</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">causaltune.models.wrapper</span> <span class="kn">import</span> <span class="n">DoWhyMethods</span><span class="p">,</span> <span class="n">DoWhyWrapper</span>
+<span class="kn">from</span> <span class="nn">causaltune.scoring</span> <span class="kn">import</span> <span class="n">Scorer</span>
+
+<span class="kn">from</span> <span class="nn">dowhy.causal_estimators.instrumental_variable_estimator</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">InstrumentalVariableEstimator</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="c1"># # Let&#39;s engage in a bit of monkey patching as we wait for this to be merged into DoWhy</span>
+<span class="c1"># # #TODO: delete this as soon as PR #485 is merged into dowhy</span>
+<span class="c1"># def effect(self, df: pd.DataFrame, **kwargs) -&gt; np.ndarray:</span>
+<span class="c1">#     # combining them in this way allows to override method_params from kwargs</span>
+<span class="c1">#     extra_params = {**self.method_params, **kwargs}</span>
+<span class="c1">#     new_estimator = type(self)(</span>
+<span class="c1">#         data=df,</span>
+<span class="c1">#         identified_estimand=self._target_estimand,</span>
+<span class="c1">#         treatment=self._target_estimand.treatment_variable,</span>
+<span class="c1">#         outcome=self._target_estimand.outcome_variable,</span>
+<span class="c1">#         test_significance=False,</span>
+<span class="c1">#         evaluate_effect_strength=False,</span>
+<span class="c1">#         confidence_intervals=False,</span>
+<span class="c1">#         target_units=self._target_units,</span>
+<span class="c1">#         effect_modifiers=self._effect_modifier_names,</span>
+<span class="c1">#         **extra_params,</span>
+<span class="c1">#     )</span>
+<span class="c1">#     scalar_effect = new_estimator.estimate_effect()</span>
+<span class="c1">#     return np.ones(len(df)) * scalar_effect.value</span>
+
+
+<div class="viewcode-block" id="DummyModel"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.DummyModel">[docs]</a><span class="k">class</span> <span class="nc">DummyModel</span><span class="p">(</span><span class="n">DoWhyMethods</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">propensity_modifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">outcome_modifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">effect_modifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">treatment_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">outcome_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">control_value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">propensity_modifiers</span> <span class="o">=</span> <span class="n">propensity_modifiers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outcome_modifiers</span> <span class="o">=</span> <span class="n">outcome_modifiers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effect_modifiers</span> <span class="o">=</span> <span class="n">effect_modifiers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment_name</span> <span class="o">=</span> <span class="n">treatment_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outcome_name</span> <span class="o">=</span> <span class="n">outcome_name</span>
+
+<div class="viewcode-block" id="DummyModel.fit"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.DummyModel.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummyModel.predict"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.DummyModel.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">mean_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Scorer</span><span class="o">.</span><span class="n">naive_ate</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_name</span><span class="p">],</span> <span class="n">X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">outcome_name</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">*</span> <span class="n">mean_</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">10e-5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),)))</span></div></div>
+
+
+<div class="viewcode-block" id="PropensityScoreWeighter"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.PropensityScoreWeighter">[docs]</a><span class="k">class</span> <span class="nc">PropensityScoreWeighter</span><span class="p">(</span><span class="n">DoWhyMethods</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">propensity_modifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">outcome_modifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">effect_modifiers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">treatment_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">outcome_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">propensity_model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">min_ps_score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">control_value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outcome_modifiers</span> <span class="o">=</span> <span class="n">outcome_modifiers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effect_modifiers</span> <span class="o">=</span> <span class="n">effect_modifiers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">propensity_modifiers</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">propensity_modifiers</span>
+            <span class="k">if</span> <span class="n">propensity_modifiers</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">effect_modifiers</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_modifiers</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">treatment_name</span> <span class="o">=</span> <span class="n">treatment_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outcome_name</span> <span class="o">=</span> <span class="n">outcome_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">propensity_model</span> <span class="o">=</span> <span class="n">propensity_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_ps_score</span> <span class="o">=</span> <span class="n">min_ps_score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_control_value</span> <span class="o">=</span> <span class="n">control_value</span>
+
+<div class="viewcode-block" id="PropensityScoreWeighter.fit"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.PropensityScoreWeighter.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_treatment_value</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_name</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control_value</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">propensity_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">propensity_modifiers</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_name</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="PropensityScoreWeighter.predict"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.PropensityScoreWeighter.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">propensity_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">propensity_modifiers</span><span class="p">])</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_ps_score</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_ps_score</span><span class="p">)</span>
+        <span class="n">est</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_treatment_value</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_treatment_value</span><span class="p">):</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_name</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control_value</span>
+            <span class="n">treat</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">treatment_name</span><span class="p">]</span> <span class="o">==</span> <span class="n">v</span>
+            <span class="n">base_outcome</span> <span class="o">=</span> <span class="n">weighted_average</span><span class="p">(</span>
+                <span class="n">X</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">base</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="n">base</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">treat_outcome</span> <span class="o">=</span> <span class="n">weighted_average</span><span class="p">(</span>
+                <span class="n">X</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">treat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outcome_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="n">treat</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">est</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">treat_outcome</span> <span class="o">-</span> <span class="n">base_outcome</span>
+        <span class="k">return</span> <span class="n">est</span></div></div>
+
+
+<div class="viewcode-block" id="weighted_average"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.weighted_average">[docs]</a><span class="k">def</span> <span class="nf">weighted_average</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">w</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MultivaluePSW"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.MultivaluePSW">[docs]</a><span class="k">class</span> <span class="nc">MultivaluePSW</span><span class="p">(</span><span class="n">DoWhyWrapper</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">inner_class</span><span class="o">=</span><span class="n">PropensityScoreWeighter</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">identifier_method</span> <span class="o">=</span> <span class="s2">&quot;backdoor&quot;</span></div>
+
+
+<div class="viewcode-block" id="Dummy"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.Dummy">[docs]</a><span class="k">class</span> <span class="nc">Dummy</span><span class="p">(</span><span class="n">MultivaluePSW</span><span class="p">):</span>
+    <span class="n">identifier_method</span> <span class="o">=</span> <span class="s2">&quot;backdoor&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a small random disturbance so the effect values are slightly different</span>
+<span class="sd">    across units</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Dummy.effect"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.Dummy.effect">[docs]</a>    <span class="k">def</span> <span class="nf">effect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">effect</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MultivaluePSW</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">effect</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">effect</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">10e-5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">effect</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="NaiveDummy"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.NaiveDummy">[docs]</a><span class="k">class</span> <span class="nc">NaiveDummy</span><span class="p">(</span><span class="n">DoWhyWrapper</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">inner_class</span><span class="o">=</span><span class="n">DummyModel</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">identifier_method</span> <span class="o">=</span> <span class="s2">&quot;backdoor&quot;</span></div>
+
+
+<div class="viewcode-block" id="SimpleIV"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.SimpleIV">[docs]</a><span class="k">class</span> <span class="nc">SimpleIV</span><span class="p">(</span><span class="n">InstrumentalVariableEstimator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Based on Wald &amp; 2SlS Estimator from dowhy&#39;s IV estimator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">identifier_method</span> <span class="o">=</span> <span class="s2">&quot;iv&quot;</span>
+
+<div class="viewcode-block" id="SimpleIV.effect"><a class="viewcode-back" href="../../../causaltune.models.html#causaltune.models.dummy.SimpleIV.effect">[docs]</a>    <span class="k">def</span> <span class="nf">effect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">scalar_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_effect</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
+        <span class="c1"># Or randomized: (1 + 0.01 * np.random.normal(size=effect.shape))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">*</span> <span class="n">scalar_effect</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation index</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    &copy; Copyright 2023, Wise Payments Limited, PyWhy Contributors.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.
+  </div>
+  
+  </body>
+</html>

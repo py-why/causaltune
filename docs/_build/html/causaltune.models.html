@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>causaltune.models package &#8212; CausalTune 2022 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/readable.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>
+  
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CausalTune 2022 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">causaltune.models package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="causaltune-models-package">
+<h1>causaltune.models package<a class="headerlink" href="#causaltune-models-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-causaltune.models.dummy">
+<span id="causaltune-models-dummy-module"></span><h2>causaltune.models.dummy module<a class="headerlink" href="#module-causaltune.models.dummy" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.dummy.Dummy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.dummy.</span></span><span class="sig-name descname"><span class="pre">Dummy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#Dummy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.Dummy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causaltune.models.dummy.MultivaluePSW" title="causaltune.models.dummy.MultivaluePSW"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultivaluePSW</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.dummy.Dummy.effect">
+<span class="sig-name descname"><span class="pre">effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#Dummy.effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.Dummy.effect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="causaltune.models.dummy.Dummy.identifier_method">
+<span class="sig-name descname"><span class="pre">identifier_method</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'backdoor'</span></em><a class="headerlink" href="#causaltune.models.dummy.Dummy.identifier_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a small random disturbance so the effect values are slightly different
+across units</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.dummy.DummyModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.dummy.</span></span><span class="sig-name descname"><span class="pre">DummyModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">propensity_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#DummyModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.DummyModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causaltune.models.wrapper.DoWhyMethods" title="causaltune.models.wrapper.DoWhyMethods"><code class="xref py py-class docutils literal notranslate"><span class="pre">DoWhyMethods</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.dummy.DummyModel.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#DummyModel.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.DummyModel.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.dummy.DummyModel.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/causaltune/models/dummy.html#DummyModel.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.DummyModel.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.dummy.MultivaluePSW">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.dummy.</span></span><span class="sig-name descname"><span class="pre">MultivaluePSW</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#MultivaluePSW"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.MultivaluePSW" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper" title="causaltune.models.wrapper.DoWhyWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">DoWhyWrapper</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.dummy.NaiveDummy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.dummy.</span></span><span class="sig-name descname"><span class="pre">NaiveDummy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#NaiveDummy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.NaiveDummy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper" title="causaltune.models.wrapper.DoWhyWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">DoWhyWrapper</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.dummy.PropensityScoreWeighter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.dummy.</span></span><span class="sig-name descname"><span class="pre">PropensityScoreWeighter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">propensity_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propensity_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_ps_score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#PropensityScoreWeighter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.PropensityScoreWeighter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causaltune.models.wrapper.DoWhyMethods" title="causaltune.models.wrapper.DoWhyMethods"><code class="xref py py-class docutils literal notranslate"><span class="pre">DoWhyMethods</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.dummy.PropensityScoreWeighter.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#PropensityScoreWeighter.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.PropensityScoreWeighter.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.dummy.PropensityScoreWeighter.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#PropensityScoreWeighter.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.PropensityScoreWeighter.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.dummy.SimpleIV">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.dummy.</span></span><span class="sig-name descname"><span class="pre">SimpleIV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identified_estimand</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IdentifiedEstimand</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iv_instrument_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_significance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluate_effect_strength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_intervals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_null_simulations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_simulations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_size_fraction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">need_conditional_estimates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_quantiles_to_discretize_cont_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#SimpleIV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.SimpleIV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentalVariableEstimator</span></code></p>
+<p>Based on Wald &amp; 2SlS Estimator from dowhy’s IV estimator</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.dummy.SimpleIV.effect">
+<span class="sig-name descname"><span class="pre">effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#SimpleIV.effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.SimpleIV.effect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="causaltune.models.dummy.SimpleIV.identifier_method">
+<span class="sig-name descname"><span class="pre">identifier_method</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'iv'</span></em><a class="headerlink" href="#causaltune.models.dummy.SimpleIV.identifier_method" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.dummy.weighted_average">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.dummy.</span></span><span class="sig-name descname"><span class="pre">weighted_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/dummy.html#weighted_average"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.dummy.weighted_average" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-causaltune.models.monkey_patches">
+<span id="causaltune-models-monkey-patches-module"></span><h2>causaltune.models.monkey_patches module<a class="headerlink" href="#module-causaltune.models.monkey_patches" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.monkey_patches.AutoML">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.monkey_patches.</span></span><span class="sig-name descname"><span class="pre">AutoML</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">settings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/monkey_patches.html#AutoML"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.monkey_patches.AutoML" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AutoML</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.monkey_patches.AutoML.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/monkey_patches.html#AutoML.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.monkey_patches.AutoML.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a model for a given task.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X_train</strong> – A numpy array or a pandas dataframe of training data in
+shape (n, m). For time series forecsat tasks, the first column of X_train
+must be the timestamp column (datetime type). Other columns in
+the dataframe are assumed to be exogenous variables (categorical or numeric).
+When using ray, X_train can be a ray.ObjectRef.</p></li>
+<li><p><strong>y_train</strong> – A numpy array or a pandas series of labels in shape (n, ).</p></li>
+<li><p><strong>dataframe</strong> – A dataframe of training data including label column.
+For time series forecast tasks, dataframe must be specified and must have
+at least two columns, timestamp and label, where the first
+column is the timestamp column (datetime type). Other columns in
+the dataframe are assumed to be exogenous variables (categorical or numeric).
+When using ray, dataframe can be a ray.ObjectRef.</p></li>
+<li><p><strong>label</strong> – A str of the label column name for, e.g., ‘label’;
+Note: If X_train and y_train are provided,
+dataframe and label are ignored;
+If not, dataframe and label must be provided.</p></li>
+<li><p><strong>metric</strong> – A string of the metric name or a function,
+e.g., ‘accuracy’, ‘roc_auc’, ‘roc_auc_ovr’, ‘roc_auc_ovo’,
+‘f1’, ‘micro_f1’, ‘macro_f1’, ‘log_loss’, ‘mae’, ‘mse’, ‘r2’,
+‘mape’. Default is ‘auto’.
+If passing a customized metric function, the function needs to
+have the following input arguments:</p></li>
+</ul>
+</dd>
+</dl>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+def custom_metric(</p>
+<blockquote>
+<div><p>X_test, y_test, estimator, labels,
+X_train, y_train, weight_test=None, weight_train=None,
+config=None, groups_test=None, groups_train=None,</p>
+</div></blockquote>
+<dl class="simple">
+<dt>):</dt><dd><p>return metric_to_minimize, metrics_to_log</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></dt><dd><p>which returns a float number as the minimization objective,
+and a dictionary as the metrics to log. E.g.,</p>
+</dd>
+</dl>
+<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python
+def custom_metric(</p>
+<blockquote>
+<div><p>X_val, y_val, estimator, labels,
+X_train, y_train, weight_val=None, weight_train=None,
+<a href="#id13"><span class="problematic" id="id14">*</span></a>args,</p>
+</div></blockquote>
+<dl>
+<dt>):</dt><dd><p>from sklearn.metrics import log_loss
+import time</p>
+<p>start = time.time()
+y_pred = estimator.predict_proba(X_val)
+pred_time = (time.time() - start) / len(X_val)
+val_loss = log_loss(y_val, y_pred, labels=labels, sample_weight=weight_val)
+y_pred = estimator.predict_proba(X_train)
+train_loss = log_loss(y_train, y_pred, labels=labels, sample_weight=weight_train)
+alpha = 0.5
+return val_loss * (1 + alpha) - alpha * train_loss, {</p>
+<blockquote>
+<div><p>“val_loss”: val_loss,
+“train_loss”: train_loss,
+“pred_time”: pred_time,</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+<dl>
+<dt><a href="#id15"><span class="problematic" id="id16">``</span></a><a href="#id17"><span class="problematic" id="id18">`</span></a></dt><dd><dl class="simple">
+<dt>task: A string of the task type, e.g.,</dt><dd><p>‘classification’, ‘regression’, ‘ts_forecast_regression’,
+‘ts_forecast_classification’, ‘ts_forecast_panel’, ‘rank’, ‘seq-classification’,
+‘seq-regression’, ‘summarization’.</p>
+</dd>
+<dt>n_jobs: An integer of the number of threads for training | default=-1.</dt><dd><p>Use all available resources when n_jobs == -1.</p>
+</dd>
+<dt>log_file_name: A string of the log file name | default=””. To disable logging,</dt><dd><p>set it to be an empty string “”.</p>
+</dd>
+<dt>estimator_list: A list of strings for estimator names, or ‘auto’.</dt><dd><p>e.g., <code class="docutils literal notranslate"><span class="pre">`['lgbm',</span> <span class="pre">'xgboost',</span> <span class="pre">'xgb_limitdepth',</span> <span class="pre">'catboost',</span> <span class="pre">'rf',</span> <span class="pre">'extra_tree']`</span></code>.</p>
+</dd>
+<dt>time_budget: A float number of the time budget in seconds.</dt><dd><p>Use -1 if no time limit.</p>
+</dd>
+<dt>max_iter: An integer of the maximal number of iterations.</dt><dd><p>NOTE: when both time_budget and max_iter are unspecified,
+only one model will be trained per estimator.</p>
+</dd>
+<dt>sample: A boolean of whether to sample the training data during</dt><dd><p>search.</p>
+</dd>
+<dt>ensemble: boolean or dict | default=False. Whether to perform</dt><dd><p>ensemble after search. Can be a dict with keys ‘passthrough’
+and ‘final_estimator’ to specify the passthrough and
+final_estimator in the stacker. The dict can also contain
+‘n_jobs’ as the key to specify the number of jobs for the stacker.</p>
+</dd>
+<dt>eval_method: A string of resampling strategy, one of</dt><dd><p>[‘auto’, ‘cv’, ‘holdout’].</p>
+</dd>
+</dl>
+<p>split_ratio: A float of the valiation data percentage for holdout.
+n_splits: An integer of the number of folds for cross - validation.
+log_type: A string of the log type, one of</p>
+<blockquote>
+<div><p>[‘better’, ‘all’].
+‘better’ only logs configs with better loss than previos iters
+‘all’ logs all the tried configs.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>model_history: A boolean of whether to keep the trained best</dt><dd><p>model per estimator. Make sure memory is large enough if setting to True.
+Default value is False: best_model_for_estimator would return a
+untrained model for non-best learner.</p>
+</dd>
+<dt>log_training_metric: A boolean of whether to log the training</dt><dd><p>metric for each model.</p>
+</dd>
+</dl>
+<p>mem_thres: A float of the memory size constraint in bytes.
+pred_time_limit: A float of the prediction latency constraint in seconds.</p>
+<blockquote>
+<div><p>It refers to the average prediction time per row in validation data.</p>
+</div></blockquote>
+<p>train_time_limit: A float of the training time constraint in seconds.
+X_val: None or a numpy array or a pandas dataframe of validation data.
+y_val: None or a numpy array or a pandas series of validation labels.
+sample_weight_val: None or a numpy array of the sample weight of</p>
+<blockquote>
+<div><p>validation data of the same shape as y_val.</p>
+</div></blockquote>
+<dl>
+<dt>groups_val: None or array-like | group labels (with matching length</dt><dd><p>to y_val) or group counts (with sum equal to length of y_val)
+for validation data. Need to be consistent with groups.</p>
+</dd>
+<dt>groups: None or array-like | Group labels (with matching length to</dt><dd><p>y_train) or groups counts (with sum equal to length of y_train)
+for training data.</p>
+</dd>
+<dt>verbose: int, default=3 | Controls the verbosity, higher means more</dt><dd><p>messages.</p>
+</dd>
+<dt>retrain_full: bool or str, default=True | whether to retrain the</dt><dd><p>selected model on the full training data when using holdout.
+True - retrain only after search finishes; False - no retraining;
+‘budget’ - do best effort to retrain without violating the time
+budget.</p>
+</dd>
+<dt>split_type: str or splitter object, default=”auto” | the data split type.</dt><dd><ul class="simple">
+<li><p>A valid splitter object is an instance of a derived class of scikit-learn</p></li>
+</ul>
+<p>[KFold](<a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html#sklearn.model_selection.KFold">https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html#sklearn.model_selection.KFold</a>)
+and have <code class="docutils literal notranslate"><span class="pre">split</span></code> and <code class="docutils literal notranslate"><span class="pre">get_n_splits</span></code> methods with the same signatures.
+Set eval_method to “cv” to use the splitter object.
+* Valid str options depend on different tasks.
+For classification tasks, valid choices are</p>
+<blockquote>
+<div><p>[“auto”, ‘stratified’, ‘uniform’, ‘time’, ‘group’]. “auto” -&gt; stratified.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>For regression tasks, valid choices are [“auto”, ‘uniform’, ‘time’].</dt><dd><p>“auto” -&gt; uniform.</p>
+</dd>
+</dl>
+<p>For time series forecast tasks, must be “auto” or ‘time’.
+For ranking task, must be “auto” or ‘group’.</p>
+</dd>
+<dt>hpo_method: str, default=”auto” | The hyperparameter</dt><dd><p>optimization method. By default, CFO is used for sequential
+search and BlendSearch is used for parallel search.
+No need to set when using flaml’s default search space or using
+a simple customized search space. When set to ‘bs’, BlendSearch
+is used. BlendSearch can be tried when the search space is
+complex, for example, containing multiple disjoint, discontinuous
+subspaces. When set to ‘random’, random search is used.</p>
+</dd>
+<dt>starting_points: A dictionary or a str to specify the starting hyperparameter</dt><dd><p>config for the estimators | default=”data”.
+If str:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>if “data”, use data-dependent defaults;</p></li>
+<li><p>if “<a class="reference external" href="data:path">data:path</a>” use data-dependent defaults which are stored at path;</p></li>
+<li><p>if “static”, use data-independent defaults.</p></li>
+</ul>
+</div></blockquote>
+<p>If dict, keys are the name of the estimators, and values are the starting
+hyperparamter configurations for the corresponding estimators.
+The value can be a single hyperparamter configuration dict or a list
+of hyperparamter configuration dicts.
+In the following code example, we get starting_points from the
+<cite>automl</cite> object and use them in the <cite>new_automl</cite> object.
+e.g.,</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p><a href="#id19"><span class="problematic" id="id20">``</span></a><a href="#id21"><span class="problematic" id="id22">`</span></a>python
+from flaml import AutoML
+automl = AutoML()
+X_train, y_train = load_iris(return_X_y=True)
+automl.fit(X_train, y_train)
+starting_points = automl.best_config_per_estimator</p>
+<p>new_automl = AutoML()
+new_automl.fit(X_train, y_train, starting_points=starting_points)
+<a href="#id23"><span class="problematic" id="id24">``</span></a><a href="#id25"><span class="problematic" id="id26">`</span></a></p>
+<blockquote>
+<div><p>seed: int or None, default=None | The random seed for hpo.
+n_concurrent_trials: [Experimental] int, default=1 | The number of</p>
+<blockquote>
+<div><p>concurrent trials. When n_concurrent_trials &gt; 1, flaml performes
+[parallel tuning](../Use-Cases/Task-Oriented-AutoML#parallel-tuning)
+and installation of ray is required: <cite>pip install flaml[ray]</cite>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>keep_search_state: boolean, default=False | Whether to keep data needed</dt><dd><p>for model search after fit(). By default the state is deleted for
+space saving.</p>
+</dd>
+<dt>preserve_checkpoint: boolean, default=True | Whether to preserve the saved checkpoint</dt><dd><p>on disk when deleting automl. By default the checkpoint is preserved.</p>
+</dd>
+<dt>early_stop: boolean, default=False | Whether to stop early if the</dt><dd><p>search is considered to converge.</p>
+</dd>
+<dt>append_log: boolean, default=False | Whetehr to directly append the log</dt><dd><p>records to the input log file if it exists.</p>
+</dd>
+<dt>auto_augment: boolean, default=True | Whether to automatically</dt><dd><p>augment rare classes.</p>
+</dd>
+<dt>min_sample_size: int, default=MIN_SAMPLE_TRAIN | the minimal sample</dt><dd><p>size when sample=True.</p>
+</dd>
+<dt>use_ray: boolean or dict.</dt><dd><p>If boolean: default=False | Whether to use ray to run the training
+in separate processes. This can be used to prevent OOM for large
+datasets, but will incur more overhead in time.
+If dict: the dict contains the keywords arguments to be passed to
+[ray.tune.run](<a class="reference external" href="https://docs.ray.io/en/latest/tune/api_docs/execution.html">https://docs.ray.io/en/latest/tune/api_docs/execution.html</a>).</p>
+</dd>
+<dt>metric_constraints: list, default=[] | The list of metric constraints.</dt><dd><p>Each element in this list is a 3-tuple, which shall be expressed
+in the following format: the first element of the 3-tuple is the name of the
+metric, the second element is the inequality sign chosen from “&gt;=” and “&lt;=”,
+and the third element is the constraint value. E.g., <cite>(‘precision’, ‘&gt;=’, 0.9)</cite>.
+Note that all the metric names in metric_constraints need to be reported via
+the metrics_to_log dictionary returned by a customized metric function.
+The customized metric function shall be provided via the <cite>metric</cite> key word argument
+of the fit() function or the automl constructor.
+Find examples in this [test](<a class="reference external" href="https://github.com/microsoft/FLAML/tree/main/test/automl/test_constraints.py">https://github.com/microsoft/FLAML/tree/main/test/automl/test_constraints.py</a>).
+If <cite>pred_time_limit</cite> is provided as one of keyword arguments to fit() function or
+the automl constructor, flaml will automatically (and under the hood)
+add it as an additional element in the metric_constraints. Essentially ‘pred_time_limit’
+specifies a constraint about the prediction latency constraint in seconds.</p>
+</dd>
+<dt>custom_hp: dict, default=None | The custom search space specified by user</dt><dd><p>Each key is the estimator name, each value is a dict of the custom search space for that estimator. Notice the
+domain of the custom search space can either be a value of a sample.Domain object.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><a href="#id27"><span class="problematic" id="id28">``</span></a><a href="#id29"><span class="problematic" id="id30">`</span></a>python
+custom_hp = {</p>
+<blockquote>
+<div><dl>
+<dt>“transformer_ms”: {</dt><dd><dl class="simple">
+<dt>“model_path”: {</dt><dd><p>“domain”: “albert-base-v2”,</p>
+</dd>
+</dl>
+<p>},
+“learning_rate”: {</p>
+<blockquote>
+<div><p>“domain”: tune.choice([1e-4, 1e-5]),</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<section id="id31">
+<h3>}<a class="headerlink" href="#id31" title="Permalink to this heading">¶</a></h3>
+<blockquote>
+<div><dl>
+<dt>cv_score_agg_func: customized cross-validation scores aggregate function. Default to average metrics across folds. If specificed, this function needs to</dt><dd><p>have the following input arguments:</p>
+<ul class="simple">
+<li><p>val_loss_folds: list of floats, the loss scores of each fold;</p></li>
+<li><p>log_metrics_folds: list of dicts/floats, the metrics of each fold to log.</p></li>
+</ul>
+<dl class="simple">
+<dt>This function should return the final aggregate result of all folds. A float number of the minimization objective, and a dictionary as the metrics to log or None.</dt><dd><p>E.g.,</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p><a href="#id32"><span class="problematic" id="id33">``</span></a><a href="#id34"><span class="problematic" id="id35">`</span></a>python
+def cv_score_agg_func(val_loss_folds, log_metrics_folds):</p>
+<blockquote>
+<div><p>metric_to_minimize = sum(val_loss_folds)/len(val_loss_folds)
+metrics_to_log = None
+for single_fold in log_metrics_folds:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>if metrics_to_log is None:</dt><dd><p>metrics_to_log = single_fold</p>
+</dd>
+<dt>elif isinstance(metrics_to_log, dict):</dt><dd><p>metrics_to_log = {k: metrics_to_log[k] + v for k, v in single_fold.items()}</p>
+</dd>
+<dt>else:</dt><dd><p>metrics_to_log += single_fold</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl>
+<dt>if metrics_to_log:</dt><dd><p>n = len(val_loss_folds)
+metrics_to_log = (</p>
+<blockquote>
+<div><p>{k: v / n for k, v in metrics_to_log.items()}
+if isinstance(metrics_to_log, dict)
+else metrics_to_log / n</p>
+</div></blockquote>
+<p>)</p>
+</dd>
+</dl>
+<p>return metric_to_minimize, metrics_to_log</p>
+</div></blockquote>
+<p><a href="#id36"><span class="problematic" id="id37">``</span></a><a href="#id38"><span class="problematic" id="id39">`</span></a></p>
+<blockquote>
+<div><p>skip_transform: boolean, default=False | Whether to pre-process data prior to modeling.
+fit_kwargs_by_estimator: dict, default=None | The user specified keywords arguments, grouped by estimator name.</p>
+<blockquote>
+<div><p>For TransformersEstimator, available fit_kwargs can be found from
+[TrainingArgumentsForAuto](nlp/huggingface/training_args).
+e.g.,</p>
+</div></blockquote>
+</div></blockquote>
+<p><a href="#id40"><span class="problematic" id="id41">``</span></a><a href="#id42"><span class="problematic" id="id43">`</span></a>python
+fit_kwargs_by_estimator = {</p>
+<blockquote>
+<div><dl class="simple">
+<dt>“transformer”: {</dt><dd><p>“output_dir”: “test/data/output/”,
+“fp16”: False,</p>
+</dd>
+</dl>
+<p>},
+“tft”: {</p>
+<blockquote>
+<div><p>“max_encoder_length”: 1,
+“min_encoder_length”: 1,
+“static_categoricals”: [],
+“static_reals”: [],
+“time_varying_known_categoricals”: [],
+“time_varying_known_reals”: [],
+“time_varying_unknown_categoricals”: [],
+“time_varying_unknown_reals”: [],
+“variable_groups”: {},
+“lags”: {},</p>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+</section>
+<section id="id44">
+<h3>}<a class="headerlink" href="#id44" title="Permalink to this heading">¶</a></h3>
+<blockquote>
+<div><dl>
+<dt><a href="#id45"><span class="problematic" id="id46">**</span></a>fit_kwargs: Other key word arguments to pass to fit() function of</dt><dd><p>the searched learners, such as sample_weight. Below are a few examples of
+estimator-specific parameters:</p>
+<blockquote>
+<div><p>period: int | forecast horizon for all time series forecast tasks.
+gpu_per_trial: float, default = 0 | A float of the number of gpus per trial,</p>
+<blockquote>
+<div><p>only used by TransformersEstimator, XGBoostSklearnEstimator, and
+TemporalFusionTransformerEstimator.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>group_ids: list of strings of column names identifying a time series, only</dt><dd><p>used by TemporalFusionTransformerEstimator, required for
+‘ts_forecast_panel’ task. <cite>group_ids</cite> is a parameter for TimeSeriesDataSet object
+from PyTorchForecasting.
+For other parameters to describe your dataset, refer to
+[TimeSeriesDataSet PyTorchForecasting](<a class="reference external" href="https://pytorch-forecasting.readthedocs.io/en/stable/api/pytorch_forecasting.data.timeseries.TimeSeriesDataSet.html">https://pytorch-forecasting.readthedocs.io/en/stable/api/pytorch_forecasting.data.timeseries.TimeSeriesDataSet.html</a>).
+To specify your variables, use <cite>static_categoricals</cite>, <cite>static_reals</cite>,
+<cite>time_varying_known_categoricals</cite>, <cite>time_varying_known_reals</cite>,
+<cite>time_varying_unknown_categoricals</cite>, <cite>time_varying_unknown_reals</cite>,
+<cite>variable_groups</cite>. To provide more information on your data, use
+<cite>max_encoder_length</cite>, <cite>min_encoder_length</cite>, <cite>lags</cite>.</p>
+</dd>
+<dt>log_dir: str, default = “lightning_logs” | Folder into which to log results</dt><dd><p>for tensorboard, only used by TemporalFusionTransformerEstimator.</p>
+</dd>
+<dt>max_epochs: int, default = 20 | Maximum number of epochs to run training,</dt><dd><p>only used by TemporalFusionTransformerEstimator.</p>
+</dd>
+<dt>batch_size: int, default = 64 | Batch size for training model, only</dt><dd><p>used by TemporalFusionTransformerEstimator.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.monkey_patches.apply_multitreatment">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.monkey_patches.</span></span><span class="sig-name descname"><span class="pre">apply_multitreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/monkey_patches.html#apply_multitreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.monkey_patches.apply_multitreatment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.monkey_patches.effect">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.monkey_patches.</span></span><span class="sig-name descname"><span class="pre">effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/monkey_patches.html#effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.monkey_patches.effect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.monkey_patches.effect_stderr">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.monkey_patches.</span></span><span class="sig-name descname"><span class="pre">effect_stderr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/monkey_patches.html#effect_stderr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.monkey_patches.effect_stderr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inference (uncertainty) results produced by the underlying EconML estimator
+:param df: Features of the units to evaluate
+:param args: passed through to the underlying estimator
+:param kwargs: passed through to the underlying estimator</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.monkey_patches.effect_tt">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.monkey_patches.</span></span><span class="sig-name descname"><span class="pre">effect_tt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/monkey_patches.html#effect_tt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.monkey_patches.effect_tt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Effect of treatment on the treated
+&#64;param df: unit features and treatment values
+&#64;param args: passed through to effect estimator
+&#64;param kwargs: passed through to effect estimator
+&#64;return: np.array of len(df) with effects of the actual treatment applied</p>
+</dd></dl>
+
+</section>
+<section id="module-causaltune.models.passthrough">
+<span id="causaltune-models-passthrough-module"></span><h2>causaltune.models.passthrough module<a class="headerlink" href="#module-causaltune.models.passthrough" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.passthrough.PassthroughInner">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.passthrough.</span></span><span class="sig-name descname"><span class="pre">PassthroughInner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include_control</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/passthrough.html#PassthroughInner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.passthrough.PassthroughInner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.passthrough.PassthroughInner.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/causaltune/models/passthrough.html#PassthroughInner.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.passthrough.PassthroughInner.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.passthrough.PassthroughInner.predict_proba">
+<span class="sig-name descname"><span class="pre">predict_proba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/passthrough.html#PassthroughInner.predict_proba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.passthrough.PassthroughInner.predict_proba" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.passthrough.PassthroughInner.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/passthrough.html#PassthroughInner.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.passthrough.PassthroughInner.score" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.passthrough.feature_filter">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.passthrough.</span></span><span class="sig-name descname"><span class="pre">feature_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ModelType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/passthrough.html#feature_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.passthrough.feature_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constrain a model to only use a subset of the supplied features
+&#64;param ModelType: The class of the model to be thus constrained
+&#64;param col_names: The names of the columns to keep
+&#64;param first_cols: If input is ndarray, take first or last N columns?
+&#64;return: The constrained class, inheriting from the original one</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.passthrough.passthrough_model">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.passthrough.</span></span><span class="sig-name descname"><span class="pre">passthrough_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_control</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/passthrough.html#passthrough_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.passthrough.passthrough_model" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Create a model with fit and predict_proba methods from columns where</dt><dd><p>predict_proba is generated from the supplied columns</p>
+</dd>
+</dl>
+<p>&#64;param col_names (Union[str, List[str]]): name of columns
+&#64;param include_control (bool, optional): Whether a column with control propensities is supplied.</p>
+<blockquote>
+<div><p>Defaults to False.</p>
+</div></blockquote>
+<p>&#64;return PassthroughInner: A model with fit and predict_proba method</p>
+</dd></dl>
+
+</section>
+<section id="module-causaltune.models.transformed_outcome">
+<span id="causaltune-models-transformed-outcome-module"></span><h2>causaltune.models.transformed_outcome module<a class="headerlink" href="#module-causaltune.models.transformed_outcome" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.transformed_outcome.TransformedOutcome">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.transformed_outcome.</span></span><span class="sig-name descname"><span class="pre">TransformedOutcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/transformed_outcome.html#TransformedOutcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.transformed_outcome.TransformedOutcome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper" title="causaltune.models.wrapper.DoWhyWrapper"><code class="xref py py-class docutils literal notranslate"><span class="pre">DoWhyWrapper</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.transformed_outcome.TransformedOutcomeFitter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.transformed_outcome.</span></span><span class="sig-name descname"><span class="pre">TransformedOutcomeFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">propensity_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">propensity_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_modifiers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/transformed_outcome.html#TransformedOutcomeFitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.transformed_outcome.TransformedOutcomeFitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#causaltune.models.wrapper.DoWhyMethods" title="causaltune.models.wrapper.DoWhyMethods"><code class="xref py py-class docutils literal notranslate"><span class="pre">DoWhyMethods</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.transformed_outcome.TransformedOutcomeFitter.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/transformed_outcome.html#TransformedOutcomeFitter.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.transformed_outcome.TransformedOutcomeFitter.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.transformed_outcome.TransformedOutcomeFitter.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/causaltune/models/transformed_outcome.html#TransformedOutcomeFitter.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.transformed_outcome.TransformedOutcomeFitter.predict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.transformed_outcome.TransformedOutcomeFitter.shap_values">
+<span class="sig-name descname"><span class="pre">shap_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/transformed_outcome.html#TransformedOutcomeFitter.shap_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.transformed_outcome.TransformedOutcomeFitter.shap_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.transformed_outcome.transformed_outcome">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.transformed_outcome.</span></span><span class="sig-name descname"><span class="pre">transformed_outcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/causaltune/models/transformed_outcome.html#transformed_outcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.transformed_outcome.transformed_outcome" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-causaltune.models.wrapper">
+<span id="causaltune-models-wrapper-module"></span><h2>causaltune.models.wrapper module<a class="headerlink" href="#module-causaltune.models.wrapper" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyMethods">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.wrapper.</span></span><span class="sig-name descname"><span class="pre">DoWhyMethods</span></span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyMethods"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyMethods" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyMethods.const_marginal_effect">
+<span class="sig-name descname"><span class="pre">const_marginal_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyMethods.const_marginal_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyMethods.const_marginal_effect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyMethods.effect">
+<span class="sig-name descname"><span class="pre">effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyMethods.effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyMethods.effect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyWrapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">causaltune.models.wrapper.</span></span><span class="sig-name descname"><span class="pre">DoWhyWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identified_estimand</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inner_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_significance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluate_effect_strength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_intervals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">CausalEstimator</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyWrapper.const_marginal_effect">
+<span class="sig-name descname"><span class="pre">const_marginal_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyWrapper.const_marginal_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyWrapper.const_marginal_effect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyWrapper.effect">
+<span class="sig-name descname"><span class="pre">effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyWrapper.effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyWrapper.effect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyWrapper.estimate_effect">
+<span class="sig-name descname"><span class="pre">estimate_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ATE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_intervals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyWrapper.estimate_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyWrapper.estimate_effect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyWrapper.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_modifier_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyWrapper.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyWrapper.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.DoWhyWrapper.shap_values">
+<span class="sig-name descname"><span class="pre">shap_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#DoWhyWrapper.shap_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.DoWhyWrapper.shap_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="causaltune.models.wrapper.remove_list">
+<span class="sig-prename descclassname"><span class="pre">causaltune.models.wrapper.</span></span><span class="sig-name descname"><span class="pre">remove_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/causaltune/models/wrapper.html#remove_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#causaltune.models.wrapper.remove_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-causaltune.models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-causaltune.models" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">causaltune.models package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-causaltune.models.dummy">causaltune.models.dummy module</a><ul>
+<li><a class="reference internal" href="#causaltune.models.dummy.Dummy"><code class="docutils literal notranslate"><span class="pre">Dummy</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.dummy.Dummy.effect"><code class="docutils literal notranslate"><span class="pre">Dummy.effect()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.dummy.Dummy.identifier_method"><code class="docutils literal notranslate"><span class="pre">Dummy.identifier_method</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.dummy.DummyModel"><code class="docutils literal notranslate"><span class="pre">DummyModel</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.dummy.DummyModel.fit"><code class="docutils literal notranslate"><span class="pre">DummyModel.fit()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.dummy.DummyModel.predict"><code class="docutils literal notranslate"><span class="pre">DummyModel.predict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.dummy.MultivaluePSW"><code class="docutils literal notranslate"><span class="pre">MultivaluePSW</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.dummy.NaiveDummy"><code class="docutils literal notranslate"><span class="pre">NaiveDummy</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.dummy.PropensityScoreWeighter"><code class="docutils literal notranslate"><span class="pre">PropensityScoreWeighter</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.dummy.PropensityScoreWeighter.fit"><code class="docutils literal notranslate"><span class="pre">PropensityScoreWeighter.fit()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.dummy.PropensityScoreWeighter.predict"><code class="docutils literal notranslate"><span class="pre">PropensityScoreWeighter.predict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.dummy.SimpleIV"><code class="docutils literal notranslate"><span class="pre">SimpleIV</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.dummy.SimpleIV.effect"><code class="docutils literal notranslate"><span class="pre">SimpleIV.effect()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.dummy.SimpleIV.identifier_method"><code class="docutils literal notranslate"><span class="pre">SimpleIV.identifier_method</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.dummy.weighted_average"><code class="docutils literal notranslate"><span class="pre">weighted_average()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-causaltune.models.monkey_patches">causaltune.models.monkey_patches module</a><ul>
+<li><a class="reference internal" href="#causaltune.models.monkey_patches.AutoML"><code class="docutils literal notranslate"><span class="pre">AutoML</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.monkey_patches.AutoML.fit"><code class="docutils literal notranslate"><span class="pre">AutoML.fit()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.monkey_patches.apply_multitreatment"><code class="docutils literal notranslate"><span class="pre">apply_multitreatment()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.monkey_patches.effect"><code class="docutils literal notranslate"><span class="pre">effect()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.monkey_patches.effect_stderr"><code class="docutils literal notranslate"><span class="pre">effect_stderr()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.monkey_patches.effect_tt"><code class="docutils literal notranslate"><span class="pre">effect_tt()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-causaltune.models.passthrough">causaltune.models.passthrough module</a><ul>
+<li><a class="reference internal" href="#causaltune.models.passthrough.PassthroughInner"><code class="docutils literal notranslate"><span class="pre">PassthroughInner</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.passthrough.PassthroughInner.fit"><code class="docutils literal notranslate"><span class="pre">PassthroughInner.fit()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.passthrough.PassthroughInner.predict_proba"><code class="docutils literal notranslate"><span class="pre">PassthroughInner.predict_proba()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.passthrough.PassthroughInner.score"><code class="docutils literal notranslate"><span class="pre">PassthroughInner.score()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.passthrough.feature_filter"><code class="docutils literal notranslate"><span class="pre">feature_filter()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.passthrough.passthrough_model"><code class="docutils literal notranslate"><span class="pre">passthrough_model()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-causaltune.models.transformed_outcome">causaltune.models.transformed_outcome module</a><ul>
+<li><a class="reference internal" href="#causaltune.models.transformed_outcome.TransformedOutcome"><code class="docutils literal notranslate"><span class="pre">TransformedOutcome</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.transformed_outcome.TransformedOutcomeFitter"><code class="docutils literal notranslate"><span class="pre">TransformedOutcomeFitter</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.transformed_outcome.TransformedOutcomeFitter.fit"><code class="docutils literal notranslate"><span class="pre">TransformedOutcomeFitter.fit()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.transformed_outcome.TransformedOutcomeFitter.predict"><code class="docutils literal notranslate"><span class="pre">TransformedOutcomeFitter.predict()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.transformed_outcome.TransformedOutcomeFitter.shap_values"><code class="docutils literal notranslate"><span class="pre">TransformedOutcomeFitter.shap_values()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.transformed_outcome.transformed_outcome"><code class="docutils literal notranslate"><span class="pre">transformed_outcome()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-causaltune.models.wrapper">causaltune.models.wrapper module</a><ul>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyMethods"><code class="docutils literal notranslate"><span class="pre">DoWhyMethods</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyMethods.const_marginal_effect"><code class="docutils literal notranslate"><span class="pre">DoWhyMethods.const_marginal_effect()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyMethods.effect"><code class="docutils literal notranslate"><span class="pre">DoWhyMethods.effect()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper"><code class="docutils literal notranslate"><span class="pre">DoWhyWrapper</span></code></a><ul>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper.const_marginal_effect"><code class="docutils literal notranslate"><span class="pre">DoWhyWrapper.const_marginal_effect()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper.effect"><code class="docutils literal notranslate"><span class="pre">DoWhyWrapper.effect()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper.estimate_effect"><code class="docutils literal notranslate"><span class="pre">DoWhyWrapper.estimate_effect()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper.fit"><code class="docutils literal notranslate"><span class="pre">DoWhyWrapper.fit()</span></code></a></li>
+<li><a class="reference internal" href="#causaltune.models.wrapper.DoWhyWrapper.shap_values"><code class="docutils literal notranslate"><span class="pre">DoWhyWrapper.shap_values()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#causaltune.models.wrapper.remove_list"><code class="docutils literal notranslate"><span class="pre">remove_list()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-causaltune.models">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div><h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation index</a><ul>
+  </ul></li>
+</ul>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/causaltune.models.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    &copy; Copyright 2023, Wise Payments Limited, PyWhy Contributors.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1.
+  </div>
+  
+  </body>
+</html>
