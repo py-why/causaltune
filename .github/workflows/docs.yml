@@ -32,6 +32,11 @@ jobs:
         id: pip-cache
         run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
 
+      - name: pandoc for nbsphinx
+        uses: docker://pandoc/core:2.9
+        with:
+          args: "--help"
+
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
@@ -42,11 +47,6 @@ jobs:
 
       - name: Install dependencies
         run: python3 -m pip install -r ./docs/requirements.txt
-
-      - name: pandoc for nbsphinx
-        uses: docker://pandoc/core:2.9
-        with:
-          args: "--help"
 
       - name: Build documentation page
         run: make html -C ./docs
