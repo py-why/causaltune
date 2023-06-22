@@ -6,7 +6,7 @@
 Welcome to CausalTune's documentation!
 ======================================
 
-*Related resources:* pyhwy_ , pypi_causaltune_
+*Related resources:* PyhWhy_ , pypi_causaltune_
 
 .. toctree::
    :maxdepth: 1
@@ -48,7 +48,7 @@ allowing after an (even partially) randomized test to estimate what the impact
 of other treatment assignment policies would have been. This can also be used as an alternative out-of-sample score,
 though energy score performed better in our synthetic data experiments.
 
-.. _pywhy: https://www.pywhy.org/
+.. _PyWhy: https://www.pywhy.org/
 .. _pypi_causaltune: https://pypi.org/project/causaltune/
 
 .. _EconML: https://github.com/microsoft/EconML/
