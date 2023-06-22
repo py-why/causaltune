@@ -6,7 +6,7 @@
 Welcome to CausalTune's documentation!
 ======================================
 
-*Related resources:* pyhwy_ | pypi_causaltune_
+*Related resources:* pyhwy_ , pypi_causaltune_
 
 .. toctree::
    :maxdepth: 1
@@ -34,11 +34,11 @@ We perform automated hyperparameter tuning of first stage models (for the treatm
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
 
 The estimators provide not only per-row treatment impact estimates, but also confidence intervals for these,
-using builtin EconML functionality for that where it is available and bootstrapping where it is not (see [example notebook](https://github.com/py-why/causaltune/blob/main/notebooks/Standard%20errors.ipynb)).
+using builtin EconML functionality for that where it is available and bootstrapping where it is not (see `example notebook <https://github.com/py-why/causaltune/blob/main/notebooks/Standard%20errors.ipynb>`_).
 
 Just like DoWhy and EconML, we assume that the causal graph provided by the user accurately describes the data-generating process.
 So for example, we assume that for CATE estimation, the list of backdoor variables under the graph/confounding variables
-provided by the user do reflect all sources of confounding between the treatment and the outcome. See [here](https://github.com/py-why/causaltune/blob/main/notebooks/CausalityDataset%20setup.ipynb) for a detailed explanation of causal graphs that are supported by CausalTune.
+provided by the user do reflect all sources of confounding between the treatment and the outcome. See `here <https://github.com/py-why/causaltune/blob/main/notebooks/CausalityDataset%20setup.ipynb>`_ for a detailed explanation of causal graphs that are supported by CausalTune.
 
 The validation methods in CausalTune cannot catch such violations and therefore this is an important assumption.
 
