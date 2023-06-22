@@ -19,7 +19,7 @@ setup(
     install_requires=[
         "dowhy==0.9.1",
         "econml==0.14.1",
-        "FLAML==1.0.14",
+        "FLAML==1.2.4",
         "numpy<1.24.0",
         "pandas",
         "pytest",
