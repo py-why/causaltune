@@ -20,7 +20,7 @@ setup(
         "dowhy==0.9.1",
         "econml==0.14.1",
         "FLAML==1.0.14",
-        "numpy<1.24.0",
+        "numpy<1.26.0",
         "pandas",
         "pytest",
         "scikit_learn",
