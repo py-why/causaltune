@@ -6,7 +6,7 @@
 Welcome to CausalTune's documentation!
 ======================================
 
-*Related resources:* PyhWhy_ , pypi_causaltune_
+*Related resources:* PyWhy_ , pypi_causaltune_
 
 .. toctree::
    :maxdepth: 1
