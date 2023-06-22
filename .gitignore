@@ -108,3 +108,4 @@ data/*
 docs/_build/
 docs/_any
 docs/_cache/
+docs/notebooks
