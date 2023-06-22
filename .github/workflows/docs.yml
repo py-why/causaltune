@@ -44,7 +44,9 @@ jobs:
         run: python3 -m pip install -r ./docs/requirements.txt
 
       - name: pandoc for nbsphinx
-        uses: docker://pandoc/latex:2.9
+        uses: docker://pandoc/core:2.9
+        with:
+          args: "--help"
 
       - name: Build documentation page
         run: make html -C ./docs

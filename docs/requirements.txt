@@ -3,3 +3,5 @@ nbsphinx
 sphinx_gallery
 sphinx_rtd_theme
 myst-parser
+
+-e
