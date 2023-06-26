@@ -41,7 +41,7 @@ setup(
             "pytest-cov",
             "nbmake",
         ],
-        "ray": ["ray[tune]~=1.11.0"],
+        "ray": ["ray[tune]>=1.11,<2.6"],
     },
     packages=find_packages(
         include=["causaltune", "causaltune.*"],
