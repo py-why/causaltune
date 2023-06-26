@@ -27,7 +27,7 @@ setup(
         "matplotlib",
         "dcor",
         "holidays",
-        "setuptools==65.5.1",
+        "setuptools==68.0.0",
         "wise-pizza",
         "seaborn",
     ],
