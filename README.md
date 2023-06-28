@@ -45,6 +45,7 @@ though energy score performed better in our synthetic data experiments.
   - [For Developers](#for-developers)
     - [Installation from source](#installation-from-source)
     - [Testing](#testing)
+  - [Contribution](#contribution)
 
 
 ## What can this do for you?
@@ -205,3 +206,5 @@ pip install -e .
 ### Testing
 We use [PyTest](https://docs.pytest.org/) for testing. If you want to contribute code, make sure that the tests run without errors.
 
+## Contribution
+See the [Contribution file](https://github.com/py-why/causaltune/blob/main/CONTRIBUTING.md) for contribution licensing and code guidelines.
