@@ -193,6 +193,17 @@ class Scorer:
 
         """
 
+        YX_1, YX_0 = Scorer._Y0_X_potential_outcomes(estimate, df)
+        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
+
+        energy_distance_score = dcor.energy_distance(
+            YX_1[select_cols], YX_0[select_cols]
+        )
+
+        return energy_distance_score
+
+    @staticmethod
+    def _Y0_X_potential_outcomes(estimate: CausalEstimate, df: pd.DataFrame):
         est = estimate.estimator
         # assert est.identifier_method in ["iv", "backdoor"]
         treatment_name = (
@@ -211,11 +222,61 @@ class Scorer:
 
         X1 = df[df[split_test_by] == 1]
         X0 = df[df[split_test_by] == 0]
-        select_cols = est._effect_modifier_names + ["yhat"]
+        return X1, X0
 
-        energy_distance_score = dcor.energy_distance(X1[select_cols], X0[select_cols])
+    def psw_energy_distance_score(
+        self, estimate: CausalEstimate, df: pd.DataFrame
+    ) -> float:
+        """
+        Calculate propensity score adjusted energy distance score between treated and controls.
 
-        return energy_distance_score
+        For theoretical details, see Ramos-Carreño and Torrecilla (2023).
+
+        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+        @param df (pandas.DataFrame): input dataframe
+
+        @return float: propensity-score weighted energy distance score
+
+        """
+
+        YX_1, YX_0 = Scorer._Y0_X_potential_outcomes(estimate, df)
+        exponent = 1
+
+        YX_1_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+            YX_1[
+                self.causal_model.get_effect_modifiers()
+                + self.causal_model.get_common_causes()
+            ]
+        )[:, 1]
+
+        YX_0_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+            YX_0[
+                self.causal_model.get_effect_modifiers()
+                + self.causal_model.get_common_causes()
+            ]
+        )[:, 1]
+
+        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
+
+        distance_xx = (
+            np.reciprocal(YX_1_psw)
+            * np.reciprocal(YX_0_psw)
+            * dcor.distances.pairwise_distances(YX_1[select_cols], exponent=exponent)
+        )
+        distance_yy = np.square(
+            np.reciprocal(YX_1_psw)
+        ) * dcor.distances.pairwise_distances(YX_0[select_cols], exponent=exponent)
+        distance_xy = np.square(
+            np.reciprocal(YX_0_psw)
+        ) * dcor.distances.pairwise_distances(
+            YX_1[select_cols], YX_0[select_cols], exponent=exponent
+        )
+
+        psw_energy_distance = (
+            2 * np.mean(distance_xy) - np.mean(distance_xx) - np.mean(distance_yy)
+        )
+
+        return psw_energy_distance
 
     @staticmethod
     def qini_make_score(
