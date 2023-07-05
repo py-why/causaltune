@@ -10,9 +10,16 @@ from econml.cate_interpreter import SingleTreeCateInterpreter  # noqa F401
 from dowhy.causal_estimator import CausalEstimate
 from dowhy import CausalModel
 
+import sys, os
+
+#### for debugging only ##############################
+root_path = os.path.realpath("")
+sys.path.insert(0, root_path + "/causaltune")
+#######################################################
+
 from causaltune.thirdparty.causalml import metrics
 from causaltune.erupt import ERUPT
-from causaltune.utils import treatment_values
+from causaltune.utils import treatment_values, kernel_matrix
 
 import dcor
 
@@ -224,8 +231,8 @@ class Scorer:
         X0 = df[df[split_test_by] == 0]
         return X1, X0
 
-    def psw_energy_distance_score(
-        self, estimate: CausalEstimate, df: pd.DataFrame
+    def psw_energy_distance(
+        self, estimate: CausalEstimate, df: pd.DataFrame, kernel="parabolic"
     ) -> float:
         """
         Calculate propensity score adjusted energy distance score between treated and controls.
@@ -258,18 +265,23 @@ class Scorer:
 
         select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
 
-        distance_xx = (
-            np.reciprocal(YX_1_psw)
-            * np.reciprocal(YX_0_psw)
-            * dcor.distances.pairwise_distances(YX_1[select_cols], exponent=exponent)
+        xy_psw_kernel = kernel_matrix(YX_1_psw, YX_0_psw, kernel=kernel)
+        xx_psw_kernel = kernel_matrix(YX_0_psw, kernel=kernel)
+        yy_psw_kernel = kernel_matrix(YX_1_psw, kernel=kernel)
+
+        distance_xy = np.multiply(
+            xy_psw_kernel,
+            dcor.distances.pairwise_distances(
+                YX_1[select_cols], YX_0[select_cols], exponent=exponent
+            ),
         )
-        distance_yy = np.square(
-            np.reciprocal(YX_1_psw)
-        ) * dcor.distances.pairwise_distances(YX_0[select_cols], exponent=exponent)
-        distance_xy = np.square(
-            np.reciprocal(YX_0_psw)
-        ) * dcor.distances.pairwise_distances(
-            YX_1[select_cols], YX_0[select_cols], exponent=exponent
+        distance_yy = np.multiply(
+            yy_psw_kernel,
+            dcor.distances.pairwise_distances(YX_1[select_cols], exponent=exponent),
+        )
+        distance_xx = np.multiply(
+            xx_psw_kernel,
+            dcor.distances.pairwise_distances(YX_0[select_cols], exponent=exponent),
         )
 
         psw_energy_distance = (

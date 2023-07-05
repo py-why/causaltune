@@ -1,8 +1,11 @@
-from typing import Any, Union, Sequence
+from typing import Any, Union, Sequence, Optional
 import math
 
 import numpy as np
 import pandas as pd
+
+from scipy.stats import rdist
+from sklearn.metrics.pairwise import rbf_kernel, sigmoid_kernel
 
 from causaltune.memoizer import MemoizingWrapper
 
@@ -103,3 +106,55 @@ def generate_psdmat(n_dims: int = 10) -> np.ndarray:
     A = A @ A.T
 
     return A
+
+
+def kernel_matrix(
+    a: np.ndarray, b: Optional[np.ndarray] = None, kernel: Optional[str] = "parabolic"
+):
+    """Generate kernel (Gram) matrix from two vectors (or self-kernel of one vector).
+    Produces kernel matrix where entry i,j is kernel mapping of the distance between i-th entry
+    in a and j-th entry in b.
+
+    Args:
+        a (np.ndarray): Scalar observations of length n_A, i.e. array of shape (n_A,) or (n_A,1)
+        b (Optional[np.ndarray], optional): Scalar observations of length n_B,
+            i.e. array of shape (n_B,) or (n_B,1).
+            If None, compares a with itself. Defaults to None.
+        kernel (Optional[str], optional): kernel name. Valid choices are
+            "parabolic", "quartic", "triweight", "rbf", "sigmoid". Defaults to "parabolic".
+
+    Raises:
+        ValueError: If selected kernel is not available.
+
+    Returns:
+        (np.ndarray): array of shape (n_A,n_B) with kernel entries
+    """
+    if b is None:
+        b = a
+
+    assert a.ndim < 3 and b.ndim < 3
+
+    if a.ndim == 1:
+        a = np.expand_dims(a, axis=1)
+    if b.ndim == 1:
+        b = np.expand_dims(b, axis=1)
+
+    if kernel in ["parabolic", "quartic", "triweight"]:
+        diff = np.subtract(a, b.T)
+
+    if kernel == "parabolic":
+        k = rdist.pdf(diff, 4)
+    elif kernel == "quartic":
+        k = rdist.pdf(diff, 6)
+    elif kernel == "triweight":
+        k = rdist.pdf(diff, 8)
+    elif kernel == "rbf":
+        k = rbf_kernel(a, b)
+    elif kernel == "sigmoid":
+        k = sigmoid_kernel(a, b)
+    else:
+        raise ValueError(
+            "Selected kernel is not available. Chooose from"
+            + '["parabolic", "quartic", "triweight", "rbf", "sigmoid"]'
+        )
+    return k
