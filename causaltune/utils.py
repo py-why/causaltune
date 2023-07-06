@@ -4,6 +4,7 @@ import math
 import numpy as np
 import pandas as pd
 
+from numpy.linalg import norm
 from scipy.stats import rdist
 from sklearn.metrics.pairwise import rbf_kernel, sigmoid_kernel
 
@@ -111,14 +112,15 @@ def generate_psdmat(n_dims: int = 10) -> np.ndarray:
 def kernel_matrix(
     a: np.ndarray, b: Optional[np.ndarray] = None, kernel: Optional[str] = "parabolic"
 ):
-    """Generate kernel (Gram) matrix from two vectors (or self-kernel of one vector).
-    Produces kernel matrix where entry i,j is kernel mapping of the distance between i-th entry
-    in a and j-th entry in b.
+    """Generate kernel (Gram) matrix from two matrices  (or self-kernel of one matrix).
+    Produces kernel matrix where entry i,j is kernel mapping of the distance between i-th row
+    in a and j-th row in b.
+    Assumes same number of columns for a and b.
 
     Args:
-        a (np.ndarray): Scalar observations of length n_A, i.e. array of shape (n_A,) or (n_A,1)
+        a (np.ndarray): n_A samples, i.e. array of shape (n_A,) or (n_A, observation_dim)
         b (Optional[np.ndarray], optional): Scalar observations of length n_B,
-            i.e. array of shape (n_B,) or (n_B,1).
+            i.e. array of shape (n_B,) or (n_B, observation_dim).
             If None, compares a with itself. Defaults to None.
         kernel (Optional[str], optional): kernel name. Valid choices are
             "parabolic", "quartic", "triweight", "rbf", "sigmoid". Defaults to "parabolic".
@@ -139,15 +141,19 @@ def kernel_matrix(
     if b.ndim == 1:
         b = np.expand_dims(b, axis=1)
 
-    if kernel in ["parabolic", "quartic", "triweight"]:
-        diff = np.subtract(a, b.T)
+    assert a.shape[1] == b.shape[1]
 
+    if kernel in ["parabolic", "quartic", "triweight"]:
+        diff = np.subtract(
+            np.tile(a, (b.shape[0], 1)), np.repeat(b, repeats=a.shape[0], axis=0)
+        )
+        norm_squared = norm(diff, axis=1) ** 2
     if kernel == "parabolic":
-        k = rdist.pdf(diff, 4)
+        k = rdist.pdf(norm_squared, 4).reshape(a.shape[0], b.shape[0])
     elif kernel == "quartic":
-        k = rdist.pdf(diff, 6)
+        k = rdist.pdf(norm_squared, 6).reshape(a.shape[0], b.shape[0])
     elif kernel == "triweight":
-        k = rdist.pdf(diff, 8)
+        k = rdist.pdf(norm_squared, 8).reshape(a.shape[0], b.shape[0])
     elif kernel == "rbf":
         k = rbf_kernel(a, b)
     elif kernel == "sigmoid":

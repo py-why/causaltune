@@ -44,7 +44,7 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
     elif problem == "backdoor":
         if multivalue:
             # TODO: support other metrics for the multivalue case
-            return ["energy_distance"]
+            return ["energy_distance", "psw_energy_distance"]
         else:
             metrics = [
                 "erupt",
@@ -53,6 +53,7 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
                 "auc",
                 # "r_scorer",
                 "energy_distance",
+                "psw_energy_distance",
             ]
             if not scores_only:
                 metrics.append("ate")
@@ -241,6 +242,7 @@ class Scorer:
 
         @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
         @param df (pandas.DataFrame): input dataframe
+        @param kernel (str): name of kernel type
 
         @return float: propensity-score weighted energy distance score
 
@@ -254,14 +256,14 @@ class Scorer:
                 self.causal_model.get_effect_modifiers()
                 + self.causal_model.get_common_causes()
             ]
-        )[:, 1]
+        )[:, 1:]
 
         YX_0_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
             YX_0[
                 self.causal_model.get_effect_modifiers()
                 + self.causal_model.get_common_causes()
             ]
-        )[:, 1]
+        )[:, 1:]
 
         select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
 
@@ -534,6 +536,13 @@ class Scorer:
 
         if "energy_distance" in metrics_to_report:
             out["energy_distance"] = Scorer.energy_distance_score(estimate, df)
+
+        if "psw_energy_distance" in metrics_to_report:
+            # TODO: Add kernel selection in method call
+            out["psw_energy_distance"] = self.psw_energy_distance(
+                estimate,
+                df,
+            )
 
         del df
         return out
