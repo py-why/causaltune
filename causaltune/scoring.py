@@ -271,17 +271,21 @@ class Scorer:
         xx_psw_kernel = kernel_matrix(YX_0_psw, kernel=kernel)
         yy_psw_kernel = kernel_matrix(YX_1_psw, kernel=kernel)
 
-        distance_xy = np.multiply(
+        xy_sum_weights = np.sum(xy_psw_kernel)
+        xx_sum_weights = np.sum(xx_psw_kernel)
+        yy_sum_weights = np.sum(yy_psw_kernel)
+
+        distance_xy = np.reciprocal(xy_sum_weights) * np.multiply(
             xy_psw_kernel,
             dcor.distances.pairwise_distances(
                 YX_1[select_cols], YX_0[select_cols], exponent=exponent
             ),
         )
-        distance_yy = np.multiply(
+        distance_yy = np.reciprocal(yy_sum_weights) * np.multiply(
             yy_psw_kernel,
             dcor.distances.pairwise_distances(YX_1[select_cols], exponent=exponent),
         )
-        distance_xx = np.multiply(
+        distance_xx = np.reciprocal(xx_sum_weights) * np.multiply(
             xx_psw_kernel,
             dcor.distances.pairwise_distances(YX_0[select_cols], exponent=exponent),
         )
@@ -592,3 +596,67 @@ class Scorer:
             )
 
         return best
+
+
+if __name__ == "__main__":
+    import pytest
+    from sklearn.model_selection import train_test_split
+    from sklearn.tree import DecisionTreeRegressor
+    from sklearn.dummy import DummyClassifier
+
+    from dowhy import CausalModel
+
+    from causaltune.datasets import synth_ihdp
+
+    # from causaltune.scoring import Scorer, supported_metrics
+
+    """Creates data to allow testing of metrics
+    Args:
+        rscorer (bool): determines whether the function returns the correct
+        inputs for the RScoreWrapper (True) or for the metrics (False)
+    Returns:
+        if rscorer=True:
+            input parameters for RScoreWrapper
+        if rscorer=False:
+            input parameters for metrics functions (such as qini_make_score
+    """
+    rscorer = True
+    data = synth_ihdp()
+    data.preprocess_dataset()
+
+    train_df, test_df = train_test_split(data.data, train_size=0.5, random_state=123)
+    causal_model = CausalModel(
+        data=train_df,
+        treatment=data.treatment,
+        outcome=data.outcomes[0],
+        common_causes=data.common_causes,
+        effect_modifiers=data.effect_modifiers,
+        random_state=123,
+    )
+    identified_estimand = causal_model.identify_effect(proceed_when_unidentifiable=True)
+    estimate = causal_model.estimate_effect(
+        identified_estimand,
+        method_name="backdoor.econml.metalearners.SLearner",
+        control_value=0,
+        treatment_value=1,
+        target_units="ate",  # condition used for CATE
+        confidence_intervals=False,
+        # random_state=123,
+        method_params={
+            "init_params": {"overall_model": DecisionTreeRegressor(random_state=123)},
+            "fit_params": {},
+        },
+    )
+
+    scorer = Scorer(
+        causal_model,
+        DummyClassifier(strategy="prior"),
+        problem="backdoor",
+        multivalue=False,
+    )
+
+    # TODO: can we use scorer.psw_estimator instead of the estimator here?
+
+    te_train = estimate.cate_estimates
+
+    scorer.psw_energy_distance(estimate, train_df)
