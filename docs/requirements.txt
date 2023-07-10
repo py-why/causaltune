@@ -1,4 +1,4 @@
-furo==2021.11.16
+furo==2023.5.20
 nbsphinx
 sphinx_gallery
 sphinx_rtd_theme
