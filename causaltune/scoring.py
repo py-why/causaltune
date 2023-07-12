@@ -5,6 +5,7 @@ from typing import Optional, Dict, Union, Any, List
 
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import QuantileTransformer
 
 from econml.cate_interpreter import SingleTreeCateInterpreter  # noqa F401
 from dowhy.causal_estimator import CausalEstimate
@@ -19,7 +20,7 @@ sys.path.insert(0, root_path + "/causaltune")
 
 from causaltune.thirdparty.causalml import metrics
 from causaltune.erupt import ERUPT
-from causaltune.utils import treatment_values, kernel_matrix
+from causaltune.utils import treatment_values, kernel_matrix, psw_joint_weights
 
 import dcor
 
@@ -201,7 +202,10 @@ class Scorer:
 
         """
 
-        YX_1, YX_0 = Scorer._Y0_X_potential_outcomes(estimate, df)
+        Y0X, _, split_test_by = Scorer._Y0_X_potential_outcomes(estimate, df)
+
+        YX_1 = Y0X[Y0X[split_test_by] == 1]
+        YX_0 = Y0X[Y0X[split_test_by] == 0]
         select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
 
         energy_distance_score = dcor.energy_distance(
@@ -228,15 +232,16 @@ class Scorer:
             else treatment_name
         )
 
-        X1 = df[df[split_test_by] == 1]
-        X0 = df[df[split_test_by] == 0]
-        return X1, X0
+        Y0X = copy.deepcopy(df)
+        return Y0X, treatment_name, split_test_by
 
     def psw_energy_distance(
         self, estimate: CausalEstimate, df: pd.DataFrame, kernel="parabolic"
     ) -> float:
         """
         Calculate propensity score adjusted energy distance score between treated and controls.
+
+        Features are normalised using the sklearn.preprocessing.QuantileTransformer
 
         For theoretical details, see Ramos-Carreño and Torrecilla (2023).
 
@@ -248,7 +253,92 @@ class Scorer:
 
         """
 
-        YX_1, YX_0 = Scorer._Y0_X_potential_outcomes(estimate, df)
+        Y0X, treatment_name, split_test_by = Scorer._Y0_X_potential_outcomes(
+            estimate, df
+        )
+
+        YX_1 = Y0X[Y0X[split_test_by] == 1]
+        YX_0 = Y0X[Y0X[split_test_by] == 0]
+
+        YX_1_all_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+            YX_1[
+                self.causal_model.get_effect_modifiers()
+                + self.causal_model.get_common_causes()
+            ]
+        )
+        treatment_series = YX_1[treatment_name]
+
+        YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
+        for i in treatment_series.unique():
+            YX_1_psw[treatment_series == i] = YX_1_all_psw[:, i][treatment_series == i]
+
+        YX_0_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+            YX_0[
+                self.causal_model.get_effect_modifiers()
+                + self.causal_model.get_common_causes()
+            ]
+        )[:, 0]
+
+        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
+        features = estimate.estimator._effect_modifier_names
+
+        xy_psw = psw_joint_weights(YX_1_psw, YX_0_psw)
+        xx_psw = psw_joint_weights(YX_0_psw)
+        yy_psw = psw_joint_weights(YX_1_psw)
+
+        xy_sum_weights = np.sum(xy_psw)
+        xx_sum_weights = np.sum(xx_psw)
+        yy_sum_weights = np.sum(yy_psw)
+
+        qt = QuantileTransformer(n_quantiles=200)
+        X_quantiles = qt.fit_transform(Y0X[features])
+
+        Y0X_transformed = pd.DataFrame(X_quantiles, columns=features, index=Y0X.index)
+        Y0X_transformed.loc[:, ["yhat", split_test_by]] = Y0X[["yhat", split_test_by]]
+
+        Y0X_1 = Y0X_transformed[Y0X_transformed[split_test_by] == 1]
+        Y0X_0 = Y0X_transformed[Y0X_transformed[split_test_by] == 0]
+
+        exponent = 1
+        distance_xy = np.reciprocal(xy_sum_weights) * np.multiply(
+            xy_psw,
+            dcor.distances.pairwise_distances(
+                Y0X_1[select_cols], Y0X_0[select_cols], exponent=exponent
+            ),
+        )
+        distance_yy = np.reciprocal(yy_sum_weights) * np.multiply(
+            yy_psw,
+            dcor.distances.pairwise_distances(Y0X_1[select_cols], exponent=exponent),
+        )
+        distance_xx = np.reciprocal(xx_sum_weights) * np.multiply(
+            xx_psw,
+            dcor.distances.pairwise_distances(Y0X_0[select_cols], exponent=exponent),
+        )
+        psw_energy_distance = (
+            2 * np.mean(distance_xy) - np.mean(distance_xx) - np.mean(distance_yy)
+        )
+        return psw_energy_distance
+
+    def psw_kernel_energy_distance(
+        self, estimate: CausalEstimate, df: pd.DataFrame, kernel="parabolic"
+    ) -> float:
+        """
+        Calculate kernel propensity score adjusted energy distance score between treated and controls.
+
+        For theoretical details, see Ramos-Carreño and Torrecilla (2023).
+
+        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+        @param df (pandas.DataFrame): input dataframe
+        @param kernel (str): name of kernel type
+
+        @return float: propensity-score weighted energy distance score
+
+        """
+
+        Y0X, _, split_test_by = Scorer._Y0_X_potential_outcomes(estimate, df)
+
+        YX_1 = Y0X[Y0X[split_test_by] == 1]
+        YX_0 = Y0X[Y0X[split_test_by] == 0]
         exponent = 1
 
         YX_1_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
@@ -290,11 +380,11 @@ class Scorer:
             dcor.distances.pairwise_distances(YX_0[select_cols], exponent=exponent),
         )
 
-        psw_energy_distance = (
+        psw_kernel_energy_distance = (
             2 * np.mean(distance_xy) - np.mean(distance_xx) - np.mean(distance_yy)
         )
 
-        return psw_energy_distance
+        return psw_kernel_energy_distance
 
     @staticmethod
     def qini_make_score(
