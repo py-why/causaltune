@@ -165,7 +165,7 @@ class Scorer:
         Check if supplied reporting metrics are valid.
 
         @param metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.
-            Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', and 'energy_distance'.
+            Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', 'energy_distance' and 'psw_energy_distance'.
         @param scoring_metric (str): specified metric
 
         @return List[str]: list of valid metrics
@@ -289,6 +289,9 @@ class Scorer:
         xy_sum_weights = np.sum(xy_psw)
         xx_sum_weights = np.sum(xx_psw)
         yy_sum_weights = np.sum(yy_psw)
+        xy_sum_weights = 1
+        xx_sum_weights = 1
+        yy_sum_weights = 1
 
         qt = QuantileTransformer(n_quantiles=200)
         X_quantiles = qt.fit_transform(Y0X[features])
@@ -541,7 +544,7 @@ class Scorer:
         @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
         @param df (pandas.DataFrame): input dataframe
         @param metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.
-            Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', and 'energy_distance'.
+            Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', 'energy_distance' and 'psw_energy_distance'.
         @param r_scorer (Optional): callable object used to compute the R-score, default is None
 
         @return dict: dictionary containing the evaluation metrics specified in metrics_to_report.
@@ -681,7 +684,7 @@ class Scorer:
             ]
             best[name] = (
                 min(est_scores, key=lambda x: x[metric])
-                if metric == "energy_distance"
+                if metric in ["energy_distance", "psw_energy_distance"]
                 else max(est_scores, key=lambda x: x[metric])
             )
 

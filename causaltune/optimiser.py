@@ -353,7 +353,7 @@ class CausalTune:
             self._settings["metrics_to_report"], self.metric
         )
 
-        if self.metric == "energy_distance":
+        if self.metric in ["energy_distance", "psw_energy_distance"]:
             self._best_estimators = defaultdict(lambda: (float("inf"), None))
 
         # TODO: allow specifying an exclusion list, too
@@ -456,7 +456,9 @@ class CausalTune:
             evaluated_rewards=[]
             if len(self.resume_scores) == 0
             else self.resume_scores,
-            mode="min" if self.metric == "energy_distance" else "max",
+            mode="min"
+            if self.metric in ["energy_distance", "psw_energy_distance"]
+            else "max",
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
@@ -505,7 +507,7 @@ class CausalTune:
             est_name = estimates["estimator_name"]
             if (
                 self._best_estimators[est_name][0] > estimates[self.metric]
-                if self.metric == "energy_distance"
+                if self.metric in ["energy_distance", "psw_energy_distance"]
                 else self._best_estimators[est_name][0] < estimates[self.metric]
             ):
                 if self._settings["store_all"]:
