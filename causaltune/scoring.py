@@ -286,12 +286,9 @@ class Scorer:
         xx_psw = psw_joint_weights(YX_0_psw)
         yy_psw = psw_joint_weights(YX_1_psw)
 
-        xy_sum_weights = np.sum(xy_psw)
-        xx_sum_weights = np.sum(xx_psw)
-        yy_sum_weights = np.sum(yy_psw)
-        xy_sum_weights = 1
-        xx_sum_weights = 1
-        yy_sum_weights = 1
+        xy_mean_weights = np.mean(xy_psw)
+        xx_mean_weights = np.mean(xx_psw)
+        yy_mean_weights = np.mean(yy_psw)
 
         qt = QuantileTransformer(n_quantiles=200)
         X_quantiles = qt.fit_transform(Y0X[features])
@@ -303,17 +300,17 @@ class Scorer:
         Y0X_0 = Y0X_transformed[Y0X_transformed[split_test_by] == 0]
 
         exponent = 1
-        distance_xy = np.reciprocal(xy_sum_weights) * np.multiply(
+        distance_xy = np.reciprocal(xy_mean_weights) * np.multiply(
             xy_psw,
             dcor.distances.pairwise_distances(
                 Y0X_1[select_cols], Y0X_0[select_cols], exponent=exponent
             ),
         )
-        distance_yy = np.reciprocal(yy_sum_weights) * np.multiply(
+        distance_yy = np.reciprocal(yy_mean_weights) * np.multiply(
             yy_psw,
             dcor.distances.pairwise_distances(Y0X_1[select_cols], exponent=exponent),
         )
-        distance_xx = np.reciprocal(xx_sum_weights) * np.multiply(
+        distance_xx = np.reciprocal(xx_mean_weights) * np.multiply(
             xx_psw,
             dcor.distances.pairwise_distances(Y0X_0[select_cols], exponent=exponent),
         )
