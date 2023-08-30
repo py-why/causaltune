@@ -92,6 +92,16 @@ class TestMetrics:
         """Tests Qini score is within exceptable range for the test example"""
         assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(22, 27)
 
+    def test_psw_energy_distance_base_case(self):
+        """Tests propensity score weighted energy distance
+        equals energy distance when feature normalisation is off, dummy propensity model
+        is used and there is a single treatment
+        """
+        _, test_df, __, estimate, scorer = simple_model_run(rscorer=True)
+        assert scorer.psw_energy_distance(
+            estimate, test_df, normalise_features=False
+        ) == pytest.approx(scorer.energy_distance_score(estimate, test_df))
+
     def test_psw_energy_distance(self):
         """Test propensity score kernel weighted energy distance"""
         _, test_df, __, estimate, scorer = simple_model_run(rscorer=True)

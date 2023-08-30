@@ -236,7 +236,10 @@ class Scorer:
         return Y0X, treatment_name, split_test_by
 
     def psw_energy_distance(
-        self, estimate: CausalEstimate, df: pd.DataFrame, kernel="parabolic"
+        self,
+        estimate: CausalEstimate,
+        df: pd.DataFrame,
+        normalise_features=False,
     ) -> float:
         """
         Calculate propensity score adjusted energy distance score between treated and controls.
@@ -248,6 +251,7 @@ class Scorer:
         @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
         @param df (pandas.DataFrame): input dataframe
         @param kernel (str): name of kernel type
+        @param normalise_features (bool): whether to normalise features with QuantileTransformer
 
         @return float: propensity-score weighted energy distance score
 
@@ -257,23 +261,23 @@ class Scorer:
             estimate, df
         )
 
-        YX_1 = Y0X[Y0X[split_test_by] == 1]
-        YX_0 = Y0X[Y0X[split_test_by] == 0]
+        Y0X_1 = Y0X[Y0X[split_test_by] == 1]
+        Y0X_0 = Y0X[Y0X[split_test_by] == 0]
 
         YX_1_all_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
-            YX_1[
+            Y0X_1[
                 self.causal_model.get_effect_modifiers()
                 + self.causal_model.get_common_causes()
             ]
         )
-        treatment_series = YX_1[treatment_name]
+        treatment_series = Y0X_1[treatment_name]
 
         YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
         for i in treatment_series.unique():
             YX_1_psw[treatment_series == i] = YX_1_all_psw[:, i][treatment_series == i]
 
         YX_0_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
-            YX_0[
+            Y0X_0[
                 self.causal_model.get_effect_modifiers()
                 + self.causal_model.get_common_causes()
             ]
@@ -290,14 +294,19 @@ class Scorer:
         xx_mean_weights = np.mean(xx_psw)
         yy_mean_weights = np.mean(yy_psw)
 
-        qt = QuantileTransformer(n_quantiles=200)
-        X_quantiles = qt.fit_transform(Y0X[features])
+        if normalise_features:
+            qt = QuantileTransformer(n_quantiles=200)
+            X_quantiles = qt.fit_transform(Y0X[features])
 
-        Y0X_transformed = pd.DataFrame(X_quantiles, columns=features, index=Y0X.index)
-        Y0X_transformed.loc[:, ["yhat", split_test_by]] = Y0X[["yhat", split_test_by]]
+            Y0X_transformed = pd.DataFrame(
+                X_quantiles, columns=features, index=Y0X.index
+            )
+            Y0X_transformed.loc[:, ["yhat", split_test_by]] = Y0X[
+                ["yhat", split_test_by]
+            ]
 
-        Y0X_1 = Y0X_transformed[Y0X_transformed[split_test_by] == 1]
-        Y0X_0 = Y0X_transformed[Y0X_transformed[split_test_by] == 0]
+            Y0X_1 = Y0X_transformed[Y0X_transformed[split_test_by] == 1]
+            Y0X_0 = Y0X_transformed[Y0X_transformed[split_test_by] == 0]
 
         exponent = 1
         distance_xy = np.reciprocal(xy_mean_weights) * np.multiply(

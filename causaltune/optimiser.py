@@ -501,6 +501,7 @@ class CausalTune:
         estimates = Parallel(n_jobs=2, backend="threading")(
             delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
+        # estimates = self._estimate_effect(config["estimator"])
 
         # pop and cache separately the fitted model object, so we only store the best ones per estimator
         if "exception" not in estimates:
