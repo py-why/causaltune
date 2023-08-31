@@ -20,7 +20,7 @@ sys.path.insert(0, root_path + "/causaltune")
 
 from causaltune.thirdparty.causalml import metrics
 from causaltune.erupt import ERUPT
-from causaltune.utils import treatment_values, kernel_matrix, psw_joint_weights
+from causaltune.utils import treatment_values, psw_joint_weights
 
 import dcor
 
@@ -252,7 +252,6 @@ class Scorer:
 
         @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
         @param df (pandas.DataFrame): input dataframe
-        @param kernel (str): name of kernel type
         @param normalise_features (bool): whether to normalise features with QuantileTransformer
 
         @return float: propensity-score weighted energy distance score
@@ -330,72 +329,6 @@ class Scorer:
         )
         return psw_energy_distance
 
-    def psw_kernel_energy_distance(
-        self, estimate: CausalEstimate, df: pd.DataFrame, kernel="parabolic"
-    ) -> float:
-        """
-        Calculate kernel propensity score adjusted energy distance score between treated and controls.
-
-        For theoretical details, see Ramos-Carreño and Torrecilla (2023).
-
-        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-        @param df (pandas.DataFrame): input dataframe
-        @param kernel (str): name of kernel type
-
-        @return float: propensity-score weighted energy distance score
-
-        """
-
-        Y0X, _, split_test_by = Scorer._Y0_X_potential_outcomes(estimate, df)
-
-        YX_1 = Y0X[Y0X[split_test_by] == 1]
-        YX_0 = Y0X[Y0X[split_test_by] == 0]
-        exponent = 1
-
-        YX_1_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
-            YX_1[
-                self.causal_model.get_effect_modifiers()
-                + self.causal_model.get_common_causes()
-            ]
-        )[:, 1:]
-
-        YX_0_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
-            YX_0[
-                self.causal_model.get_effect_modifiers()
-                + self.causal_model.get_common_causes()
-            ]
-        )[:, 1:]
-
-        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
-
-        xy_psw_kernel = kernel_matrix(YX_1_psw, YX_0_psw, kernel=kernel)
-        xx_psw_kernel = kernel_matrix(YX_0_psw, kernel=kernel)
-        yy_psw_kernel = kernel_matrix(YX_1_psw, kernel=kernel)
-
-        xy_sum_weights = np.sum(xy_psw_kernel)
-        xx_sum_weights = np.sum(xx_psw_kernel)
-        yy_sum_weights = np.sum(yy_psw_kernel)
-
-        distance_xy = np.reciprocal(xy_sum_weights) * np.multiply(
-            xy_psw_kernel,
-            dcor.distances.pairwise_distances(
-                YX_1[select_cols], YX_0[select_cols], exponent=exponent
-            ),
-        )
-        distance_yy = np.reciprocal(yy_sum_weights) * np.multiply(
-            yy_psw_kernel,
-            dcor.distances.pairwise_distances(YX_1[select_cols], exponent=exponent),
-        )
-        distance_xx = np.reciprocal(xx_sum_weights) * np.multiply(
-            xx_psw_kernel,
-            dcor.distances.pairwise_distances(YX_0[select_cols], exponent=exponent),
-        )
-
-        psw_kernel_energy_distance = (
-            2 * np.mean(distance_xy) - np.mean(distance_xx) - np.mean(distance_yy)
-        )
-
-        return psw_kernel_energy_distance
 
     @staticmethod
     def qini_make_score(
@@ -644,7 +577,6 @@ class Scorer:
             out["energy_distance"] = Scorer.energy_distance_score(estimate, df)
 
         if "psw_energy_distance" in metrics_to_report:
-            # TODO: Add kernel selection in method call
             out["psw_energy_distance"] = self.psw_energy_distance(
                 estimate,
                 df,
