@@ -63,14 +63,14 @@ impact in the next iteration. CausalTune also serves as a variance reduction met
 The per-customer impact estimates, even if noisy, can be used to implement per-customer Thompson sampling for new customers, biasing random treatment assignment towards ones we think are most likely to work. As we still control the per-customer propensity to treat, same methods as above can be applied to keep refining our impact estimates.
 
 Thus, there is no need to either wait for the test to gather enough data for significance, nor to ever end the
-test, before using its results to assign the most impactful treatment (based on our knowlede so far) to each customer.
+test, before using its results to assign the most impactful treatment (based on our knowledge so far) to each customer.
 
 As in this case the propensity to treat is known for each customer, we [allow to explicitly supply it](https://github.com/py-why/causaltune/blob/main/notebooks/Propensity%20Model%20Selection.ipynb)
 as a column to the estimators, instead of estimating it from the data like in other cases.
 
 ### 3. Estimate the benefit of smarter (but still partially random) assignment compared to fully random without the need for an actual fully random test group
 
-Previous section described using causal estimators to bias treatment assignment towards the choice we think is
+The previous section described using causal estimators to bias treatment assignment towards the choice we think is
 most likely to work best for a given customer.
 
 However, after the fact we would like to know the extra benefit of that compared to a fully random assignment.

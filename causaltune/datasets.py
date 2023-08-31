@@ -46,7 +46,7 @@ def linear_multi_dataset(
 
 
 def nhefs() -> CausalityDataset:
-    """loads the NHEFS dataset
+    """Loads the NHEFS dataset
     The dataset describes the impact of quitting smoke on weight gain over a period of 11 years
     The data consists of the treatment (quit smoking yes no), the outcome (change in weight) and
     a series of covariates of which we include a subset of 9 (see below).
@@ -86,7 +86,7 @@ def nhefs() -> CausalityDataset:
 
 
 def lalonde_nsw() -> CausalityDataset:
-    """loads the Lalonde NSW dataset
+    """Loads the Lalonde NSW dataset
     The dataset described the impact of a job training programme on the real earnings
     of individuals several years later.
     The data consists of the treatment indicator (training yes no), covariates (age, race,
@@ -122,7 +122,7 @@ def lalonde_nsw() -> CausalityDataset:
 
 
 def amazon_reviews(rating="pos") -> CausalityDataset:
-    """loads amazon reviews dataset
+    """Loads amazon reviews dataset
     The dataset describes the impact of positive (or negative) reviews for products on Amazon on sales.
     The authors distinguish between items with more than three reviews (treated) and less than three
     reviews (untreated). As the rating given by reviews might impact sales, they divide the dataset
@@ -184,7 +184,7 @@ def amazon_reviews(rating="pos") -> CausalityDataset:
 
 
 def synth_ihdp(return_df=False) -> CausalityDataset:
-    """loads IHDP dataset
+    """Loads IHDP dataset
     The Infant Health and Development Program (IHDP) dataset contains data on the impact of visits by specialists
     on the cognitive development of children. The dataset consists of 25 covariates describing various features
     of these children and their mothers, a binary treatment variable (visit/no visit) and a continuous outcome.
@@ -200,9 +200,13 @@ def synth_ihdp(return_df=False) -> CausalityDataset:
         year={2011}
     }
 
+    Args:
+        return_df (bool): whether or not to return dataset as pd.DataFrame
+
     Returns:
         pd.DataFrame: dataset for causal inference with cols "treatment", "y_factual" and covariates "x1" to "x25"
     """
+
     # load raw data
     data = pd.read_csv(
         "https://raw.githubusercontent.com/AMLab-Amsterdam/CEVAE/master/datasets/IHDP/csv/ihdp_npci_1.csv",
@@ -227,7 +231,7 @@ def synth_ihdp(return_df=False) -> CausalityDataset:
 
 
 def synth_acic(condition=1) -> CausalityDataset:
-    """loads data from ACIC Causal Inference Challenge 2016
+    """Loads data from ACIC Causal Inference Challenge 2016
     The dataset consists of 58 covariates, a binary treatment and a continuous response.
     There are 10 simulated pairs of treatment and response, which can be selected
     with the condition argument supplied to this function.
@@ -338,7 +342,7 @@ def generate_synthetic_data(
     effect_size: Union[int, None] = None,
     add_instrument: bool = False,
 ) -> CausalityDataset:
-    """generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.
+    """Generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.
     Supports RCT (unconfounded) and observational (confounded) data.
 
     Args:
@@ -351,7 +355,6 @@ def generate_synthetic_data(
         add_instrument (bool, optional): include instrumental variable (yes/no). Defaults to False
         effect_size (Union[int, None]): if provided, constant effect size (ATE). if None, generate CATE.
             Defaults to None.
-
 
     Returns:
         CausalityDataset: columns for covariates, treatment assignment, outcome and true treatment effect
@@ -499,13 +502,13 @@ def generate_synth_data_with_categories(
 
 
 def generate_non_random_dataset(num_samples=1000):
-    """Synthetic dataset with non-uniform propensities to treat
+    """Generates synthetic dataset with non-uniform propensities to treat.
 
     Args:
         num_samples (int, optional): number of independent samples. Defaults to 1000.
 
     Returns:
-        CausalityDataset: data object for causal inference
+        CausalityDataset: data object
     """
     num_samples = num_samples
 
@@ -572,6 +575,7 @@ def mlrate_experiment_synth_dgp(
         const_te (float, optional): constant average treatment effect
         noise (float, optional): exogeneous variance scaler
         cate_scaler (float, optional): heterogeneous treatment effect scaler
+
     Returns:
         cd (CausalityDataset): data object for causal inference
 

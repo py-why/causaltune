@@ -102,3 +102,10 @@ __pycache__/
 */flaml.log
 
 data/*
+
+
+# Sphinx
+docs/_build/
+docs/_any
+docs/_cache/
+docs/notebooks

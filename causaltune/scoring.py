@@ -116,13 +116,14 @@ class Scorer:
             )
 
     def ate(self, df: pd.DataFrame) -> tuple:
-        """
-        Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.
+        """Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.
 
-        @param df (pandas.DataFrame): input dataframe
+        Args:
+            df (pandas.DataFrame): input dataframe
 
-        @return tuple: tuple containing the ATE, standard deviation of the estimate (or None if multi-treatment),
-            and sample size (or None if estimate has more than one dimension)
+        Returns:
+            tuple: tuple containing the ATE, standard deviation of the estimate (or None if multi-treatment),
+                and sample size (or None if estimate has more than one dimension)
 
         """
 
@@ -138,12 +139,13 @@ class Scorer:
             return estimate, None, None
 
     def resolve_metric(self, metric: str) -> str:
-        """
-        Check if supplied metric is supported. If not, default to 'energy_distance'.
+        """Check if supplied metric is supported. If not, default to 'energy_distance'.
 
-        @param metric (str): evaluation metric
+        Args:
+            metric (str): evaluation metric
 
-        @return str: metric/'energy_distance'
+        Returns:
+            str: metric/'energy_distance'
 
         """
 
@@ -161,8 +163,7 @@ class Scorer:
     def resolve_reported_metrics(
         self, metrics_to_report: Union[List[str], None], scoring_metric: str
     ) -> List[str]:
-        """
-        Check if supplied reporting metrics are valid.
+        """Check if supplied reporting metrics are valid.
 
         Args:
             metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.
@@ -192,15 +193,15 @@ class Scorer:
         estimate: CausalEstimate,
         df: pd.DataFrame,
     ) -> float:
-        """
-        Calculate energy distance score between treated and controls.
-
+        """Calculate energy distance score between treated and controls.
         For theoretical details, see Ramos-Carreño and Torrecilla (2023).
 
-        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-        @param df (pandas.DataFrame): input dataframe
+        Args:
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+            df (pandas.DataFrame): input dataframe
 
-        @return float: energy distance score
+        Returns:
+            float: energy distance score
 
         """
 
@@ -334,14 +335,15 @@ class Scorer:
     def qini_make_score(
         estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
     ) -> float:
-        """
-        Calculate the Qini score, defined as the area between the Qini curves of a model and random.
+        """Calculate the Qini score, defined as the area between the Qini curves of a model and random.
 
-        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-        @param df (pandas.DataFrame): input dataframe
-        @param cate_estimate (np.ndarray): array with cate estimates
+        Args:
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+            df (pandas.DataFrame): input dataframe
+            cate_estimate (np.ndarray): array with cate estimates
 
-        @return float: Qini score
+        Returns:
+            float: Qini score
 
         """
 
@@ -362,14 +364,15 @@ class Scorer:
     def auc_make_score(
         estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
     ) -> float:
-        """
-        Calculate the area under the uplift curve.
+        """Calculate the area under the uplift curve.
 
-        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-        @param df (pandas.DataFrame): input dataframe
-        @param cate_estimate (np.ndarray): array with cate estimates
+        Args:
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+            df (pandas.DataFrame): input dataframe
+            cate_estimate (np.ndarray): array with cate estimates
 
-        @return float: area under the uplift curve
+        Returns:
+            float: area under the uplift curve
 
         """
 
@@ -406,19 +409,17 @@ class Scorer:
     def r_make_score(
         estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, r_scorer
     ) -> float:
-        """
-        Calculate r_score.
+        """Calculate r_score.
+        For details refer to Nie and Wager (2017) and Schuler et al. (2018). Adaption from EconML implementation.
 
-        For details refer to Nie and Wager (2017) and Schuler et al. (2018).
+        Args:
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+            df (pandas.DataFrame): input dataframe
+            cate_estimate (np.ndarray): array with cate estimates
+            r_scorer: callable object used to compute the R-score
 
-        Adaption from EconML implementation.
-
-        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-        @param df (pandas.DataFrame): input dataframe
-        @param cate_estimate (np.ndarray): array with cate estimates
-        @param r_scorer: callable object used to compute the R-score
-
-        @return float: r_score
+        Returns:
+            float: r_score
 
         """
 
@@ -427,13 +428,14 @@ class Scorer:
 
     @staticmethod
     def naive_ate(treatment: pd.Series, outcome: pd.Series):
-        """
-        Calculate simple ATE.
+        """Calculate simple ATE.
 
-        @param treatment (pandas.Series): series of treatments
-        @param outcome (pandas.Series): series of outcomes
+        Args:
+            treatment (pandas.Series): series of treatments
+            outcome (pandas.Series): series of outcomes
 
-        @return: tuple of simple ATE, standard deviation, and sample size
+        Returns:
+            tuple: tuple of simple ATE, standard deviation, and sample size
 
         """
 
@@ -450,14 +452,15 @@ class Scorer:
     def group_ate(
         self, df: pd.DataFrame, policy: Union[pd.DataFrame, np.ndarray]
     ) -> pd.DataFrame:
-        """
-        Compute the average treatment effect (ATE) for different groups specified by a policy.
+        """Compute the average treatment effect (ATE) for different groups specified by a policy.
 
-        @param df (pandas.DataFrame): input dataframe, should contain columns for the treatment, outcome, and policy
-        @param policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values,
-            used to group the data
+        Args:
+            df (pandas.DataFrame): input dataframe, should contain columns for the treatment, outcome, and policy
+            policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values,
+                used to group the data
 
-        @return: pandas.DataFrame of ATE, std, and size per policy
+        Returns:
+            pandas.DataFrame: ATE, std, and size per policy
 
         """
 
@@ -589,13 +592,14 @@ class Scorer:
     def best_score_by_estimator(
         scores: Dict[str, dict], metric: str
     ) -> Dict[str, dict]:
-        """
-        Obtain best score for each estimator.
+        """Obtain best score for each estimator.
 
-        @param scores (Dict[str, dict]): CausalTune.scores dictionary
-        @param metric (str): metric of interest
+        Args:
+            scores (Dict[str, dict]): CausalTune.scores dictionary
+            metric (str): metric of interest
 
-        @return Dict[str, dict]: dictionary containing best score by estimator
+        Returns:
+            Dict[str, dict]: dictionary containing best score by estimator
 
         """
 
