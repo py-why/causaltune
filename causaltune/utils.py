@@ -4,9 +4,6 @@ import math
 import numpy as np
 import pandas as pd
 
-from numpy.linalg import norm
-from scipy.stats import rdist
-
 from causaltune.memoizer import MemoizingWrapper
 
 
