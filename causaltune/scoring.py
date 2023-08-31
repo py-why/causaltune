@@ -11,12 +11,6 @@ from econml.cate_interpreter import SingleTreeCateInterpreter  # noqa F401
 from dowhy.causal_estimator import CausalEstimate
 from dowhy import CausalModel
 
-import sys, os
-
-#### for debugging only ##############################
-root_path = os.path.realpath("")
-sys.path.insert(0, root_path + "/causaltune")
-#######################################################
 
 from causaltune.thirdparty.causalml import metrics
 from causaltune.erupt import ERUPT
@@ -634,67 +628,3 @@ class Scorer:
             )
 
         return best
-
-
-if __name__ == "__main__":
-    import pytest
-    from sklearn.model_selection import train_test_split
-    from sklearn.tree import DecisionTreeRegressor
-    from sklearn.dummy import DummyClassifier
-
-    from dowhy import CausalModel
-
-    from causaltune.datasets import synth_ihdp
-
-    # from causaltune.scoring import Scorer, supported_metrics
-
-    """Creates data to allow testing of metrics
-    Args:
-        rscorer (bool): determines whether the function returns the correct
-        inputs for the RScoreWrapper (True) or for the metrics (False)
-    Returns:
-        if rscorer=True:
-            input parameters for RScoreWrapper
-        if rscorer=False:
-            input parameters for metrics functions (such as qini_make_score
-    """
-    rscorer = True
-    data = synth_ihdp()
-    data.preprocess_dataset()
-
-    train_df, test_df = train_test_split(data.data, train_size=0.5, random_state=123)
-    causal_model = CausalModel(
-        data=train_df,
-        treatment=data.treatment,
-        outcome=data.outcomes[0],
-        common_causes=data.common_causes,
-        effect_modifiers=data.effect_modifiers,
-        random_state=123,
-    )
-    identified_estimand = causal_model.identify_effect(proceed_when_unidentifiable=True)
-    estimate = causal_model.estimate_effect(
-        identified_estimand,
-        method_name="backdoor.econml.metalearners.SLearner",
-        control_value=0,
-        treatment_value=1,
-        target_units="ate",  # condition used for CATE
-        confidence_intervals=False,
-        # random_state=123,
-        method_params={
-            "init_params": {"overall_model": DecisionTreeRegressor(random_state=123)},
-            "fit_params": {},
-        },
-    )
-
-    scorer = Scorer(
-        causal_model,
-        DummyClassifier(strategy="prior"),
-        problem="backdoor",
-        multivalue=False,
-    )
-
-    # TODO: can we use scorer.psw_estimator instead of the estimator here?
-
-    te_train = estimate.cate_estimates
-
-    scorer.psw_energy_distance(estimate, train_df)
