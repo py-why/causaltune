@@ -108,9 +108,7 @@ class Scorer:
                 X_names=self.psw_estimator._effect_modifier_names
                 + self.psw_estimator._observed_common_causes_names,
             )
-            self.erupt = ERUPT(treatment_name=treatment_name, propensity_model=self.psw_estimator.estimator.propensity_model, X_names=self.psw_estimator._effect_modifier_names
-                + self.psw_estimator._observed_common_causes_names,
-            )
+
     def ate(self, df: pd.DataFrame) -> tuple:
         """Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.
 
