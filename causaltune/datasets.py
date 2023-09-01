@@ -372,7 +372,8 @@ def generate_synthetic_data(
 
     if confounding:
         if linear_confounder:
-            p = 1 / (1 + np.exp(X[:, 0] * 2 + X[:, 1] * 4))
+            # p = 1 / (1 + np.exp(X[:, 0] * 2 + X[:, 1] * 4))
+            p = 1 / (1 + np.exp(X[:, 0] * X[:, 1] + 3 * X[:, 2]))
         else:
             p = 1 / (1 + np.exp(X[:, 0] * X[:, 1] + X[:, 2] * 3))
         p = np.clip(p, 0.1, 0.9)

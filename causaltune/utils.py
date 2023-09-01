@@ -1,4 +1,4 @@
-from typing import Any, Union, Sequence
+from typing import Any, Union, Sequence, Optional
 import math
 
 import numpy as np
@@ -103,3 +103,33 @@ def generate_psdmat(n_dims: int = 10) -> np.ndarray:
     A = A @ A.T
 
     return A
+
+
+def psw_joint_weights(a: np.ndarray, b: Optional[np.ndarray] = None):
+    """Generate inverse joint propensity-score weights from two vectors
+
+    Args:
+        a (np.ndarray): propensity score vector of length n_A, array of shape (n_A,) or (n_A, 1)
+        b (Optional[np.ndarray], optional): propensity score vector of length n_B,
+            array of shape (n_B,) or (n_B, 1).
+            If None, compares a with itself. Defaults to None.Defaults to None.
+
+    Returns:
+        (np.ndarray): inverse propensity score product matrix of shape (n_A, n_B)
+    """
+    if b is None:
+        b = a
+
+    assert a.ndim < 3 and b.ndim < 3
+
+    if a.ndim == 1:
+        a = np.expand_dims(a, axis=1)
+    if b.ndim == 1:
+        b = np.expand_dims(b, axis=1)
+
+    assert a.shape[1] == b.shape[1]
+
+    w = np.multiply(a, b.T)
+    ipw = np.reciprocal(w)
+
+    return ipw

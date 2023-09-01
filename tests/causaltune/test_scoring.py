@@ -58,7 +58,7 @@ def simple_model_run(rscorer=False):
 
     te_train = estimate.cate_estimates
     if rscorer:
-        return train_df, test_df, data, scorer
+        return train_df, test_df, data, estimate, scorer
     else:
         return estimate, train_df, te_train
 
@@ -91,6 +91,21 @@ class TestMetrics:
     def test_qini_make_score(self):
         """Tests Qini score is within exceptable range for the test example"""
         assert Scorer.qini_make_score(*simple_model_run()) == pytest.approx(22, 27)
+
+    def test_psw_energy_distance_base_case(self):
+        """Tests propensity score weighted energy distance
+        equals energy distance when feature normalisation is off, dummy propensity model
+        is used and there is a single treatment
+        """
+        _, test_df, __, estimate, scorer = simple_model_run(rscorer=True)
+        assert scorer.psw_energy_distance(
+            estimate, test_df, normalise_features=False
+        ) == pytest.approx(scorer.energy_distance_score(estimate, test_df))
+
+    def test_psw_energy_distance(self):
+        """Test propensity score kernel weighted energy distance"""
+        _, test_df, __, estimate, scorer = simple_model_run(rscorer=True)
+        scorer.psw_energy_distance(estimate, test_df)
 
     # TODO: Fix R-scorer or purge it
     # def test_r_make_score(self):

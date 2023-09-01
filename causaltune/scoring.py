@@ -5,14 +5,16 @@ from typing import Optional, Dict, Union, Any, List
 
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import QuantileTransformer
 
 from econml.cate_interpreter import SingleTreeCateInterpreter  # noqa F401
 from dowhy.causal_estimator import CausalEstimate
 from dowhy import CausalModel
 
+
 from causaltune.thirdparty.causalml import metrics
 from causaltune.erupt import ERUPT
-from causaltune.utils import treatment_values
+from causaltune.utils import treatment_values, psw_joint_weights
 
 import dcor
 
@@ -37,7 +39,7 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
     elif problem == "backdoor":
         if multivalue:
             # TODO: support other metrics for the multivalue case
-            return ["energy_distance"]
+            return ["energy_distance", "psw_energy_distance"]
         else:
             metrics = [
                 "erupt",
@@ -46,6 +48,7 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
                 "auc",
                 # "r_scorer",
                 "energy_distance",
+                "psw_energy_distance",
             ]
             if not scores_only:
                 metrics.append("ate")
@@ -158,7 +161,8 @@ class Scorer:
 
         Args:
             metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.
-                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', and 'energy_distance'.
+                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc',
+                'energy_distance' and 'psw_energy_distance'.
             scoring_metric (str): specified metric
 
         Returns:
@@ -196,6 +200,20 @@ class Scorer:
 
         """
 
+        Y0X, _, split_test_by = Scorer._Y0_X_potential_outcomes(estimate, df)
+
+        YX_1 = Y0X[Y0X[split_test_by] == 1]
+        YX_0 = Y0X[Y0X[split_test_by] == 0]
+        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
+
+        energy_distance_score = dcor.energy_distance(
+            YX_1[select_cols], YX_0[select_cols]
+        )
+
+        return energy_distance_score
+
+    @staticmethod
+    def _Y0_X_potential_outcomes(estimate: CausalEstimate, df: pd.DataFrame):
         est = estimate.estimator
         # assert est.identifier_method in ["iv", "backdoor"]
         treatment_name = (
@@ -212,13 +230,100 @@ class Scorer:
             else treatment_name
         )
 
-        X1 = df[df[split_test_by] == 1]
-        X0 = df[df[split_test_by] == 0]
-        select_cols = est._effect_modifier_names + ["yhat"]
+        Y0X = copy.deepcopy(df)
+        return Y0X, treatment_name, split_test_by
 
-        energy_distance_score = dcor.energy_distance(X1[select_cols], X0[select_cols])
+    def psw_energy_distance(
+        self,
+        estimate: CausalEstimate,
+        df: pd.DataFrame,
+        normalise_features=False,
+    ) -> float:
+        """
+        Calculate propensity score adjusted energy distance score between treated and controls.
 
-        return energy_distance_score
+        Features are normalised using the sklearn.preprocessing.QuantileTransformer
+
+        For theoretical details, see Ramos-Carreño and Torrecilla (2023).
+
+        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+        @param df (pandas.DataFrame): input dataframe
+        @param normalise_features (bool): whether to normalise features with QuantileTransformer
+
+        @return float: propensity-score weighted energy distance score
+
+        """
+
+        Y0X, treatment_name, split_test_by = Scorer._Y0_X_potential_outcomes(
+            estimate, df
+        )
+
+        Y0X_1 = Y0X[Y0X[split_test_by] == 1]
+        Y0X_0 = Y0X[Y0X[split_test_by] == 0]
+
+        YX_1_all_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+            Y0X_1[
+                self.causal_model.get_effect_modifiers()
+                + self.causal_model.get_common_causes()
+            ]
+        )
+        treatment_series = Y0X_1[treatment_name]
+
+        YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
+        for i in treatment_series.unique():
+            YX_1_psw[treatment_series == i] = YX_1_all_psw[:, i][treatment_series == i]
+
+        YX_0_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+            Y0X_0[
+                self.causal_model.get_effect_modifiers()
+                + self.causal_model.get_common_causes()
+            ]
+        )[:, 0]
+
+        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
+        features = estimate.estimator._effect_modifier_names
+
+        xy_psw = psw_joint_weights(YX_1_psw, YX_0_psw)
+        xx_psw = psw_joint_weights(YX_0_psw)
+        yy_psw = psw_joint_weights(YX_1_psw)
+
+        xy_mean_weights = np.mean(xy_psw)
+        xx_mean_weights = np.mean(xx_psw)
+        yy_mean_weights = np.mean(yy_psw)
+
+        if normalise_features:
+            qt = QuantileTransformer(n_quantiles=200)
+            X_quantiles = qt.fit_transform(Y0X[features])
+
+            Y0X_transformed = pd.DataFrame(
+                X_quantiles, columns=features, index=Y0X.index
+            )
+            Y0X_transformed.loc[:, ["yhat", split_test_by]] = Y0X[
+                ["yhat", split_test_by]
+            ]
+
+            Y0X_1 = Y0X_transformed[Y0X_transformed[split_test_by] == 1]
+            Y0X_0 = Y0X_transformed[Y0X_transformed[split_test_by] == 0]
+
+        exponent = 1
+        distance_xy = np.reciprocal(xy_mean_weights) * np.multiply(
+            xy_psw,
+            dcor.distances.pairwise_distances(
+                Y0X_1[select_cols], Y0X_0[select_cols], exponent=exponent
+            ),
+        )
+        distance_yy = np.reciprocal(yy_mean_weights) * np.multiply(
+            yy_psw,
+            dcor.distances.pairwise_distances(Y0X_1[select_cols], exponent=exponent),
+        )
+        distance_xx = np.reciprocal(xx_mean_weights) * np.multiply(
+            xx_psw,
+            dcor.distances.pairwise_distances(Y0X_0[select_cols], exponent=exponent),
+        )
+        psw_energy_distance = (
+            2 * np.mean(distance_xy) - np.mean(distance_xx) - np.mean(distance_yy)
+        )
+        return psw_energy_distance
 
     @staticmethod
     def qini_make_score(
@@ -377,7 +482,8 @@ class Scorer:
             estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
             df (pandas.DataFrame): input dataframe
             metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.
-                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', and 'energy_distance'.
+                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc',
+                'energy_distance' and 'psw_energy_distance'.
             r_scorer (Optional): callable object used to compute the R-score, default is None
 
         Returns:
@@ -468,6 +574,12 @@ class Scorer:
         if "energy_distance" in metrics_to_report:
             out["energy_distance"] = Scorer.energy_distance_score(estimate, df)
 
+        if "psw_energy_distance" in metrics_to_report:
+            out["psw_energy_distance"] = self.psw_energy_distance(
+                estimate,
+                df,
+            )
+
         del df
         return out
 
@@ -512,7 +624,7 @@ class Scorer:
             ]
             best[name] = (
                 min(est_scores, key=lambda x: x[metric])
-                if metric == "energy_distance"
+                if metric in ["energy_distance", "psw_energy_distance"]
                 else max(est_scores, key=lambda x: x[metric])
             )
 
