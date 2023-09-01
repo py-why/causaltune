@@ -161,7 +161,8 @@ class Scorer:
 
         Args:
             metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.
-                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', 'energy_distance' and 'psw_energy_distance'.
+                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', 
+                'energy_distance' and 'psw_energy_distance'.
             scoring_metric (str): specified metric
 
         Returns:
@@ -324,7 +325,6 @@ class Scorer:
         )
         return psw_energy_distance
 
-
     @staticmethod
     def qini_make_score(
         estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
@@ -482,7 +482,8 @@ class Scorer:
             estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
             df (pandas.DataFrame): input dataframe
             metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.
-                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', 'energy_distance' and 'psw_energy_distance'.
+                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', 
+                'energy_distance' and 'psw_energy_distance'.
             r_scorer (Optional): callable object used to compute the R-score, default is None
 
         Returns:
