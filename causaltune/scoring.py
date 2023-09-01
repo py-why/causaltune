@@ -108,7 +108,9 @@ class Scorer:
                 X_names=self.psw_estimator._effect_modifier_names
                 + self.psw_estimator._observed_common_causes_names,
             )
-
+            self.erupt = ERUPT(treatment_name=treatment_name, propensity_model=self.psw_estimator.estimator.propensity_model, X_names=self.psw_estimator._effect_modifier_names
+                + self.psw_estimator._observed_common_causes_names,
+            )
     def ate(self, df: pd.DataFrame) -> tuple:
         """Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.
 
@@ -161,7 +163,7 @@ class Scorer:
 
         Args:
             metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.
-                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', 
+                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc',
                 'energy_distance' and 'psw_energy_distance'.
             scoring_metric (str): specified metric
 
@@ -482,7 +484,7 @@ class Scorer:
             estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
             df (pandas.DataFrame): input dataframe
             metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.
-                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc', 
+                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc',
                 'energy_distance' and 'psw_energy_distance'.
             r_scorer (Optional): callable object used to compute the R-score, default is None
 
