@@ -1,5 +1,6 @@
 # CausalTune: A library for automated Causal Inference model estimation and selection
 
+[CausalTune Docs](https://www.pywhy.org/causaltune/)
 
 **CausalTune** is a library for automated tuning and selection for causal estimators.
 
@@ -38,6 +39,8 @@ though energy score performed better in our synthetic data experiments.
     - [4. Observational inference](#4-observational-inference)
     - [5. IV models: Impact of customer choosing to use a feature](#5-iv-models-impact-of-customer-choosing-to-use-a-feature)
   - [Installation](#installation)
+    - [Requirements](#requirements)
+    - [Installation Guide for Mac (for installation from source):](#installation-guide-for-mac-for-installation-from-source)
   - [Quick Start](#quick-start)
   - [Supported Models](#supported-models)
   - [Supported Metrics](#supported-metrics)
@@ -91,10 +94,10 @@ the assignment probability from the data). [Example notebook](https://github.com
 
 If you have reason to suppose unobserved confounders, such as customer intent (did the customer do a lot of volume
 because of the promotion, or did they sign up for the promotion because they intended to do lots of volume anyway?)
-consider looking for an instrumental variable instead. 
+consider looking for an instrumental variable instead.
 <!--
 Can we reformulate to (did the customer do a lot of volume because of the promotion or is the customer more likely
-to sign up for the promotion because they have a higher volume per se?) 
+to sign up for the promotion because they have a higher volume per se?)
 -->
 
 Note that our derivation of energy score as a valid out-of-sample score for causal models is strictly speaking not
@@ -117,7 +120,8 @@ Please be aware we have not yet extensively used the IV model fitting functional
 To install from source, see [For Developers](#for-developers) section below.
 
 
-**Requirements**\
+### Requirements
+
 CausalTune works with Python 3.8 and 3.9.
 
 It requires the following libraries to work:
@@ -125,12 +129,42 @@ It requires the following libraries to work:
 - Pandas
 - EconML
 - DoWhy
+- FLAML
 - Scikit-Learn
+- Dcor
 
-If you run into any problems, try installing the dependencies manually:
+The easiest way to install the dependencies is via
 ```
 pip install -r requirements.txt
 ```
+into the virtual environment of your choice.
+
+### Installation Guide for Mac (for installation from source):
+
+Mac/ OS users: For some machines, it can happen that the package LightGBM which is a dependency of AutoML / Flaml will not automatically be installed properly. In that case, a workaround is to set up a conda environment and install LightGBM through the conda-forge channel
+
+1. Clone the Repository and navigate to the repository
+
+2. Set Up a Conda Environment using an appropriate Python Version
+	- Ensure Anaconda or Miniconda is installed.
+	- Create a new Conda environment: `conda create -n causaltune-env python=3.9.x`
+	- Activate the environment: `conda activate causaltune-env`.
+
+3. Install the dependency lightgbm seperatly before attempting to install other dependencies
+	- `conda install -c conda-forge lightgbm`
+
+4. Install Dependencies
+	- Navigate to the directory containing 'requirements.txt'.
+	- Install dependencies: `pip3 install -r requirements.txt`.
+
+5. Load CausalTune from the Local Repository
+   	- Adjust Python script paths as needed before running import causaltune, e.g.:
+    ```
+    import sys
+    sys.path.append('path/to/cloned/repository')
+    import causaltune
+    ```
+
 
 ## Quick Start
 
