@@ -20,6 +20,7 @@ setup(
         "dowhy==0.9.1",
         "econml==0.14.1",
         "FLAML==1.0.14",
+        "xgboost<2.0.0",
         "numpy<1.24.0",
         "pandas",
         "pytest",
