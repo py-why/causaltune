@@ -1,6 +1,5 @@
 import copy
 import warnings
-from copy import deepcopy
 from typing import List, Optional, Union
 from collections import defaultdict
 
@@ -181,9 +180,9 @@ class CausalTune:
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
         self._settings["try_init_configs"] = try_init_configs
-        self._settings[
-            "include_experimental_estimators"
-        ] = include_experimental_estimators
+        self._settings["include_experimental_estimators"] = (
+            include_experimental_estimators
+        )
 
         # params for FLAML on component models:
         self._settings["component_models"] = {}
@@ -312,6 +311,7 @@ class CausalTune:
         Returns:
             None
         """
+        data = copy.deepcopy(data)
         if outcome is None and isinstance(data, CausalityDataset):
             outcome = data.outcomes[0]
 
@@ -328,10 +328,11 @@ class CausalTune:
             )
 
         if preprocess:
-            dataset_processor = CausalityDatasetProcessor()
-            dataset_processor.fit(data, encoder_type=encoder_type, encoder_outcome=encoder_outcome)
-            self.dataset_processor = dataset_processor
-            data = dataset_processor.transform(data, encoder_type=encoder_type, encoder_outcome=encoder_outcome)
+            self.dataset_processor = CausalityDatasetProcessor()
+            self.dataset_processor.fit(
+                data, encoder_type=encoder_type, outcome=encoder_outcome
+            )
+            data = self.dataset_processor.transform(data)
         else:
             self.dataset_processor = None
 
@@ -487,15 +488,17 @@ class CausalTune:
             self._tune_with_config,
             search_space,
             metric=self.metric,
-            points_to_evaluate=init_cfg
-            if len(self.resume_cfg) == 0
-            else self.resume_cfg,
-            evaluated_rewards=[]
-            if len(self.resume_scores) == 0
-            else self.resume_scores,
-            mode="min"
-            if self.metric in ["energy_distance", "psw_energy_distance"]
-            else "max",
+            points_to_evaluate=(
+                init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
+            ),
+            evaluated_rewards=(
+                [] if len(self.resume_scores) == 0 else self.resume_scores
+            ),
+            mode=(
+                "min"
+                if self.metric in ["energy_distance", "psw_energy_distance"]
+                else "max"
+            ),
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
@@ -710,7 +713,9 @@ class CausalTune:
         """
         return self.model.effect(df, *args, **kwargs)
 
-    def predict(self, cd: CausalityDataset, preprocess: Optional[bool] = False, *args, **kwargs):
+    def predict(
+        self, cd: CausalityDataset, preprocess: Optional[bool] = False, *args, **kwargs
+    ):
         """Heterogeneous Treatment Effects for data CausalityDataset
 
         Args:
@@ -720,6 +725,7 @@ class CausalTune:
             (np.ndarray): predicted treatment effect for each datapoint
 
         """
+        cd = copy.deepcopy(cd)
         if preprocess:
             if self.dataset_processor:
                 cd = self.dataset_processor.transform(cd)
