@@ -711,10 +711,10 @@ class CausalTune:
         return self.model.effect(df, *args, **kwargs)
 
     def predict(self, cd: CausalityDataset, preprocess: Optional[bool] = False, *args, **kwargs):
-        """Heterogeneous Treatment Effects for data df
+        """Heterogeneous Treatment Effects for data CausalityDataset
 
         Args:
-            df (pd.DataFrame): data to predict treatment effect for
+            cd (CausalityDataset): data to predict treatment effect for
 
         Returns:
             (np.ndarray): predicted treatment effect for each datapoint
