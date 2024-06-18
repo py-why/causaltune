@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import copy
 import pandas as pd
@@ -14,7 +14,7 @@ class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
         self.encoder = None
 
     def fit(
-        self, cd: CausalityDataset, encoder_type: str = "onehot", outcome: str = None
+        self, cd: CausalityDataset, encoder_type: Optional[str] = "onehot", outcome: str = None
     ):
         cd = copy.deepcopy(cd)
         self.preprocess_dataset(
@@ -69,7 +69,7 @@ class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
 
         # for other categories, include first column dummy for easier interpretability
         cat_df = df.drop(columns=exclude_cols + float_features)
-        if len(cat_df.columns):
+        if len(cat_df.columns) and encoder_type:
             if encoder_type == "onehot":
                 if fit_phase:
                     encoder = OneHotEncoder(
@@ -137,10 +137,10 @@ class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
     def preprocess_dataset(
         self,
         cd: CausalityDataset,
-        drop_first: bool = False,
+        drop_first: Optional[bool] = False,
         fit_phase: bool = True,
-        encoder_type: str = "onehot",
-        outcome: str = None,
+        encoder_type: Optional[str] = "onehot",
+        outcome: Optional[str] = None,
     ):
         """Preprocesses input dataset for CausalTune by
         converting treatment and instrument columns to integer, normalizing, filling nans, and one-hot encoding.

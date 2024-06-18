@@ -29,6 +29,7 @@ from causaltune.models.monkey_patches import (
     effect_stderr,
 )
 from causaltune.data_utils import CausalityDataset
+from causaltune.dataset_processor import CausalityDatasetProcessor
 from causaltune.models.passthrough import feature_filter
 
 
@@ -285,6 +286,9 @@ class CausalTune:
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
+        preprocess: bool = False,
+        encoder_type: Optional[str] = None,
+        encoder_outcome: Optional[str] = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -301,6 +305,9 @@ class CausalTune:
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
+            preprocess (bool): preprocess CausalityDataset if needed.
+            encoder_type (Optional[str]): Categorical Encoder for preprocessing
+            encoder_outcome (Optional[str]): Categorical Encoder target for preprocessing: TargetEncoder, WOE.
 
         Returns:
             None
@@ -319,6 +326,14 @@ class CausalTune:
                 instruments=instruments,
                 propensity_modifiers=propensity_modifiers,
             )
+
+        if preprocess:
+            dataset_processor = CausalityDatasetProcessor()
+            dataset_processor.fit(data, encoder_type=encoder_type, encoder_outcome=encoder_outcome)
+            self.dataset_processor = dataset_processor
+            data = dataset_processor.transform(data, encoder_type=encoder_type, encoder_outcome=encoder_outcome)
+        else:
+            self.dataset_processor = None
 
         self.data = data
         treatment_values = data.treatment_values
@@ -694,6 +709,23 @@ class CausalTune:
 
         """
         return self.model.effect(df, *args, **kwargs)
+
+    def predict(self, cd: CausalityDataset, preprocess: Optional[bool] = False, *args, **kwargs):
+        """Heterogeneous Treatment Effects for data df
+
+        Args:
+            df (pd.DataFrame): data to predict treatment effect for
+
+        Returns:
+            (np.ndarray): predicted treatment effect for each datapoint
+
+        """
+        if preprocess:
+            if self.dataset_processor:
+                cd = self.dataset_processor.transform(cd)
+            else:
+                raise ValueError("CausalityDatasetProcessor has not been trained")
+        return self.model.effect(cd.data, *args, **kwargs)
 
     def effect_inference(self, df, *args, **kwargs):
         """Inference (uncertainty) results produced by best estimator
