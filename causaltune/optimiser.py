@@ -1,4 +1,5 @@
 import copy
+from copy import deepcopy
 import warnings
 from typing import List, Optional, Union
 from collections import defaultdict
