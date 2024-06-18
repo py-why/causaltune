@@ -31,6 +31,7 @@ setup(
         "setuptools==65.5.1",
         "wise-pizza",
         "seaborn",
+        "category_encoders"
     ],
     extras_require={
         "test": [
