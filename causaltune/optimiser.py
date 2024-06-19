@@ -312,7 +312,6 @@ class CausalTune:
         Returns:
             None
         """
-        data = copy.deepcopy(data)
         if outcome is None and isinstance(data, CausalityDataset):
             outcome = data.outcomes[0]
 
@@ -329,6 +328,7 @@ class CausalTune:
             )
 
         if preprocess:
+            data = copy.deepcopy(data)
             self.dataset_processor = CausalityDatasetProcessor()
             self.dataset_processor.fit(
                 data, encoder_type=encoder_type, outcome=encoder_outcome
@@ -726,8 +726,8 @@ class CausalTune:
             (np.ndarray): predicted treatment effect for each datapoint
 
         """
-        cd = copy.deepcopy(cd)
         if preprocess:
+            cd = copy.deepcopy(cd)
             if self.dataset_processor:
                 cd = self.dataset_processor.transform(cd)
             else:
