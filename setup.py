@@ -5,7 +5,7 @@ with open("README.md") as f:
 
 setup(
     name="causaltune",
-    version="0.1.3",
+    version="0.1.4",
     description="AutoML for Causal Inference.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -31,6 +31,7 @@ setup(
         "setuptools==65.5.1",
         "wise-pizza",
         "seaborn",
+        "category_encoders",
     ],
     extras_require={
         "test": [

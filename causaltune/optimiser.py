@@ -1,6 +1,6 @@
 import copy
-import warnings
 from copy import deepcopy
+import warnings
 from typing import List, Optional, Union
 from collections import defaultdict
 
@@ -29,6 +29,7 @@ from causaltune.models.monkey_patches import (
     effect_stderr,
 )
 from causaltune.data_utils import CausalityDataset
+from causaltune.dataset_processor import CausalityDatasetProcessor
 from causaltune.models.passthrough import feature_filter
 
 
@@ -180,9 +181,9 @@ class CausalTune:
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
         self._settings["try_init_configs"] = try_init_configs
-        self._settings[
-            "include_experimental_estimators"
-        ] = include_experimental_estimators
+        self._settings["include_experimental_estimators"] = (
+            include_experimental_estimators
+        )
 
         # params for FLAML on component models:
         self._settings["component_models"] = {}
@@ -285,6 +286,9 @@ class CausalTune:
         estimator_list: Optional[Union[str, List[str]]] = None,
         resume: Optional[bool] = False,
         time_budget: Optional[int] = None,
+        preprocess: bool = False,
+        encoder_type: Optional[str] = None,
+        encoder_outcome: Optional[str] = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -301,6 +305,9 @@ class CausalTune:
             estimator_list (Optional[Union[str, List[str]]]): subset of estimators to consider
             resume (Optional[bool]): set to True to continue previous fit
             time_budget (Optional[int]): change new time budget allocated to fit, useful for warm starts.
+            preprocess (bool): preprocess CausalityDataset if needed.
+            encoder_type (Optional[str]): Categorical Encoder for preprocessing
+            encoder_outcome (Optional[str]): Categorical Encoder target for preprocessing: TargetEncoder, WOE.
 
         Returns:
             None
@@ -319,6 +326,16 @@ class CausalTune:
                 instruments=instruments,
                 propensity_modifiers=propensity_modifiers,
             )
+
+        if preprocess:
+            data = copy.deepcopy(data)
+            self.dataset_processor = CausalityDatasetProcessor()
+            self.dataset_processor.fit(
+                data, encoder_type=encoder_type, outcome=encoder_outcome
+            )
+            data = self.dataset_processor.transform(data)
+        else:
+            self.dataset_processor = None
 
         self.data = data
         treatment_values = data.treatment_values
@@ -472,15 +489,17 @@ class CausalTune:
             self._tune_with_config,
             search_space,
             metric=self.metric,
-            points_to_evaluate=init_cfg
-            if len(self.resume_cfg) == 0
-            else self.resume_cfg,
-            evaluated_rewards=[]
-            if len(self.resume_scores) == 0
-            else self.resume_scores,
-            mode="min"
-            if self.metric in ["energy_distance", "psw_energy_distance"]
-            else "max",
+            points_to_evaluate=(
+                init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
+            ),
+            evaluated_rewards=(
+                [] if len(self.resume_scores) == 0 else self.resume_scores
+            ),
+            mode=(
+                "min"
+                if self.metric in ["energy_distance", "psw_energy_distance"]
+                else "max"
+            ),
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
@@ -694,6 +713,26 @@ class CausalTune:
 
         """
         return self.model.effect(df, *args, **kwargs)
+
+    def predict(
+        self, cd: CausalityDataset, preprocess: Optional[bool] = False, *args, **kwargs
+    ):
+        """Heterogeneous Treatment Effects for data CausalityDataset
+
+        Args:
+            cd (CausalityDataset): data to predict treatment effect for
+
+        Returns:
+            (np.ndarray): predicted treatment effect for each datapoint
+
+        """
+        if preprocess:
+            cd = copy.deepcopy(cd)
+            if self.dataset_processor:
+                cd = self.dataset_processor.transform(cd)
+            else:
+                raise ValueError("CausalityDatasetProcessor has not been trained")
+        return self.model.effect(cd.data, *args, **kwargs)
 
     def effect_inference(self, df, *args, **kwargs):
         """Inference (uncertainty) results produced by best estimator
