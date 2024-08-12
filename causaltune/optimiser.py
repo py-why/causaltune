@@ -497,7 +497,7 @@ class CausalTune:
             ),
             mode=(
                 "min"
-                if self.metric in ["energy_distance", "psw_energy_distance"]
+                if self.metric in ["energy_distance", "psw_energy_distance", "frobenius_norm","codec","policy_risk"]
                 else "max"
             ),
             low_cost_partial_config={},
