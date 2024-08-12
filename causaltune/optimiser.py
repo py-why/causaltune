@@ -527,44 +527,45 @@ class CausalTune:
             self.scores[est_name]["estimator"] = self._best_estimators[est_name][1]
 
     def _tune_with_config(self, config: dict) -> dict:
-        """Performs Hyperparameter Optimisation for a
-        causal inference estimator
+        """
+        Performs Hyperparameter Optimisation for a causal inference estimator.
 
         Args:
-            config (dict): dictionary with search space for
-                all tunable parameters
+            config (dict): Dictionary with search space for all tunable parameters.
 
         Returns:
             (dict): values of metrics after optimisation
         """
-        # estimate effect with current config
-
-        # if using FLAML < 1.0.7 need to set n_jobs = 2 here
-        # to spawn a separate process to prevent cross-talk between tuner and automl on component models:
-
         estimates = Parallel(n_jobs=2, backend="threading")(
             delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
         )[0]
-        # estimates = self._estimate_effect(config["estimator"])
 
-        # pop and cache separately the fitted model object, so we only store the best ones per estimator
         if "exception" not in estimates:
             est_name = estimates["estimator_name"]
-            if (
-                self._best_estimators[est_name][0] > estimates[self.metric]
-                if self.metric in ["energy_distance", "psw_energy_distance"]
-                else self._best_estimators[est_name][0] < estimates[self.metric]
-            ):
-                if self._settings["store_all"]:
-                    self._best_estimators[est_name] = (
-                        estimates[self.metric],
-                        estimates["estimator"],
-                    )
-                else:
-                    self._best_estimators[est_name] = (
-                        estimates[self.metric],
-                        estimates.pop("estimator"),
-                    )
+            current_score = estimates[self.metric]
+
+            # Initialize best_score if this is the first estimator for this name
+            if est_name not in self._best_estimators:
+                self._best_estimators[est_name] = (np.inf if self.metric in ["energy_distance", 
+                                                                             "psw_energy_distance", 
+                                                                             "frobenius_norm", 
+                                                                             "codec", 
+                                                                             "policy_risk"] else -np.inf, None)
+
+            best_score = self._best_estimators[est_name][0]
+
+            # Determine if the current estimator performs better, handling inf values
+            if self.metric in ["energy_distance", "psw_energy_distance", "frobenius_norm", "codec","policy_risk"]:
+                is_better = (np.isfinite(current_score) and current_score < best_score) or (np.isinf(best_score) and np.isfinite(current_score))
+            else:
+                is_better = (np.isfinite(current_score) and current_score > best_score) or (np.isinf(best_score) and np.isfinite(current_score))
+
+            # Store the estimator if we're storing all, if it's better, or if it's the first valid (non-inf) estimator
+            if self._settings["store_all"] or is_better or (self._best_estimators[est_name][1] is None and np.isfinite(current_score)):
+                self._best_estimators[est_name] = (
+                    current_score,
+                    estimates["estimator"] if self._settings["store_all"] else estimates.pop("estimator")
+                )
 
         return estimates
 
