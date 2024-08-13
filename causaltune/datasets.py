@@ -403,7 +403,8 @@ def generate_synthetic_data(
     err = np.random.randn(n_samples) * 0.05 if noisy_outcomes else 0
 
     # nonlinear dependence of Y on X:
-    mu = lambda X: X[:, 0] * X[:, 1] + X[:, 2] + X[:, 3] * X[:, 4]  # noqa E731
+    def mu(X):
+        return X[:, 0] * X[:, 1] + X[:, 2] + X[:, 3] * X[:, 4]  # noqa E731
 
     Y_base = mu(X) + err
     Y = tau * T + Y_base
@@ -425,7 +426,6 @@ def generate_synthetic_data(
         df["instrument"] = Z
         data.instruments = ["instrument"]
     return data
-
 
 
 def generate_linear_synthetic_data(
@@ -498,7 +498,8 @@ def generate_linear_synthetic_data(
     err = np.random.randn(n_samples) * 0.05 if noisy_outcomes else 0
 
     # linear dependence of Y on X:
-    mu = lambda X: X @ np.random.uniform(0.1, 0.3, size=n_covariates)  # noqa E731
+    def mu(X):
+        return X @ np.random.uniform(0.1, 0.3, size=n_covariates)  # noqa E731
 
     Y_base = mu(X) + err
     Y = tau * T + Y_base
@@ -520,9 +521,6 @@ def generate_linear_synthetic_data(
         df["instrument"] = Z
         data.instruments = ["instrument"]
     return data
-
-
-
 
 
 def generate_synth_data_with_categories(
