@@ -91,7 +91,8 @@ class Scorer:
 
         if problem == "backdoor":
             print(
-                "Fitting a Propensity-Weighted scoring estimator to be used in scoring tasks"
+                "Fitting a Propensity-Weighted scoring estimator "
+                "to be used in scoring tasks"
             )
             treatment_series = causal_model._data[causal_model._treatment[0]]
             # this will also fit self.propensity_model, which we'll also use in
@@ -122,7 +123,8 @@ class Scorer:
             if not isinstance(treatment_name, str):
                 treatment_name = treatment_name[0]
 
-            # No need to call self.erupt.fit() as propensity model is already fitted
+            # No need to call self.erupt.fit()
+            # as propensity model is already fitted
             # self.propensity_model = est.propensity_model
             self.erupt = ERUPT(
                 treatment_name=treatment_name,
@@ -132,15 +134,17 @@ class Scorer:
             )
 
     def ate(self, df: pd.DataFrame) -> tuple:
-        """Calculate the Average Treatment Effect. Provide naive std estimates in single-treatment cases.
+        """
+        Calculate the Average Treatment Effect. Provide naive std estimates in
+        single-treatment cases.
 
         Args:
             df (pandas.DataFrame): input dataframe
 
         Returns:
-            tuple: tuple containing the ATE, standard deviation of the estimate (or None if multi-treatment),
-                and sample size (or None if estimate has more than one dimension)
-
+            tuple: tuple containing the ATE, standard deviation of the estimate
+            (or None if multi-treatment), and sample size (or None if estimate
+            has more than one dimension)
         """
 
         estimate = self.psw_estimator.estimator.effect(df).mean(axis=0)
@@ -156,7 +160,8 @@ class Scorer:
             return estimate, None, None
 
     def resolve_metric(self, metric: str) -> str:
-        """Check if supplied metric is supported. If not, default to 'energy_distance'.
+        """Check if supplied metric is supported.
+            If not, default to 'energy_distance'.
 
         Args:
             metric (str): evaluation metric
@@ -181,16 +186,18 @@ class Scorer:
     def resolve_reported_metrics(
         self, metrics_to_report: Union[List[str], None], scoring_metric: str
     ) -> List[str]:
-        """Check if supplied reporting metrics are valid.
+        """
+        Check if supplied reporting metrics are valid.
 
         Args:
-            metrics_to_report (Union[List[str], None]): list of strings specifying the evaluation metrics to compute.
-                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc',
-                'energy_distance' and 'psw_energy_distance'.
-            scoring_metric (str): specified metric
+            metrics_to_report (Union[List[str], None]): list of strings
+            specifying the evaluation metrics to compute. Possible options
+            include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc',
+            'energy_distance', and 'psw_energy_distance'.
+            scoring_metric (str): specified metric.
 
         Returns:
-            List[str]: list of valid metrics
+            List[str]: list of valid metrics.
         """
 
         metrics = supported_metrics(
@@ -217,16 +224,17 @@ class Scorer:
         estimate: CausalEstimate,
         df: pd.DataFrame,
     ) -> float:
-        """Calculate energy distance score between treated and controls.
-        For theoretical details, see Ramos-Carreño and Torrecilla (2023).
+        """
+        Calculate energy distance score between treated and controls. For
+        theoretical details, see Ramos-Carreño and Torrecilla (2023).
 
         Args:
-            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate
+            to evaluate
             df (pandas.DataFrame): input dataframe
 
         Returns:
             float: energy distance score
-
         """
 
         Y0X, _, split_test_by = Scorer._Y0_X_potential_outcomes(estimate, df)
@@ -276,10 +284,12 @@ class Scorer:
         Args:
             estimate (CausalEstimate): causal estimate to evaluate
             df (pandas.DataFrame): input dataframe
-            sd_threshold (float): threshold for standard deviation of CATE estimates
+            sd_threshold (float): threshold for standard deviation of CATE
+            estimates
 
         Returns:
-            float: Frobenius norm-based score, or np.inf if calculation is not possible
+            float: Frobenius norm-based score, or np.inf if calculation is
+            not possible
         """
         # Attempt to get CATE estimates, handling potential AttributeErrors
         try:
@@ -292,7 +302,7 @@ class Scorer:
 
         # Check if CATE estimates are consistently constant (below threshold)
         if np.std(cate_estimates) <= sd_threshold:
-            return np.inf  # Return inf for consistently constant CATE estimates
+            return np.inf  # Return inf for constant CATE estimates
 
         # Prepare data for treated and control groups
         Y0X, treatment_name, split_test_by = self._Y0_X_potential_outcomes(
@@ -308,7 +318,8 @@ class Scorer:
         select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
 
         # Calculate propensity scores for treated group
-        YX_1_all_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+        propensitymodel = self.psw_estimator.estimator.propensity_model
+        YX_1_all_psw = propensitymodel.predict_proba(
             Y0X_1[
                 self.causal_model.get_effect_modifiers()
                 + self.causal_model.get_common_causes()
@@ -317,11 +328,13 @@ class Scorer:
         treatment_series = Y0X_1[treatment_name]
         YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
         for i in treatment_series.unique():
-            YX_1_psw[treatment_series == i] = YX_1_all_psw[:,
-                                                           i][treatment_series == i]
+            YX_1_psw[treatment_series == i] = (
+                YX_1_all_psw[:, i][treatment_series == i]
+            )
 
         # Calculate propensity scores for control group
-        YX_0_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+        propensitymodel = self.psw_estimator.estimator.propensity_model
+        YX_0_psw = propensitymodel.predict_proba(
             Y0X_0[
                 self.causal_model.get_effect_modifiers()
                 + self.causal_model.get_common_causes()
@@ -357,18 +370,23 @@ class Scorer:
         normalise_features=False,
     ) -> float:
         """
-        Calculate propensity score adjusted energy distance score between treated and controls.
+        Calculate propensity score adjusted energy distance score between
+        treated and controls.
 
-        Features are normalised using the sklearn.preprocessing.QuantileTransformer
+        Features are normalized using the
+        `sklearn.preprocessing.QuantileTransformer`.
 
         For theoretical details, see Ramos-Carreño and Torrecilla (2023).
 
-        @param estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-        @param df (pandas.DataFrame): input dataframe
-        @param normalise_features (bool): whether to normalise features with QuantileTransformer
+        Args:
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate
+            to evaluate.
+            df (pandas.DataFrame): input dataframe.
+            normalise_features (bool): whether to normalize features with
+            `QuantileTransformer`.
 
-        @return float: propensity-score weighted energy distance score
-
+        Returns:
+            float: propensity-score weighted energy distance score.
         """
 
         Y0X, treatment_name, split_test_by = Scorer._Y0_X_potential_outcomes(
@@ -378,7 +396,8 @@ class Scorer:
         Y0X_1 = Y0X[Y0X[split_test_by] == 1]
         Y0X_0 = Y0X[Y0X[split_test_by] == 0]
 
-        YX_1_all_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+        propensitymodel = self.psw_estimator.estimator.propensity_model
+        YX_1_all_psw = propensitymodel.predict_proba(
             Y0X_1[
                 self.causal_model.get_effect_modifiers()
                 + self.causal_model.get_common_causes()
@@ -388,10 +407,12 @@ class Scorer:
 
         YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
         for i in treatment_series.unique():
-            YX_1_psw[treatment_series == i] = YX_1_all_psw[:,
-                                                           i][treatment_series == i]
+            YX_1_psw[treatment_series == i] = (
+                YX_1_all_psw[:, i][treatment_series == i]
+            )
 
-        YX_0_psw = self.psw_estimator.estimator.propensity_model.predict_proba(
+        propensitymodel = self.psw_estimator.estimator.propensity_model
+        YX_0_psw = propensitymodel.predict_proba(
             Y0X_0[
                 self.causal_model.get_effect_modifiers()
                 + self.causal_model.get_common_causes()
@@ -490,8 +511,9 @@ class Scorer:
                 "Propensity model fitting failed. Please check the setup.")
         else:
             # Calculate propensity scores using the pre-fitted propensity model
-            propensity_scores = self.psw_estimator.estimator.propensity_model.predict_proba(
-                df)
+            propensity_scores = (
+                self.psw_estimator.estimator.propensity_model.predict_proba(df)
+            )
             if propensity_scores.ndim == 2:
                 # Use second column if 2D array
                 propensity_scores = propensity_scores[:, 1]
@@ -512,18 +534,21 @@ class Scorer:
         rct_df['policy_treatment'] = policy_treatment[rct_indices]
 
         # Compute policy value using inverse probability weighting
-        value_policy = ((rct_df[outcome_name] *
-                         (rct_df[treatment_name] == 1)
-                         * (rct_df['policy_treatment'] == 1)
-                         * rct_df['weight']).sum()
-                        / rct_df['weight'].sum()
-                        * (rct_df['policy_treatment'] == 1).mean()
-                        + (rct_df[outcome_name]
-                           * (rct_df[treatment_name] == 0)
-                           * (rct_df['policy_treatment'] == 0)
-                           * rct_df['weight']).sum() /
-                        rct_df['weight'].sum()
-                        * (rct_df['policy_treatment'] == 0).mean())
+        value_policy = (
+            (
+                (rct_df[outcome_name] * (rct_df[treatment_name] == 1)
+                 * (rct_df['policy_treatment'] == 1)
+                 * rct_df['weight']).sum()
+                / rct_df['weight'].sum()
+                * (rct_df['policy_treatment'] == 1).mean()
+            ) + (
+                (rct_df[outcome_name] * (rct_df[treatment_name] == 0)
+                 * (rct_df['policy_treatment'] == 0)
+                 * rct_df['weight']).sum()
+                / rct_df['weight'].sum()
+                * (rct_df['policy_treatment'] == 0).mean()
+            )
+        )
 
         # Compute Policy Risk (1 - policy value)
         policy_risk = 1 - value_policy
@@ -534,16 +559,18 @@ class Scorer:
     def qini_make_score(
         estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray
     ) -> float:
-        """Calculate the Qini score, defined as the area between the Qini curves of a model and random.
+        """
+        Calculate the Qini score, defined as the area between the Qini curves
+        of a model and random.
 
         Args:
-            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate
+            to evaluate
             df (pandas.DataFrame): input dataframe
-            cate_estimate (np.ndarray): array with cate estimates
+            cate_estimate (np.ndarray): array with CATE estimates
 
         Returns:
             float: Qini score
-
         """
 
         est = estimate.estimator
@@ -569,7 +596,8 @@ class Scorer:
         ids (array-like): List of indices to sample from.
 
         Returns:
-        numpy.ndarray: Array of sampled indices with no position i having x[i] == i.
+        numpy.ndarray: Array of sampled indices with
+        no position i having x[i] == i.
         """
 
         m = len(ids)
@@ -583,7 +611,8 @@ class Scorer:
     @staticmethod
     def estimateConditionalQ(Y, X, Z):
         """
-        Estimate Q(Y, Z | X), the numerator of the measure of conditional dependence of Y on Z given X.
+        Estimate Q(Y, Z | X), the numerator of the measure of
+        conditional dependence of Y on Z given X.
 
         Parameters:
         Y (array-like): Vector of responses (length n).
@@ -661,7 +690,8 @@ class Scorer:
     @staticmethod
     def estimateConditionalS(Y, X):
         """
-        Estimate S(Y, X), the denominator of the measure of dependence of Y on Z given X.
+        Estimate S(Y, X), the denominator of the
+        measure of dependence of Y on Z given X.
 
         Parameters:
         Y (array-like): Vector of responses (length n).
@@ -738,22 +768,27 @@ class Scorer:
         """
         Estimate the conditional dependence coefficient (CODEC).
 
-        The conditional dependence coefficient (CODEC) is a measure of the amount of conditional dependence between
-        a random variable Y and a random vector Z given a random vector X, based on an i.i.d. sample of (Y, Z, X).
-        The coefficient is asymptotically guaranteed to be between 0 and 1.
+        The conditional dependence coefficient (CODEC) is a measure of the
+        amount of conditional dependence between a random variable Y and a
+        random vector Z given a random vector X, based on an i.i.d. sample of
+        (Y, Z, X). The coefficient is asymptotically guaranteed to be between
+        0 and 1.
 
         Parameters:
-        Y (array-like): Vector of responses (length n).
-        Z (array-like): Matrix of predictors (n by q).
-        X (array-like, optional): Matrix of predictors (n by p). Default is None.
-        na_rm (bool): If True, remove NAs.
+            Y (array-like): Vector of responses (length n).
+            Z (array-like): Matrix of predictors (n by q).
+            X (array-like, optional): Matrix of predictors (n by p). Default
+            is None.
+            na_rm (bool): If True, remove NAs.
 
         Returns:
-        float: The conditional dependence coefficient (CODEC) of Y and Z given X. If X is None, this is just a measure of the dependence between Y and Z.
+            float: The conditional dependence coefficient (CODEC) of Y and Z
+            given X. If X is None, this is just a measure of the dependence
+            between Y and Z.
 
         References:
-        Azadkia, M. and Chatterjee, S. (2019). A simple measure of conditional dependence.
-        https://arxiv.org/pdf/1910.12327.pdf
+            Azadkia, M. and Chatterjee, S. (2019). A simple measure of
+            conditional dependence. https://arxiv.org/pdf/1910.12327.pdf
         """
 
         if X is None:
@@ -869,7 +904,8 @@ class Scorer:
         """Calculate the area under the uplift curve.
 
         Args:
-            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate
+            to evaluate
             df (pandas.DataFrame): input dataframe
             cate_estimate (np.ndarray): array with cate estimates
 
@@ -914,18 +950,21 @@ class Scorer:
             df: pd.DataFrame,
             cate_estimate: np.ndarray,
             r_scorer) -> float:
-        """Calculate r_score.
-        For details refer to Nie and Wager (2017) and Schuler et al. (2018). Adaption from EconML implementation.
+        """
+        Calculate r_score.
+
+        For details, refer to Nie and Wager (2017) and Schuler et al. (2018).
+        Adapted from the EconML implementation.
 
         Args:
-            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate
+            to evaluate
             df (pandas.DataFrame): input dataframe
-            cate_estimate (np.ndarray): array with cate estimates
+            cate_estimate (np.ndarray): array with CATE estimates
             r_scorer: callable object used to compute the R-score
 
         Returns:
             float: r_score
-
         """
 
         # TODO
@@ -957,16 +996,18 @@ class Scorer:
     def group_ate(
         self, df: pd.DataFrame, policy: Union[pd.DataFrame, np.ndarray]
     ) -> pd.DataFrame:
-        """Compute the average treatment effect (ATE) for different groups specified by a policy.
+        """
+        Compute the average treatment effect (ATE) for different groups
+        specified by a policy.
 
         Args:
-            df (pandas.DataFrame): input dataframe, should contain columns for the treatment, outcome, and policy
-            policy (Union[pd.DataFrame, np.ndarray]): policy column in df or an array of the policy values,
-                used to group the data
+            df (pandas.DataFrame): input dataframe, should contain columns
+            for the treatment, outcome, and policy.
+            policy (Union[pd.DataFrame, np.ndarray]): policy column in df or
+            an array of the policy values, used to group the data.
 
         Returns:
-            pandas.DataFrame: ATE, std, and size per policy
-
+            pandas.DataFrame: ATE, std, and size per policy.
         """
 
         tmp = {"all": self.ate(df)}
@@ -987,20 +1028,26 @@ class Scorer:
         metrics_to_report: List[str],
         r_scorer=None,
     ) -> dict:
-        """Calculate various performance metrics for a given causal estimate using a given DataFrame.
+        """
+        Calculate various performance metrics for a given causal estimate using
+        a given DataFrame.
 
         Args:
-            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate to evaluate
-            df (pandas.DataFrame): input dataframe
-            metrics_to_report (List[str]): list of strings specifying the evaluation metrics to compute.
-                Possible options include 'ate', 'erupt', 'norm_erupt', 'qini', 'auc',
-                'energy_distance' and 'psw_energy_distance'.
-            r_scorer (Optional): callable object used to compute the R-score, default is None
+            estimate (dowhy.causal_estimator.CausalEstimate): causal estimate
+            to evaluate.
+            df (pandas.DataFrame): input dataframe.
+            metrics_to_report (List[str]): list of strings specifying the
+            evaluation metrics to compute. Possible options include 'ate',
+            'erupt', 'norm_erupt', 'qini', 'auc', 'energy_distance' and
+            'psw_energy_distance'.
+            r_scorer (Optional): callable object used to compute the R-score,
+            default is None.
 
         Returns:
-            dict: dictionary containing the evaluation metrics specified in metrics_to_report.
-                The values key in the dictionary contains the input DataFrame with additional columns for
-                the propensity scores, the policy, the normalized policy, and the weights, if applicable.
+            dict: dictionary containing the evaluation metrics specified in
+            metrics_to_report. The values key in the dictionary contains the
+            input DataFrame with additional columns for the propensity scores,
+            the policy, the normalized policy, and the weights, if applicable.
         """
 
         out = dict()
@@ -1031,23 +1078,24 @@ class Scorer:
         if self.problem == "backdoor":
             values = df[[treatment_name, outcome_name]]
             simple_ate = self.ate(df)[0]
+
             if isinstance(simple_ate, float):
                 # simple_ate = simple_ate[0]
                 # .reset_index(drop=True)
-                values[
-                    "p"
-                ] = self.psw_estimator.estimator.propensity_model.predict_proba(
-                    df[
-                        self.causal_model.get_effect_modifiers()
-                        + self.causal_model.get_common_causes()
-                    ]
-                )[
-                    :, 1
-                ]
+                propensitymodel = self.psw_estimator.estimator.propensity_model
+                values["p"] = (
+                    propensitymodel.predict_proba(
+                        df[
+                            self.causal_model.get_effect_modifiers()
+                            + self.causal_model.get_common_causes()
+                        ]
+                    )[:, 1]
+                )
                 values["policy"] = cate_estimate > 0
                 values["norm_policy"] = cate_estimate > simple_ate
                 values["weights"] = self.erupt.weights(
-                    df, lambda x: cate_estimate > 0)
+                    df, lambda x: cate_estimate > 0
+                )
             else:
                 pass
                 # TODO: what do we do here if multiple treatments?
@@ -1062,9 +1110,9 @@ class Scorer:
                     self.erupt.score(
                         df,
                         df[outcome_name],
-                        cate_estimate > simple_ate) -
-                    simple_ate
-                    * values["norm_policy"].mean())
+                        cate_estimate > simple_ate
+                    ) - simple_ate * values["norm_policy"].mean()
+                )
                 out["norm_erupt"] = norm_erupt_score
 
             if "prob_erupt" in metrics_to_report:
@@ -1072,7 +1120,10 @@ class Scorer:
                 treatment_std_devs = pd.Series(
                     cate_estimate.std(), index=df.index)
                 prob_erupt_score = self.erupt.probabilistic_erupt_score(
-                    df, df[outcome_name], treatment_effects, treatment_std_devs)
+                    df, df[outcome_name],
+                    treatment_effects,
+                    treatment_std_devs
+                )
                 out["prob_erupt"] = prob_erupt_score
 
             if "frobenius_norm" in metrics_to_report:
@@ -1142,7 +1193,8 @@ class Scorer:
         for k, v in scores.items():
             if "estimator_name" not in v:
                 raise ValueError(
-                    f"Malformed scores dict, 'estimator_name' field missing in {k}, {v}"
+                    f"Malformed scores dict, 'estimator_name' field missing "
+                    f"in{k}, {v}"
                 )
 
         estimator_names = sorted(
