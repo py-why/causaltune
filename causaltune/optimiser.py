@@ -181,9 +181,9 @@ class CausalTune:
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
         self._settings["try_init_configs"] = try_init_configs
-        self._settings["include_experimental_estimators"] = (
-            include_experimental_estimators
-        )
+        self._settings[
+            "include_experimental_estimators"
+        ] = include_experimental_estimators
 
         # params for FLAML on component models:
         self._settings["component_models"] = {}
@@ -497,7 +497,14 @@ class CausalTune:
             ),
             mode=(
                 "min"
-                if self.metric in ["energy_distance", "psw_energy_distance", "frobenius_norm","codec","policy_risk"]
+                if self.metric
+                in [
+                    "energy_distance",
+                    "psw_energy_distance",
+                    "frobenius_norm",
+                    "codec",
+                    "policy_risk",
+                ]
                 else "max"
             ),
             low_cost_partial_config={},
@@ -546,25 +553,52 @@ class CausalTune:
 
             # Initialize best_score if this is the first estimator for this name
             if est_name not in self._best_estimators:
-                self._best_estimators[est_name] = (np.inf if self.metric in ["energy_distance", 
-                                                                             "psw_energy_distance", 
-                                                                             "frobenius_norm", 
-                                                                             "codec", 
-                                                                             "policy_risk"] else -np.inf, None)
+                self._best_estimators[est_name] = (
+                    np.inf
+                    if self.metric
+                    in [
+                        "energy_distance",
+                        "psw_energy_distance",
+                        "frobenius_norm",
+                        "codec",
+                        "policy_risk",
+                    ]
+                    else -np.inf,
+                    None,
+                )
 
             best_score = self._best_estimators[est_name][0]
 
             # Determine if the current estimator performs better, handling inf values
-            if self.metric in ["energy_distance", "psw_energy_distance", "frobenius_norm", "codec","policy_risk"]:
-                is_better = (np.isfinite(current_score) and current_score < best_score) or (np.isinf(best_score) and np.isfinite(current_score))
+            if self.metric in [
+                "energy_distance",
+                "psw_energy_distance",
+                "frobenius_norm",
+                "codec",
+                "policy_risk",
+            ]:
+                is_better = (
+                    np.isfinite(current_score) and current_score < best_score
+                ) or (np.isinf(best_score) and np.isfinite(current_score))
             else:
-                is_better = (np.isfinite(current_score) and current_score > best_score) or (np.isinf(best_score) and np.isfinite(current_score))
+                is_better = (
+                    np.isfinite(current_score) and current_score > best_score
+                ) or (np.isinf(best_score) and np.isfinite(current_score))
 
             # Store the estimator if we're storing all, if it's better, or if it's the first valid (non-inf) estimator
-            if self._settings["store_all"] or is_better or (self._best_estimators[est_name][1] is None and np.isfinite(current_score)):
+            if (
+                self._settings["store_all"]
+                or is_better
+                or (
+                    self._best_estimators[est_name][1] is None
+                    and np.isfinite(current_score)
+                )
+            ):
                 self._best_estimators[est_name] = (
                     current_score,
-                    estimates["estimator"] if self._settings["store_all"] else estimates.pop("estimator")
+                    estimates["estimator"]
+                    if self._settings["store_all"]
+                    else estimates.pop("estimator"),
                 )
 
         return estimates
