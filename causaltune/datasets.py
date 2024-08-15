@@ -445,9 +445,11 @@ def generate_linear_synthetic_data(
         n_samples (int, optional): number of independent samples. Defaults to 100.
         n_covariates (int, optional): number of covariates. Defaults to 5.
         covariance (Union[str, np.ndarray], optional): covariance matrix of covariates. can be "isotropic",
-         "anisotropic" or user-supplied. Defaults to "isotropic".
-        confounding (bool, optional): whether or not values of covariates affect treatment effect. Defaults to True.
-        linear_confounder (bool, optional): whether to use a linear confounder for treatment assignment. Defaults to False.
+            "anisotropic" or user-supplied. Defaults to "isotropic".
+        confounding (bool, optional): whether or not values of covariates affect treatment effect.
+            Defaults to True.
+        linear_confounder (bool, optional): whether to use a linear confounder for treatment assignment. 
+            Defaults to False.
         noisy_outcomes (bool, optional): additive noise in the outcomes. Defaults to False.
         add_instrument (bool, optional): include instrumental variable (yes/no). Defaults to False
         effect_size (Union[int, None]): if provided, constant effect size (ATE). if None, generate CATE.
