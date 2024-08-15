@@ -12,8 +12,10 @@ from causaltune.utils import generate_psdmat
 
 
 def linear_multi_dataset(
-    n_points=10000, impact=None, include_propensity=False, include_control=False
-) -> CausalityDataset:
+        n_points=10000,
+        impact=None,
+        include_propensity=False,
+        include_control=False) -> CausalityDataset:
     if impact is None:
         impact = {0: 0.0, 1: 2.0, 2: 1.0}
     df = pd.DataFrame(
@@ -78,9 +80,8 @@ def nhefs() -> CausalityDataset:
     df = df.loc[~missing]
 
     df = df[covariates + ["qsmk"] + ["wt82_71"]]
-    df.rename(
-        columns={c: "x" + str(i + 1) for i, c in enumerate(covariates)}, inplace=True
-    )
+    df.rename(columns={c: "x" + str(i + 1)
+                       for i, c in enumerate(covariates)}, inplace=True)
 
     return CausalityDataset(df, treatment="qsmk", outcomes=["wt82_71"])
 
@@ -171,7 +172,8 @@ def amazon_reviews(rating="pos") -> CausalityDataset:
             gdown.download(url, "amazon_" + rating + ".csv", fuzzy=True)
             df = pd.read_csv("amazon_" + rating + ".csv")
         df.drop(df.columns[[2, 3, 4]], axis=1, inplace=True)
-        df.columns = ["treatment", "y_factual"] + ["x" + str(i) for i in range(1, 301)]
+        df.columns = ["treatment", "y_factual"] + \
+            ["x" + str(i) for i in range(1, 301)]
         return CausalityDataset(df, "treatment", ["y_factual"])
     else:
         print(
@@ -224,10 +226,14 @@ def synth_ihdp(return_df=False) -> CausalityDataset:
     data.columns = col
     # drop the columns we don't care about
     ignore_patterns = ["y_cfactual", "mu"]
-    ignore_cols = [c for c in data.columns if any([s in c for s in ignore_patterns])]
+    ignore_cols = [c for c in data.columns if any(
+        [s in c for s in ignore_patterns])]
     data = data.drop(columns=ignore_cols)
 
-    return CausalityDataset(data, "treatment", ["y_factual"]) if not return_df else data
+    return CausalityDataset(
+        data,
+        "treatment",
+        ["y_factual"]) if not return_df else data
 
 
 def synth_acic(condition=1) -> CausalityDataset:
@@ -410,11 +416,18 @@ def generate_synthetic_data(
     Y = tau * T + Y_base
 
     features = [f"X{i+1}" for i in range(n_covariates)]
-    df = pd.DataFrame(
-        np.array([*X.T, T, Y, tau, p, Y_base]).T,
-        columns=features
-        + ["treatment", "outcome", "true_effect", "propensity", "base_outcome"],
-    )
+    df = pd.DataFrame(np.array([*X.T,
+                                T,
+                                Y,
+                                tau,
+                                p,
+                                Y_base]).T,
+                      columns=features + ["treatment",
+                                          "outcome",
+                                          "true_effect",
+                                          "propensity",
+                                          "base_outcome"],
+                      )
     data = CausalityDataset(
         data=df,
         treatment="treatment",
@@ -448,7 +461,7 @@ def generate_linear_synthetic_data(
             "anisotropic" or user-supplied. Defaults to "isotropic".
         confounding (bool, optional): whether or not values of covariates affect treatment effect.
             Defaults to True.
-        linear_confounder (bool, optional): whether to use a linear confounder for treatment assignment. 
+        linear_confounder (bool, optional): whether to use a linear confounder for treatment assignment.
             Defaults to False.
         noisy_outcomes (bool, optional): additive noise in the outcomes. Defaults to False.
         add_instrument (bool, optional): include instrumental variable (yes/no). Defaults to False
@@ -507,11 +520,18 @@ def generate_linear_synthetic_data(
     Y = tau * T + Y_base
 
     features = [f"X{i+1}" for i in range(n_covariates)]
-    df = pd.DataFrame(
-        np.array([*X.T, T, Y, tau, p, Y_base]).T,
-        columns=features
-        + ["treatment", "outcome", "true_effect", "propensity", "base_outcome"],
-    )
+    df = pd.DataFrame(np.array([*X.T,
+                                T,
+                                Y,
+                                tau,
+                                p,
+                                Y_base]).T,
+                      columns=features + ["treatment",
+                                          "outcome",
+                                          "true_effect",
+                                          "propensity",
+                                          "base_outcome"],
+                      )
     data = CausalityDataset(
         data=df,
         treatment="treatment",
@@ -621,8 +641,16 @@ def generate_non_random_dataset(num_samples=1000):
     )
     treatment = np.random.binomial(1, propensity)
     outcome = (
-        0.2 * treatment + 0.5 * x1 - 0.2 * x2 + np.random.normal(0, 1, num_samples)
-    )
+        0.2
+        * treatment
+        + 0.5
+        * x1
+        - 0.2
+        * x2
+        + np.random.normal(
+            0,
+            1,
+            num_samples))
 
     dataset = {
         "T": treatment,
