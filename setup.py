@@ -23,7 +23,7 @@ setup(
         "econml==0.14.1",
         "FLAML==1.0.14",
         "xgboost==1.7.6",
-        "numpy<1.24.0",
+        "numpy==1.23.5",
         "pandas",
         "pytest",
         "scikit_learn",
