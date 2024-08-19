@@ -5,7 +5,7 @@ with open("README.md") as f:
 
 setup(
     name="causaltune",
-    version="0.1.4",
+    version="0.1.5",
     description="AutoML for Causal Inference.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -15,12 +15,14 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     install_requires=[
         "dowhy==0.9.1",
         "econml==0.14.1",
         "FLAML==1.0.14",
-        "xgboost<2.0.0",
+        "xgboost==1.7.6",
         "numpy<1.24.0",
         "pandas",
         "pytest",
@@ -31,7 +33,7 @@ setup(
         "setuptools==65.5.1",
         "wise-pizza",
         "seaborn",
-        "category_encoders",
+        "category_encoders==2.6.3",
     ],
     extras_require={
         "test": [
