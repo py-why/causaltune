@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 
 from causaltune import CausalTune
-from causaltune.params import SimpleParamService
+from causaltune.search.params import SimpleParamService
 
 
 class TestEstimatorListGenerator:
@@ -10,9 +10,7 @@ class TestEstimatorListGenerator:
 
     def test_auto_list(self):
         """tests if "auto" setting yields all available estimators"""
-        cfg = SimpleParamService(
-            propensity_model=None, outcome_model=None, multivalue=False
-        )
+        cfg = SimpleParamService(propensity_model=None, outcome_model=None, multivalue=False)
         auto_estimators_iv = cfg.estimator_names_from_patterns("iv", "auto")
         auto_estimators_backdoor = cfg.estimator_names_from_patterns("backdoor", "auto")
         # verify that returned estimator list includes all available estimators
@@ -40,9 +38,7 @@ class TestEstimatorListGenerator:
 
     def test_substring_group(self):
         """tests if substring match to group of estimators works"""
-        cfg = SimpleParamService(
-            propensity_model=None, outcome_model=None, multivalue=False
-        )
+        cfg = SimpleParamService(propensity_model=None, outcome_model=None, multivalue=False)
 
         estimator_list = cfg.estimator_names_from_patterns("backdoor", ["dml"])
         available_estimators = [e for e in cfg._configs().keys() if "dml" in e]
@@ -57,21 +53,13 @@ class TestEstimatorListGenerator:
 
     def test_substring_single(self):
         """tests if substring match to single estimators works"""
-        cfg = SimpleParamService(
-            propensity_model=None, outcome_model=None, multivalue=False
-        )
-        estimator_list = cfg.estimator_names_from_patterns(
-            "backdoor", ["DomainAdaptationLearner"]
-        )
-        assert estimator_list == [
-            "backdoor.econml.metalearners.DomainAdaptationLearner"
-        ]
+        cfg = SimpleParamService(propensity_model=None, outcome_model=None, multivalue=False)
+        estimator_list = cfg.estimator_names_from_patterns("backdoor", ["DomainAdaptationLearner"])
+        assert estimator_list == ["backdoor.econml.metalearners.DomainAdaptationLearner"]
 
     def test_checkduplicates(self):
         """tests if duplicates are removed"""
-        cfg = SimpleParamService(
-            propensity_model=None, outcome_model=None, multivalue=False
-        )
+        cfg = SimpleParamService(propensity_model=None, outcome_model=None, multivalue=False)
         estimator_list = cfg.estimator_names_from_patterns(
             "backdoor",
             [
@@ -87,14 +75,10 @@ class TestEstimatorListGenerator:
         # this should raise a ValueError
         # unavailable estimators:
 
-        cfg = SimpleParamService(
-            propensity_model=None, outcome_model=None, multivalue=False
-        )
+        cfg = SimpleParamService(propensity_model=None, outcome_model=None, multivalue=False)
 
         with pytest.raises(ValueError):
-            cfg.estimator_names_from_patterns(
-                "backdoor", ["linear_regression", "pasta", 12]
-            )
+            cfg.estimator_names_from_patterns("backdoor", ["linear_regression", "pasta", 12])
 
         with pytest.raises(ValueError):
             cfg.estimator_names_from_patterns("backdoor", 5)
@@ -104,9 +88,7 @@ class TestEstimatorListGenerator:
             """tests if empty list is correctly handled"""
             ct = CausalTune(components_time_budget=10)
             ct.fit(
-                pd.DataFrame(
-                    {"treatment": [0, 1], "outcome": [0.5, 1.5], "dummy": [0.1, 0.2]}
-                ),
+                pd.DataFrame({"treatment": [0, 1], "outcome": [0.5, 1.5], "dummy": [0.1, 0.2]}),
                 treatment="treatment",
                 outcome="outcome",
                 common_causes=["dummy"],

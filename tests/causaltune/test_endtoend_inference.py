@@ -5,7 +5,7 @@ from econml.inference import BootstrapInference
 
 from causaltune import CausalTune
 from causaltune.datasets import linear_multi_dataset
-from causaltune.params import SimpleParamService
+from causaltune.search.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 

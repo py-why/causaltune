@@ -3,7 +3,7 @@ import warnings
 
 from causaltune import CausalTune
 from causaltune.datasets import linear_multi_dataset
-from causaltune.params import SimpleParamService
+from causaltune.search.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
@@ -60,9 +60,7 @@ class TestEndToEndAutoMLPropensity(object):
             multivalue=True,
         )
 
-        estimator_list = cfg.estimator_names_from_patterns(
-            "backdoor", "all", data_rows=len(data)
-        )
+        estimator_list = cfg.estimator_names_from_patterns("backdoor", "all", data_rows=len(data))
 
         ct = CausalTune(
             estimator_list="all",
