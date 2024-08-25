@@ -519,7 +519,7 @@ class CausalTune:
         # to spawn a separate process to prevent cross-talk between tuner and automl on component models:
 
         estimates = Parallel(n_jobs=2, backend="threading")(
-            delayed(self._estimate_effect)(config["estimator"]) for i in range(1)
+            delayed(self._estimate_effect)(config) for i in range(1)
         )[0]
         # estimates = self._estimate_effect(config["estimator"])
 
@@ -558,17 +558,10 @@ class CausalTune:
     def _estimate_effect(self, config):
         """estimates effect with chosen estimator"""
 
-        # add params that are tuned by flaml:
-        config = clean_config(copy.copy(config))
-        self.estimator_name = config.pop("estimator_name")
-        # params_to_tune = {
-        #     k: v for k, v in config.items() if (not k == "estimator_name")
-        # }
-        cfg = self.cfg.method_params(self.estimator_name)
-        method_params = {
-            "init_params": {**deepcopy(config), **cfg.init_params},
-            "fit_params": {},
-        }
+        # Do we need an boject property for this, instead of a local var?
+        self.estimator_name = config["estimator"]["estimator_name"]
+        method_params = self.cfg.method_params(config, self.outcome_model)
+
         try:  #
             # if True:  #
             estimate = self._est_effect_stub(method_params)
@@ -589,7 +582,8 @@ class CausalTune:
                 "estimator": estimate,
                 "estimator_name": scores.pop("estimator_name"),
                 "scores": scores,
-                "config": config,
+                # TODO: return full config!
+                "config": config["estimator"],
             }
         except Exception as e:
             print("Evaluation failed!\n", config, traceback.format_exc())
