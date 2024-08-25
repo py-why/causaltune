@@ -246,23 +246,27 @@ class CausalTune:
             # TODO: implement filtering like below, when there are propensity-only features
             # feature_filter below acts on classes not instances
             # to preserve all the extra methods through inheritance
-            self.outcome_model = outcome_model
+            return outcome_model
         else:
-            data = self.data
-            propensity_only_cols = [
-                p
-                for p in data.propensity_modifiers
-                if p not in data.common_causes + data.effect_modifiers
-            ]
+            return self.auto_outcome_model()
 
-            if len(propensity_only_cols):
-                outcome_model_class = feature_filter(
-                    AutoML, data.effect_modifiers + data.common_causes, first_cols=True
-                )
-            else:
-                outcome_model_class = AutoML
+    def auto_outcome_model(self):
+        data = self.data
+        propensity_only_cols = [
+            p
+            for p in data.propensity_modifiers
+            if p not in data.common_causes + data.effect_modifiers
+        ]
 
-            self.outcome_model = outcome_model_class(**self._settings["component_models"])
+        if len(propensity_only_cols):
+            # TODO: implement feature_filter for arbitrary outcome models
+            outcome_model_class = feature_filter(
+                AutoML, data.effect_modifiers + data.common_causes, first_cols=True
+            )
+        else:
+            outcome_model_class = AutoML
+
+        return outcome_model_class(**self._settings["component_models"])
 
     def fit(
         self,
@@ -349,7 +353,9 @@ class CausalTune:
         )
 
         self.init_propensity_model(self._settings["propensity_model"])
-        self.init_outcome_model(self._settings["outcome_model"])
+
+        # Is that state needed at all?
+        # self.outcome_model = self.init_outcome_model(self._settings["outcome_model"])
 
         self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
             proceed_when_unidentifiable=True
@@ -392,8 +398,6 @@ class CausalTune:
 
         # config with method-specific params
         self.cfg = SimpleParamService(
-            self.propensity_model,
-            self.outcome_model,
             n_jobs=self._settings["component_models"]["n_jobs"],
             include_experimental=self._settings["include_experimental_estimators"],
             multivalue=treatment_is_multivalue(self._treatment_values),
@@ -438,20 +442,24 @@ class CausalTune:
         if self._settings["test_size"] is not None:
             self.test_df = self.test_df.sample(self._settings["test_size"])
 
-        self.r_scorer = (
-            None
-            if "r_scorer" not in self.metrics_to_report
-            else RScoreWrapper(
-                self.outcome_model,
-                self.propensity_model,
-                self.train_df,
-                self.test_df,
-                outcome,
-                treatment,
-                common_causes,
-                effect_modifiers,
+        if "r_scorer" in self.metrics_to_report:
+            raise NotImplementedError(
+                "R-squared scorer no longer suported, please raise an issue if you want it back"
             )
-        )
+        # self.r_scorer = (
+        #     None
+        #     if "r_scorer" not in self.metrics_to_report
+        #     else RScoreWrapper(
+        #         self.outcome_model,
+        #         self.propensity_model,
+        #         self.train_df,
+        #         self.test_df,
+        #         outcome,
+        #         treatment,
+        #         common_causes,
+        #         effect_modifiers,
+        #     )
+        # )
 
         search_space = self.cfg.search_space(self.estimator_list)
         init_cfg = (
@@ -560,7 +568,8 @@ class CausalTune:
 
         # Do we need an boject property for this, instead of a local var?
         self.estimator_name = config["estimator"]["estimator_name"]
-        method_params = self.cfg.method_params(config, self.outcome_model)
+        outcome_model = self.init_outcome_model(self._settings["outcome_model"])
+        method_params = self.cfg.method_params(config, outcome_model, self.propensity_model)
 
         try:  #
             # if True:  #

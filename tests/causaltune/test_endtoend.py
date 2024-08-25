@@ -41,8 +41,6 @@ class TestEndToEnd(object):
         data.preprocess_dataset()
 
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=False,

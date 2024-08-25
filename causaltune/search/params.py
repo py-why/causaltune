@@ -14,6 +14,7 @@ from causaltune.utils import clean_config
 class EstimatorConfig:
     outcome_model_name: str = None
     final_model_name: str = None
+    propensity_model_name: str = None
     init_params: dict = field(default_factory=dict)
     fit_params: dict = field(default_factory=dict)
     search_space: dict = field(default_factory=dict)
@@ -26,17 +27,11 @@ class EstimatorConfig:
 class SimpleParamService:
     def __init__(
         self,
-        propensity_model,
-        outcome_model,
         multivalue: bool,
-        final_model=None,
         n_bootstrap_samples: Optional[int] = None,
         n_jobs: Optional[int] = None,
         include_experimental=False,
     ):
-        self.propensity_model = propensity_model
-        self.outcome_model = outcome_model
-        self.final_model = final_model
         self.n_jobs = n_jobs
         self.include_experimental = include_experimental
         self.n_bootstrap_samples = n_bootstrap_samples
@@ -181,6 +176,8 @@ class SimpleParamService:
         self,
         config: dict,
         outcome_model: Any,
+        propensity_model: Any,
+        final_model: Any = None,
     ):
         config = clean_config(deepcopy(config["estimator"]))
         estimator_name = config.pop("estimator_name")
@@ -189,9 +186,18 @@ class SimpleParamService:
 
         # Insert the outcome model dynamically (prelude to spawning it dynamically)
         if cfg.outcome_model_name is not None and cfg.outcome_model_name not in cfg.init_params:
-            cfg.init_params[cfg.outcome_model_name] = outcome_model
+            cfg.init_params[cfg.outcome_model_name] = deepcopy(outcome_model)
+
+        if (
+            cfg.propensity_model_name is not None
+            and cfg.propensity_model_name not in cfg.init_params
+        ):
+            cfg.init_params[cfg.propensity_model_name] = deepcopy(propensity_model)
+
         if cfg.final_model_name is not None and cfg.final_model_name not in cfg.init_params:
-            cfg.init_params[cfg.final_model_name] = outcome_model
+            cfg.init_params[cfg.final_model_name] = (
+                deepcopy(final_model) if final_model is not None else deepcopy(outcome_model)
+            )
 
         method_params = {
             "init_params": {**deepcopy(config), **cfg.init_params},
@@ -200,8 +206,6 @@ class SimpleParamService:
         return method_params
 
     def _configs(self) -> Dict[str, EstimatorConfig]:
-        propensity_model = deepcopy(self.propensity_model)
-        # outcome_model = deepcopy(self.outcome_model)
         if self.n_bootstrap_samples is not None:
             # TODO Egor please look into this
             # bootstrap is causing recursion errors (see notes below)
@@ -210,50 +214,39 @@ class SimpleParamService:
             # )
             pass
 
-        # if self.final_model is None:
-        #     final_model = deepcopy(self.outcome_model)
-        # else:
-        #     final_model = deepcopy(self.final_model)
-
         configs: dict[str:EstimatorConfig] = {
             "backdoor.causaltune.models.NaiveDummy": EstimatorConfig(),
             "backdoor.causaltune.models.Dummy": EstimatorConfig(
-                init_params={"propensity_model": propensity_model},
+                propensity_model_name="propensity_model",
                 experimental=False,
             ),
             "backdoor.propensity_score_weighting": EstimatorConfig(
-                init_params={"propensity_model": propensity_model},
+                propensity_model_name="propensity_model",
                 experimental=True,
             ),
             "backdoor.econml.metalearners.SLearner": EstimatorConfig(
                 outcome_model_name="overall_model",
-                init_params={},
                 supports_multivalue=True,
             ),
             "backdoor.econml.metalearners.TLearner": EstimatorConfig(
                 outcome_model_name="models",
-                init_params={},
                 supports_multivalue=True,
             ),
             "backdoor.econml.metalearners.XLearner": EstimatorConfig(
                 outcome_model_name="models",
-                init_params={
-                    "propensity_model": propensity_model,
-                },
+                propensity_model_name="propensity_model",
                 supports_multivalue=True,
             ),
             "backdoor.econml.metalearners.DomainAdaptationLearner": EstimatorConfig(
                 outcome_model_name="models",
+                propensity_model_name="propensity_model",
                 final_model_name="final_models",
-                init_params={
-                    "propensity_model": propensity_model,
-                },
                 supports_multivalue=True,
             ),
             "backdoor.econml.dr.ForestDRLearner": EstimatorConfig(
                 outcome_model_name="model_regression",
+                propensity_model_name="model_propensity",
                 init_params={
-                    "model_propensity": propensity_model,
                     # putting these here for now, until default values can be reconciled with search space
                     "mc_iters": None,
                     "max_depth": None,
@@ -291,8 +284,8 @@ class SimpleParamService:
             ),
             "backdoor.econml.dr.LinearDRLearner": EstimatorConfig(
                 outcome_model_name="model_regression",
+                propensity_model_name="model_propensity",
                 init_params={
-                    "model_propensity": propensity_model,
                     "mc_iters": None,
                 },
                 search_space={
@@ -309,8 +302,8 @@ class SimpleParamService:
             ),
             "backdoor.econml.dr.SparseLinearDRLearner": EstimatorConfig(
                 outcome_model_name="model_regression",
+                propensity_model_name="model_propensity",
                 init_params={
-                    "model_propensity": propensity_model,
                     "mc_iters": None,
                 },
                 search_space={
@@ -337,8 +330,8 @@ class SimpleParamService:
             ),
             "backdoor.econml.dml.LinearDML": EstimatorConfig(
                 outcome_model_name="model_y",
+                propensity_model_name="model_t",
                 init_params={
-                    "model_t": propensity_model,
                     "discrete_treatment": True,
                     # it runs out of memory fast if the below is not set
                     "linear_first_stages": False,
@@ -358,8 +351,8 @@ class SimpleParamService:
             ),
             "backdoor.econml.dml.SparseLinearDML": EstimatorConfig(
                 outcome_model_name="model_y",
+                propensity_model_name="model_t",
                 init_params={
-                    "model_t": propensity_model,
                     "discrete_treatment": True,
                     # it runs out of memory fast if the below is not set
                     "linear_first_stages": False,
@@ -387,8 +380,8 @@ class SimpleParamService:
             ),
             "backdoor.econml.dml.CausalForestDML": EstimatorConfig(
                 outcome_model_name="model_y",
+                propensity_model_name="model_t",
                 init_params={
-                    "model_t": propensity_model,
                     # "max_depth": self.max_depth,
                     # "n_estimators": self.n_estimators,
                     "discrete_treatment": True,
@@ -439,9 +432,7 @@ class SimpleParamService:
             ),
             "backdoor.causaltune.models.TransformedOutcome": EstimatorConfig(
                 outcome_model_name="outcome_model",
-                init_params={
-                    "propensity_model": propensity_model,
-                },
+                propensity_model_name="propensity_model",
             ),
             # leaving out DML and NonParamDML as they're base classes for the 3
             # above
@@ -456,8 +447,8 @@ class SimpleParamService:
             #     "fit_params": {},
             # },
             "backdoor.econml.orf.DROrthoForest": EstimatorConfig(
+                propensity_model_name="propensity_model",
                 init_params={
-                    "propensity_model": propensity_model,
                     "model_Y": linear_model.Ridge(alpha=0.01),  # WeightedLasso(alpha=0.01),  #
                     "n_jobs": self.n_jobs,
                     # "max_depth": self.max_depth,
@@ -485,8 +476,8 @@ class SimpleParamService:
                 inference="blb",
             ),
             "backdoor.econml.orf.DMLOrthoForest": EstimatorConfig(
+                propensity_model_name="model_T",
                 init_params={
-                    "model_T": propensity_model,
                     "model_Y": linear_model.Ridge(alpha=0.01),  # WeightedLasso(alpha=0.01),  #
                     "discrete_treatment": True,
                     "n_jobs": self.n_jobs,
@@ -518,9 +509,7 @@ class SimpleParamService:
             ),
             "iv.econml.iv.dr.LinearDRIV": EstimatorConfig(
                 outcome_model_name="model_y_xw",
-                init_params={
-                    "model_t_xw": propensity_model,
-                },
+                propensity_model_name="model_t_xw",
                 search_space={
                     "projection": tune.choice([0, 1]),
                 },
@@ -528,9 +517,7 @@ class SimpleParamService:
             ),
             "iv.econml.iv.dml.OrthoIV": EstimatorConfig(
                 outcome_model_name="model_y_xw",
-                init_params={
-                    "model_t_xw": propensity_model,
-                },
+                propensity_model_name="model_t_xw",
                 search_space={
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
@@ -540,9 +527,7 @@ class SimpleParamService:
             ),
             "iv.econml.iv.dml.DMLIV": EstimatorConfig(
                 outcome_model_name="model_y_xw",
-                init_params={
-                    "model_t_xw": propensity_model,
-                },
+                propensity_model_name="model_t_xw",
                 search_space={
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
@@ -552,9 +537,7 @@ class SimpleParamService:
             ),
             "iv.econml.iv.dr.SparseLinearDRIV": EstimatorConfig(
                 outcome_model_name="model_y_xw",
-                init_params={
-                    "model_t_xw": propensity_model,
-                },
+                propensity_model_name="model_t_xw",
                 search_space={
                     "projection": tune.choice([0, 1]),
                     "opt_reweighted": tune.choice([0, 1]),
@@ -568,7 +551,6 @@ class SimpleParamService:
             ),
             "iv.econml.iv.dr.LinearIntentToTreatDRIV": EstimatorConfig(
                 outcome_model_name="model_y_xw",
-                init_params={},
                 search_space={
                     "cov_clip": tune.quniform(0.08, 0.2, 0.01),
                     "opt_reweighted": tune.choice([0, 1]),
