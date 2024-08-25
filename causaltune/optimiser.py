@@ -94,7 +94,7 @@ class CausalTune:
         test_size=None,
         num_samples=-1,
         propensity_model="dummy",
-        outcome_model=None,
+        outcome_model="nested",
         components_task="regression",
         components_verbose=0,
         components_pred_time_limit=10 / 1e6,
@@ -238,17 +238,24 @@ class CausalTune:
             )
 
     def init_outcome_model(self, outcome_model):
+        # TODO: implement filtering like below, when there are propensity-only features
+        # feature_filter below acts on classes not instances
+        # to preserve all the extra methods through inheritance
         # if we are only supplying certain features to the propensity function,
         # make them invisible to the outcome component model
         # This is a workaround for the DoWhy/EconML data model which doesn't
         # support that out of the box
-        if outcome_model is not None:
-            # TODO: implement filtering like below, when there are propensity-only features
-            # feature_filter below acts on classes not instances
-            # to preserve all the extra methods through inheritance
+
+        if hasattr(outcome_model, "fit") and hasattr(outcome_model, "predict"):
             return outcome_model
-        else:
+        elif outcome_model == "auto":
+            # Will be dynamically chosen at optimization time
+            return outcome_model
+        elif outcome_model == "nested":
+            # The current default behavior
             return self.auto_outcome_model()
+        else:
+            raise ValueError('outcome_model valid values are None, "auto", or an estimator object')
 
     def auto_outcome_model(self):
         data = self.data
@@ -354,9 +361,6 @@ class CausalTune:
 
         self.init_propensity_model(self._settings["propensity_model"])
 
-        # Is that state needed at all?
-        # self.outcome_model = self.init_outcome_model(self._settings["outcome_model"])
-
         self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
             proceed_when_unidentifiable=True
         )
@@ -401,6 +405,7 @@ class CausalTune:
             n_jobs=self._settings["component_models"]["n_jobs"],
             include_experimental=self._settings["include_experimental_estimators"],
             multivalue=treatment_is_multivalue(self._treatment_values),
+            sample_outcome_estimators=self._settings["outcome_model"] == "auto",
         )
 
         self.estimator_list = self.cfg.estimator_names_from_patterns(
@@ -618,7 +623,10 @@ class CausalTune:
             None.
         """
         for scr in self.scores.values():
-            scr["scores"][dataset_name] = self._compute_metrics(scr["estimator"], df)
+            if scr["estimator"] is None:
+                warnings.warn("Skipping scoring for estimator %s", scr["estimator_name"])
+            else:
+                scr["scores"][dataset_name] = self._compute_metrics(scr["estimator"], df)
 
     @property
     def best_estimator(self) -> str:

@@ -1,3 +1,4 @@
+import warnings
 from typing import Tuple
 import copy
 
@@ -67,18 +68,31 @@ def joint_config(data_size: Tuple[int, int], estimator_list=None):
         except ImportError as e:
             print(f"Error instantiating {name}: {e}")
 
-    return {"estimator": tune.choice(joint_cfg)}, joint_init_params, joint_low_cost_init_params
+    return tune.choice(joint_cfg), joint_init_params, joint_low_cost_init_params
 
 
 def model_from_cfg(cfg: dict):
     cfg = copy.deepcopy(cfg)
-    model_name = cfg["estimator"].pop("estimator_name")
-    out = estimators[model_name](task=task_factory("regression"), **cfg["estimator"])
+    model_name = cfg.pop("estimator_name")
+    estimator_class = estimators[model_name]
+
+    # Some Econml estimators pass a weights vector as an unnamed third argument,
+    # which is not supported by flaml. We need to wrap the estimator to ignore
+    # TODO: expose better estimator wrappers that support weights
+    class FlamlEstimatorWrapper(estimator_class):
+        wrapped_class = estimator_class
+
+        def fit(self, X, y, *args, **kwargs):
+            if len(kwargs):
+                warnings.warn(f"Extra args {args} {kwargs} are being ignored")
+            return self.wrapped_class.fit(self, X, y)
+
+    out = FlamlEstimatorWrapper(task=task_factory("regression"), **cfg)
     return out
 
 
 def config2score(cfg: dict, X, y):
-    model = model_from_cfg(cfg)
+    model = model_from_cfg(cfg["estimator"])
     model.fit(X, y)
     ypred = model.predict(X)
     err = y - ypred
@@ -117,10 +131,10 @@ if __name__ == "__main__":
     X, y = make_fake_data()
     cfg, init_params, low_cost_init_params = joint_config(data_size=X.shape)
     flaml.tune.run(
-        evaluation_function=lambda cfg: config2score(cfg, X, y),
+        evaluation_function=lambda cfgs: config2score(cfgs, X, y),
         metric="score",
         mode="min",
-        config=cfg,
+        config={"estimator": cfg},
         points_to_evaluate=init_params,
         num_samples=10,
     )

@@ -53,8 +53,6 @@ class TestEndToEndAutoMLPropensity(object):
         data = linear_multi_dataset(10000)
 
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=True,

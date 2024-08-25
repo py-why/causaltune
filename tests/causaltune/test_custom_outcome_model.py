@@ -20,8 +20,6 @@ class TestCustomOutputModel(object):
         data.preprocess_dataset()
 
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=False,
@@ -56,8 +54,6 @@ class TestCustomOutputModel(object):
     def test_custom_outcome_model_multivalue(self):
         data = linear_multi_dataset(10000)
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=True,

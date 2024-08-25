@@ -21,8 +21,6 @@ class TestEndToEndInference(object):
         data.preprocess_dataset()
 
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=False,
@@ -71,8 +69,6 @@ class TestEndToEndInference(object):
     def test_endtoend_multivalue_nobootstrap(self):
         data = linear_multi_dataset(1000)
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=True,

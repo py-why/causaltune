@@ -8,6 +8,7 @@ from econml.inference import BootstrapInference  # noqa F401
 from sklearn import linear_model
 
 from causaltune.utils import clean_config
+from causaltune.search.component import model_from_cfg, joint_config
 
 
 @dataclass
@@ -31,11 +32,13 @@ class SimpleParamService:
         n_bootstrap_samples: Optional[int] = None,
         n_jobs: Optional[int] = None,
         include_experimental=False,
+        sample_outcome_estimators: bool = False,
     ):
         self.n_jobs = n_jobs
         self.include_experimental = include_experimental
         self.n_bootstrap_samples = n_bootstrap_samples
         self.multivalue = multivalue
+        self.sample_outcome_estimators = sample_outcome_estimators
 
     def estimator_names_from_patterns(
         self,
@@ -128,7 +131,9 @@ class SimpleParamService:
         else:
             return [est for est, cfg in cfgs.items() if not cfg.experimental]
 
-    def search_space(self, estimator_list: Iterable[str]):
+    def search_space(
+        self, estimator_list: Iterable[str], outcome_estimator_list: Iterable[str] = None
+    ):
         """Constructs search space with estimators and their respective configs
 
         Args:
@@ -146,7 +151,11 @@ class SimpleParamService:
             if est in estimator_list
         ]
 
-        return {"estimator": tune.choice(search_space)}
+        out = {"estimator": tune.choice(search_space)}
+        if self.sample_outcome_estimators:
+            out["outcome_estimator"], _, _ = joint_config((10000, 10), outcome_estimator_list)
+
+        return out
 
     def default_configs(self, estimator_list: Iterable[str]):
         """Creates list with initial configs to try before moving
@@ -179,12 +188,15 @@ class SimpleParamService:
         propensity_model: Any,
         final_model: Any = None,
     ):
-        config = clean_config(deepcopy(config["estimator"]))
-        estimator_name = config.pop("estimator_name")
+        est_config = clean_config(deepcopy(config["estimator"]))
+        estimator_name = est_config.pop("estimator_name")
+
+        if outcome_model == "auto":
+            # Spawn the outcome model dynamically
+            outcome_model = model_from_cfg(config["outcome_estimator"])
 
         cfg = self._configs()[estimator_name]
 
-        # Insert the outcome model dynamically (prelude to spawning it dynamically)
         if cfg.outcome_model_name is not None and cfg.outcome_model_name not in cfg.init_params:
             cfg.init_params[cfg.outcome_model_name] = deepcopy(outcome_model)
 
@@ -200,7 +212,7 @@ class SimpleParamService:
             )
 
         method_params = {
-            "init_params": {**deepcopy(config), **cfg.init_params},
+            "init_params": {**deepcopy(est_config), **cfg.init_params},
             "fit_params": {},
         }
         return method_params
