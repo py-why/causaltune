@@ -1,5 +1,4 @@
 import copy
-from copy import deepcopy
 import warnings
 from typing import List, Optional, Union
 from collections import defaultdict
@@ -21,8 +20,7 @@ from joblib import Parallel, delayed
 
 from causaltune.search.params import SimpleParamService
 from causaltune.scoring import Scorer
-from causaltune.r_score import RScoreWrapper
-from causaltune.utils import clean_config, treatment_is_multivalue
+from causaltune.utils import treatment_is_multivalue
 from causaltune.models.monkey_patches import (
     AutoML,
     apply_multitreatment,

@@ -1,5 +1,5 @@
 from flaml import tune
-from copy import deepcopy, copy
+from copy import deepcopy
 from typing import Optional, Sequence, Union, Iterable, Dict, Any
 from dataclasses import dataclass, field
 
