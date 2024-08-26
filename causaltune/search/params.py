@@ -1,6 +1,7 @@
+import numpy as np
 from flaml import tune
 from copy import deepcopy
-from typing import Optional, Sequence, Union, Iterable, Dict, Any
+from typing import Optional, Sequence, Union, Iterable, Dict, Any, Tuple
 from dataclasses import dataclass, field
 
 import warnings
@@ -109,7 +110,7 @@ class SimpleParamService:
                     assert isinstance(p, str)
             except Exception:
                 raise ValueError(
-                    "Invalid estimator list, must be 'auto', 'all', or a list of strings"
+                    "Invalid estimator list, must be 'auto', 'all', 'cheap_inference' or a list of strings"
                 )
 
             out = [
@@ -132,7 +133,10 @@ class SimpleParamService:
             return [est for est, cfg in cfgs.items() if not cfg.experimental]
 
     def search_space(
-        self, estimator_list: Iterable[str], outcome_estimator_list: Iterable[str] = None
+        self,
+        estimator_list: Iterable[str],
+        data_size: Tuple[int, int],
+        outcome_estimator_list: Iterable[str] = None,
     ):
         """Constructs search space with estimators and their respective configs
 
@@ -153,11 +157,17 @@ class SimpleParamService:
 
         out = {"estimator": tune.choice(search_space)}
         if self.sample_outcome_estimators:
-            out["outcome_estimator"], _, _ = joint_config((10000, 10), outcome_estimator_list)
+            out["outcome_estimator"], _, _ = joint_config(data_size, outcome_estimator_list)
 
         return out
 
-    def default_configs(self, estimator_list: Iterable[str]):
+    def default_configs(
+        self,
+        estimator_list: Iterable[str],
+        data_size: Tuple[int, int],
+        outcome_estimator_list: Iterable[str] = None,
+        num_outcome_samples: int = 3,
+    ):
         """Creates list with initial configs to try before moving
         on to hierarchical HPO.
         The list has been identified by evaluating performance of all
@@ -172,13 +182,34 @@ class SimpleParamService:
         Returns:
             list: list of dicts with promising initial configs
         """
-        points = [
+        pre_points = [
             {"estimator": {"estimator_name": est, **est_params.defaults}}
             for est, est_params in self._configs().items()
             if est in estimator_list
         ]
 
-        print("Initial configs:", points)
+        cfgs = self._configs()
+
+        if self.sample_outcome_estimators:
+            points = []
+            _, init_params, _ = joint_config(data_size, outcome_estimator_list)
+            for p in pre_points:
+                if cfgs[p["estimator"]["estimator_name"]].outcome_model_name is None:
+                    this_p = deepcopy(p)
+                    # this won't have any effect, so pick any valid config to mitigate sampling bias
+                    this_p["outcome_estimator"] = np.random.choice(init_params)
+                    points.append(p)
+                    continue
+                else:  # Sample different outcome functions for first pass
+                    for outcome_est in np.random.choice(
+                        init_params, size=num_outcome_samples, replace=False
+                    ):
+                        this_p = deepcopy(p)
+                        this_p["outcome_estimator"] = outcome_est
+                        points.append(this_p)
+        else:
+            points = pre_points
+
         return points
 
     def method_params(
@@ -191,11 +222,11 @@ class SimpleParamService:
         est_config = clean_config(deepcopy(config["estimator"]))
         estimator_name = est_config.pop("estimator_name")
 
-        if outcome_model == "auto":
+        cfg = self._configs()[estimator_name]
+
+        if outcome_model == "auto" and cfg.outcome_model_name is not None:
             # Spawn the outcome model dynamically
             outcome_model = model_from_cfg(config["outcome_estimator"])
-
-        cfg = self._configs()[estimator_name]
 
         if cfg.outcome_model_name is not None and cfg.outcome_model_name not in cfg.init_params:
             cfg.init_params[cfg.outcome_model_name] = deepcopy(outcome_model)

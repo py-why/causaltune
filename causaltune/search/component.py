@@ -63,7 +63,7 @@ def joint_config(data_size: Tuple[int, int], estimator_list=None):
             cfg["estimator_name"] = name
             joint_cfg.append(cfg)
             init_params["estimator_name"] = name
-            joint_init_params.append({"estimator": init_params})
+            joint_init_params.append(init_params)
             joint_low_cost_init_params[name] = low_cost_init_params
         except ImportError as e:
             print(f"Error instantiating {name}: {e}")

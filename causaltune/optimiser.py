@@ -464,9 +464,9 @@ class CausalTune:
         #     )
         # )
 
-        search_space = self.cfg.search_space(self.estimator_list)
+        search_space = self.cfg.search_space(self.estimator_list, data_size=data.data.shape)
         init_cfg = (
-            self.cfg.default_configs(self.estimator_list)
+            self.cfg.default_configs(self.estimator_list, data_size=data.data.shape)
             if self._settings["try_init_configs"]
             else []
         )

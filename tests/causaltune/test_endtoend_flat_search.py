@@ -48,8 +48,8 @@ class TestEndToEnd(object):
         estimator_list = cfg.estimator_names_from_patterns("backdoor", "all", 1)
         # outcome = targets[0]
         ct = CausalTune(
-            num_samples=len(estimator_list),
             components_time_budget=10,
+            num_samples=len(estimator_list) * 4,
             estimator_list=estimator_list,  # "all",  #
             outcome_model="auto",
             use_ray=False,
