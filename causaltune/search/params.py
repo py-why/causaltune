@@ -157,7 +157,9 @@ class SimpleParamService:
 
         out = {"estimator": tune.choice(search_space)}
         if self.sample_outcome_estimators:
-            out["outcome_estimator"], _, _ = joint_config(data_size, outcome_estimator_list)
+            out["outcome_estimator"], _, _ = joint_config(
+                data_size, outcome_estimator_list
+            )
 
         return out
 
@@ -228,7 +230,10 @@ class SimpleParamService:
             # Spawn the outcome model dynamically
             outcome_model = model_from_cfg(config["outcome_estimator"])
 
-        if cfg.outcome_model_name is not None and cfg.outcome_model_name not in cfg.init_params:
+        if (
+            cfg.outcome_model_name is not None
+            and cfg.outcome_model_name not in cfg.init_params
+        ):
             cfg.init_params[cfg.outcome_model_name] = deepcopy(outcome_model)
 
         if (
@@ -237,9 +242,14 @@ class SimpleParamService:
         ):
             cfg.init_params[cfg.propensity_model_name] = deepcopy(propensity_model)
 
-        if cfg.final_model_name is not None and cfg.final_model_name not in cfg.init_params:
+        if (
+            cfg.final_model_name is not None
+            and cfg.final_model_name not in cfg.init_params
+        ):
             cfg.init_params[cfg.final_model_name] = (
-                deepcopy(final_model) if final_model is not None else deepcopy(outcome_model)
+                deepcopy(final_model)
+                if final_model is not None
+                else deepcopy(outcome_model)
             )
 
         method_params = {
@@ -492,7 +502,9 @@ class SimpleParamService:
             "backdoor.econml.orf.DROrthoForest": EstimatorConfig(
                 propensity_model_name="propensity_model",
                 init_params={
-                    "model_Y": linear_model.Ridge(alpha=0.01),  # WeightedLasso(alpha=0.01),  #
+                    "model_Y": linear_model.Ridge(
+                        alpha=0.01
+                    ),  # WeightedLasso(alpha=0.01),  #
                     "n_jobs": self.n_jobs,
                     # "max_depth": self.max_depth,
                     # "n_trees": self.n_estimators,
@@ -521,7 +533,9 @@ class SimpleParamService:
             "backdoor.econml.orf.DMLOrthoForest": EstimatorConfig(
                 propensity_model_name="model_T",
                 init_params={
-                    "model_Y": linear_model.Ridge(alpha=0.01),  # WeightedLasso(alpha=0.01),  #
+                    "model_Y": linear_model.Ridge(
+                        alpha=0.01
+                    ),  # WeightedLasso(alpha=0.01),  #
                     "discrete_treatment": True,
                     "n_jobs": self.n_jobs,
                     # "max_depth": self.max_depth,
