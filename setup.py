@@ -21,7 +21,7 @@ setup(
     install_requires=[
         "dowhy==0.9.1",
         "econml==0.14.1",
-        "FLAML==1.0.14",
+        "FLAML==2.2.0",
         "xgboost==1.7.6",
         "numpy==1.23.5",
         "pandas",
