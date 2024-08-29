@@ -120,5 +120,5 @@ class TestEndToEndInference(object):
 
 
 if __name__ == "__main__":
-    # pytest.main([__file__])
-    TestEndToEndInference().test_endtoend_multivalue_bootstrap()
+    pytest.main([__file__])
+    # TestEndToEndInference().test_endtoend_multivalue_bootstrap()
