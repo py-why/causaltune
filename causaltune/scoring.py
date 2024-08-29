@@ -1149,7 +1149,7 @@ class Scorer:
                         outcome_name=outcome_name,
                         policy=None
                     )
-                except:
+                except Exception as e:
                     pass
 
             if "qini" in metrics_to_report:
