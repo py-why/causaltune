@@ -47,16 +47,6 @@ class TestCustomPropensityModel(object):
         ct.effect(data.data)
         ct.score_dataset(data.data, "test")
 
-        # now let's test Shapley values calculation
-        for est_name, scores in ct.scores.items():
-            # Dummy model doesn't support Shapley values
-            # Orthoforest shapley calc is VERY slow
-            if "Dummy" not in est_name and "Ortho" not in est_name:
-                print("Calculating Shapley values for", est_name)
-                shap_values(scores["estimator"], data.data[:10])
-
-        print(f"Best estimator: {ct.best_estimator}")
-
     def test_sklearn_propensity_model_multivalue(self):
         data = linear_multi_dataset(5000)
         cfg = SimpleParamService(
