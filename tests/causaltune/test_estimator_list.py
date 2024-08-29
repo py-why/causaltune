@@ -54,8 +54,12 @@ class TestEstimatorListGenerator:
     def test_substring_single(self):
         """tests if substring match to single estimators works"""
         cfg = SimpleParamService(multivalue=False)
-        estimator_list = cfg.estimator_names_from_patterns("backdoor", ["DomainAdaptationLearner"])
-        assert estimator_list == ["backdoor.econml.metalearners.DomainAdaptationLearner"]
+        estimator_list = cfg.estimator_names_from_patterns(
+            "backdoor", ["DomainAdaptationLearner"]
+        )
+        assert estimator_list == [
+            "backdoor.econml.metalearners.DomainAdaptationLearner"
+        ]
 
     def test_checkduplicates(self):
         """tests if duplicates are removed"""
@@ -78,7 +82,9 @@ class TestEstimatorListGenerator:
         cfg = SimpleParamService(multivalue=False)
 
         with pytest.raises(ValueError):
-            cfg.estimator_names_from_patterns("backdoor", ["linear_regression", "pasta", 12])
+            cfg.estimator_names_from_patterns(
+                "backdoor", ["linear_regression", "pasta", 12]
+            )
 
         with pytest.raises(ValueError):
             cfg.estimator_names_from_patterns("backdoor", 5)
@@ -88,7 +94,9 @@ class TestEstimatorListGenerator:
             """tests if empty list is correctly handled"""
             ct = CausalTune(components_time_budget=10)
             ct.fit(
-                pd.DataFrame({"treatment": [0, 1], "outcome": [0.5, 1.5], "dummy": [0.1, 0.2]}),
+                pd.DataFrame(
+                    {"treatment": [0, 1], "outcome": [0.5, 1.5], "dummy": [0.1, 0.2]}
+                ),
                 treatment="treatment",
                 outcome="outcome",
                 common_causes=["dummy"],

@@ -32,7 +32,9 @@ from causaltune.models.passthrough import feature_filter
 
 
 # Patched from sklearn.linear_model._base to adjust rtol and atol values
-def _check_precomputed_gram_matrix(X, precompute, X_offset, X_scale, rtol=1e-4, atol=1e-2):
+def _check_precomputed_gram_matrix(
+    X, precompute, X_offset, X_scale, rtol=1e-4, atol=1e-2
+):
     n_features = X.shape[1]
     f1 = n_features // 2
     f2 = min(f1 + 1, n_features - 1)
@@ -177,13 +179,17 @@ class CausalTune:
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
         self._settings["try_init_configs"] = try_init_configs
-        self._settings["include_experimental_estimators"] = include_experimental_estimators
+        self._settings[
+            "include_experimental_estimators"
+        ] = include_experimental_estimators
 
         # params for FLAML on component models:
         self._settings["component_models"] = {}
         self._settings["component_models"]["task"] = components_task
         self._settings["component_models"]["verbose"] = components_verbose
-        self._settings["component_models"]["pred_time_limit"] = components_pred_time_limit
+        self._settings["component_models"][
+            "pred_time_limit"
+        ] = components_pred_time_limit
         self._settings["component_models"]["n_jobs"] = components_njobs
         self._settings["component_models"]["time_budget"] = components_time_budget
         self._settings["component_models"]["eval_method"] = "holdout"
@@ -228,7 +234,9 @@ class CausalTune:
             self.propensity_model = AutoML(
                 **{**self._settings["component_models"], "task": "classification"}
             )
-        elif hasattr(propensity_model, "fit") and hasattr(propensity_model, "predict_proba"):
+        elif hasattr(propensity_model, "fit") and hasattr(
+            propensity_model, "predict_proba"
+        ):
             self.propensity_model = propensity_model
         else:
             raise ValueError(
@@ -253,7 +261,9 @@ class CausalTune:
             # The current default behavior
             return self.auto_outcome_model()
         else:
-            raise ValueError('outcome_model valid values are None, "auto", or an estimator object')
+            raise ValueError(
+                'outcome_model valid values are None, "auto", or an estimator object'
+            )
 
     def auto_outcome_model(self):
         data = self.data
@@ -329,7 +339,9 @@ class CausalTune:
         if preprocess:
             data = copy.deepcopy(data)
             self.dataset_processor = CausalityDatasetProcessor()
-            self.dataset_processor.fit(data, encoder_type=encoder_type, outcome=encoder_outcome)
+            self.dataset_processor.fit(
+                data, encoder_type=encoder_type, outcome=encoder_outcome
+            )
             data = self.dataset_processor.transform(data)
         else:
             self.dataset_processor = None
@@ -337,7 +349,9 @@ class CausalTune:
         self.data = data
         treatment_values = data.treatment_values
 
-        assert len(treatment_values) > 1, "Treatment must take at least 2 values, eg 0 and 1!"
+        assert (
+            len(treatment_values) > 1
+        ), "Treatment must take at least 2 values, eg 0 and 1!"
 
         self._control_value = treatment_values[0]
         self._treatment_values = list(treatment_values[1:])
@@ -359,8 +373,8 @@ class CausalTune:
 
         self.init_propensity_model(self._settings["propensity_model"])
 
-        self.identified_estimand: IdentifiedEstimand = self.causal_model.identify_effect(
-            proceed_when_unidentifiable=True
+        self.identified_estimand: IdentifiedEstimand = (
+            self.causal_model.identify_effect(proceed_when_unidentifiable=True)
         )
 
         if bool(self.identified_estimand.estimands["iv"]) and bool(data.instruments):
@@ -431,7 +445,9 @@ class CausalTune:
             and self._settings["tuner"]["num_samples"] == -1
         ):
             self._settings["tuner"]["time_budget_s"] = (
-                2.5 * len(self.estimator_list) * self._settings["component_models"]["time_budget"]
+                2.5
+                * len(self.estimator_list)
+                * self._settings["component_models"]["time_budget"]
             )
 
         cmtb = self._settings["component_models"]["time_budget"]
@@ -464,7 +480,9 @@ class CausalTune:
         #     )
         # )
 
-        search_space = self.cfg.search_space(self.estimator_list, data_size=data.data.shape)
+        search_space = self.cfg.search_space(
+            self.estimator_list, data_size=data.data.shape
+        )
         init_cfg = (
             self.cfg.default_configs(self.estimator_list, data_size=data.data.shape)
             if self._settings["try_init_configs"]
@@ -484,9 +502,17 @@ class CausalTune:
             self._tune_with_config,
             search_space,
             metric=self.metric,
-            points_to_evaluate=(init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg),
-            evaluated_rewards=([] if len(self.resume_scores) == 0 else self.resume_scores),
-            mode=("min" if self.metric in ["energy_distance", "psw_energy_distance"] else "max"),
+            points_to_evaluate=(
+                init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
+            ),
+            evaluated_rewards=(
+                [] if len(self.resume_scores) == 0 else self.resume_scores
+            ),
+            mode=(
+                "min"
+                if self.metric in ["energy_distance", "psw_energy_distance"]
+                else "max"
+            ),
             low_cost_partial_config={},
             **self._settings["tuner"],
         )
@@ -572,7 +598,9 @@ class CausalTune:
         # Do we need an boject property for this, instead of a local var?
         self.estimator_name = config["estimator"]["estimator_name"]
         outcome_model = self.init_outcome_model(self._settings["outcome_model"])
-        method_params = self.cfg.method_params(config, outcome_model, self.propensity_model)
+        method_params = self.cfg.method_params(
+            config, outcome_model, self.propensity_model
+        )
 
         try:  #
             # This calls the causal model's estimate_effect method
@@ -607,7 +635,9 @@ class CausalTune:
             }
 
     def _compute_metrics(self, estimator, df: pd.DataFrame) -> dict:
-        return self.scorer.make_scores(estimator, df, self.metrics_to_report, r_scorer=None)
+        return self.scorer.make_scores(
+            estimator, df, self.metrics_to_report, r_scorer=None
+        )
 
     def score_dataset(self, df: pd.DataFrame, dataset_name: str):
         """
@@ -622,9 +652,13 @@ class CausalTune:
         """
         for scr in self.scores.values():
             if scr["estimator"] is None:
-                warnings.warn("Skipping scoring for estimator %s", scr["estimator_name"])
+                warnings.warn(
+                    "Skipping scoring for estimator %s", scr["estimator_name"]
+                )
             else:
-                scr["scores"][dataset_name] = self._compute_metrics(scr["estimator"], df)
+                scr["scores"][dataset_name] = self._compute_metrics(
+                    scr["estimator"], df
+                )
 
     @property
     def best_estimator(self) -> str:
@@ -697,7 +731,9 @@ class CausalTune:
         """
         return self.model.effect(df, *args, **kwargs)
 
-    def predict(self, cd: CausalityDataset, preprocess: Optional[bool] = False, *args, **kwargs):
+    def predict(
+        self, cd: CausalityDataset, preprocess: Optional[bool] = False, *args, **kwargs
+    ):
         """Heterogeneous Treatment Effects for data CausalityDataset
 
         Args:

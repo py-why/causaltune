@@ -79,7 +79,9 @@ class TestEndToEnd(object):
             include_experimental=False,
             multivalue=True,
         )
-        estimator_list = cfg.estimator_names_from_patterns("backdoor", "all", data_rows=len(data))
+        estimator_list = cfg.estimator_names_from_patterns(
+            "backdoor", "all", data_rows=len(data)
+        )
 
         ct = CausalTune(
             estimator_list="all",

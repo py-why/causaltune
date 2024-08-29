@@ -14,7 +14,10 @@ class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
         self.encoder = None
 
     def fit(
-        self, cd: CausalityDataset, encoder_type: Optional[str] = "onehot", outcome: str = None
+        self,
+        cd: CausalityDataset,
+        encoder_type: Optional[str] = "onehot",
+        outcome: str = None,
     ):
         cd = copy.deepcopy(cd)
         self.preprocess_dataset(
