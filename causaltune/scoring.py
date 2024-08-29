@@ -512,7 +512,18 @@ class Scorer:
         else:
             # Calculate propensity scores using the pre-fitted propensity model
             propensity_scores = (
-                self.psw_estimator.estimator.propensity_model.predict_proba(df)
+                self.psw_estimator.estimator.propensity_model.predict_proba(
+                    df.drop(
+                        [
+                            'index',
+                            'variant',
+                            'Y',
+                            'dy',
+                            'yhat'
+                        ],
+                        axis=1
+                    )
+                )
             )
             if propensity_scores.ndim == 2:
                 # Use second column if 2D array
@@ -1130,13 +1141,16 @@ class Scorer:
                 out["frobenius_norm"] = self.frobenius_norm_score(estimate, df)
 
             if "policy_risk" in metrics_to_report:
-                out["policy_risk"] = self.policy_risk_score(
-                    estimate=estimate,
-                    df=df,
-                    cate_estimate=cate_estimate,
-                    outcome_name=outcome_name,
-                    policy=None
-                )
+                try:
+                    out["policy_risk"] = self.policy_risk_score(
+                        estimate=estimate,
+                        df=df,
+                        cate_estimate=cate_estimate,
+                        outcome_name=outcome_name,
+                        policy=None
+                    )
+                except:
+                    pass
 
             if "qini" in metrics_to_report:
                 out["qini"] = Scorer.qini_make_score(
