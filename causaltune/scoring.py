@@ -1150,7 +1150,7 @@ class Scorer:
                         policy=None
                     )
                 except Exception as e:
-                    print(e)
+                    e
                     pass
 
             if "qini" in metrics_to_report:
