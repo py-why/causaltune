@@ -16,8 +16,9 @@ from flaml.automl.model import (
     ExtraTreesEstimator,
 )
 from flaml.automl.task.factory import task_factory
-
 import flaml
+
+from causaltune.models.regression import ElasticNetEstimator, LassoLarsEstimator
 
 
 def flaml_config_to_tune_config(flaml_config: dict) -> Tuple[dict, dict, dict]:
@@ -37,6 +38,8 @@ def flaml_config_to_tune_config(flaml_config: dict) -> Tuple[dict, dict, dict]:
 
 
 estimators = {
+    "elastic_net": ElasticNetEstimator,
+    "lasso_lars": LassoLarsEstimator,
     "knn": KNeighborsEstimator,
     "xgboost": XGBoostSklearnEstimator,
     "xgboost_limit_depth": XGBoostLimitDepthEstimator,
@@ -56,7 +59,7 @@ def joint_config(data_size: Tuple[int, int], estimator_list=None):
             continue
         task = task_factory("regression")
         cfg, init_params, low_cost_init_params = flaml_config_to_tune_config(
-            cls.search_space(data_size, task=task)
+            cls.search_space(data_size=data_size, task=task)
         )
 
         # Test if the estimator instantiates fine
