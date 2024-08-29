@@ -7,6 +7,7 @@ import pandas as pd
 
 from flaml import tune
 from flaml.automl.model import (
+    KNeighborsEstimator,
     XGBoostSklearnEstimator,
     XGBoostLimitDepthEstimator,
     RandomForestEstimator,
@@ -36,6 +37,7 @@ def flaml_config_to_tune_config(flaml_config: dict) -> Tuple[dict, dict, dict]:
 
 
 estimators = {
+    "knn": KNeighborsEstimator,
     "xgboost": XGBoostSklearnEstimator,
     "xgboost_limit_depth": XGBoostLimitDepthEstimator,
     "random_forest": RandomForestEstimator,

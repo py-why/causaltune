@@ -575,7 +575,7 @@ class CausalTune:
         method_params = self.cfg.method_params(config, outcome_model, self.propensity_model)
 
         try:  #
-            # if True:  #
+            # This calls the causal model's estimate_effect method
             estimate = self._est_effect_stub(method_params)
             scores = {
                 "estimator_name": self.estimator_name,
@@ -592,10 +592,10 @@ class CausalTune:
             return {
                 self.metric: scores["validation"][self.metric],
                 "estimator": estimate,
-                "estimator_name": scores.pop("estimator_name"),
+                "estimator_name": self.estimator_name,
                 "scores": scores,
                 # TODO: return full config!
-                "config": config["estimator"],
+                "config": config,
             }
         except Exception as e:
             print("Evaluation failed!\n", config, traceback.format_exc())
@@ -769,19 +769,20 @@ class CausalTune:
         if "Econml" in str(type(self.model)):
             # Get a list of "Inference" objects from EconML, one per treatment
             self.model.__class__.effect_stderr = effect_stderr
-            cfg = self.cfg.method_params(self.best_estimator)
+            outcome_model = self.init_outcome_model(self._settings["outcome_model"])
+            method_params = self.cfg.method_params(
+                self.best_config, outcome_model, self.propensity_model
+            )
 
-            if cfg.inference == "bootstrap":
+            if self.cfg.full_config(self.best_estimator).inference == "bootstrap":
                 # TODO: before bootstrapping, check whether that's already been done
                 bootstrap = BootstrapInference(
                     n_bootstrap_samples=n_bootstrap_samples, n_jobs=n_jobs
                 )
-
-                best_cfg = {k: v for k, v in self.best_config.items() if k not in ["estimator"]}
-                method_params = {
-                    "init_params": {**best_cfg, **cfg.init_params},
-                    "fit_params": {"inference": bootstrap},
-                }
+                method_params["fit_params"]["inference"] = bootstrap
+                self.estimator_name = (
+                    self.best_estimator
+                )  # needed for _est_effect_stub, just in case
                 self.bootstrapped_estimate = self._est_effect_stub(method_params)
                 est = self.bootstrapped_estimate.estimator
             else:

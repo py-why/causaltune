@@ -107,6 +107,7 @@ class TestEndToEndInference(object):
                 estimator_list=[e],
                 use_ray=False,
                 verbose=3,
+                outcome_model="auto",
                 components_verbose=2,
                 resources_per_trial={"cpu": 0.5},
             )
@@ -119,5 +120,5 @@ class TestEndToEndInference(object):
 
 
 if __name__ == "__main__":
-    pytest.main([__file__])
-    # TestEndToEnd().test_endtoend_iv()
+    # pytest.main([__file__])
+    TestEndToEndInference().test_endtoend_multivalue_bootstrap()

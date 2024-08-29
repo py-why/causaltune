@@ -248,6 +248,10 @@ class SimpleParamService:
         }
         return method_params
 
+    def full_config(self, estimator_name: str):
+        cfg = self._configs()[estimator_name]
+        return cfg
+
     def _configs(self) -> Dict[str, EstimatorConfig]:
         if self.n_bootstrap_samples is not None:
             # TODO Egor please look into this
