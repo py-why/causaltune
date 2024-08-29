@@ -9,7 +9,7 @@ from causaltune.datasets import (
     generate_synth_data_with_categories,
     linear_multi_dataset,
 )
-from causaltune.params import SimpleParamService
+from causaltune.search.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
@@ -24,8 +24,6 @@ class TestCustomPropensityModel(object):
         data.preprocess_dataset()
 
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=False,
@@ -60,8 +58,6 @@ class TestCustomPropensityModel(object):
     def test_sklearn_propensity_model_multivalue(self):
         data = linear_multi_dataset(5000)
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=True,

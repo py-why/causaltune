@@ -8,6 +8,7 @@ from causaltune.memoizer import MemoizingWrapper
 
 
 def clean_config(params: dict):
+    # TODO: move this to formal constraints in tune?
     if "subforest_size" in params and "n_estimators" in params:
         params["n_estimators"] = params["subforest_size"] * math.ceil(
             params["n_estimators"] / params["subforest_size"]

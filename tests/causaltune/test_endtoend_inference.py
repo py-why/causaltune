@@ -5,7 +5,7 @@ from econml.inference import BootstrapInference
 
 from causaltune import CausalTune
 from causaltune.datasets import linear_multi_dataset
-from causaltune.params import SimpleParamService
+from causaltune.search.params import SimpleParamService
 
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
@@ -21,8 +21,6 @@ class TestEndToEndInference(object):
         data.preprocess_dataset()
 
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=False,
@@ -71,8 +69,6 @@ class TestEndToEndInference(object):
     def test_endtoend_multivalue_nobootstrap(self):
         data = linear_multi_dataset(1000)
         cfg = SimpleParamService(
-            propensity_model=None,
-            outcome_model=None,
             n_jobs=-1,
             include_experimental=False,
             multivalue=True,
@@ -111,6 +107,7 @@ class TestEndToEndInference(object):
                 estimator_list=[e],
                 use_ray=False,
                 verbose=3,
+                outcome_model="auto",
                 components_verbose=2,
                 resources_per_trial={"cpu": 0.5},
             )
@@ -124,4 +121,4 @@ class TestEndToEndInference(object):
 
 if __name__ == "__main__":
     pytest.main([__file__])
-    # TestEndToEnd().test_endtoend_iv()
+    # TestEndToEndInference().test_endtoend_multivalue_bootstrap()
