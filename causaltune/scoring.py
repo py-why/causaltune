@@ -514,6 +514,7 @@ class Scorer:
             propensity_scores = (
                 self.psw_estimator.estimator.propensity_model.predict_proba(
                     df[['random'] + self.psw_estimator._effect_modifier_names]
+                )
             )
             if propensity_scores.ndim == 2:
                 # Use second column if 2D array
