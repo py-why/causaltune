@@ -513,17 +513,7 @@ class Scorer:
             # Calculate propensity scores using the pre-fitted propensity model
             propensity_scores = (
                 self.psw_estimator.estimator.propensity_model.predict_proba(
-                    df.drop(
-                        [
-                            'index',
-                            'variant',
-                            'Y',
-                            'dy',
-                            'yhat'
-                        ],
-                        axis=1
-                    )
-                )
+                    df[['random'] + self.psw_estimator._effect_modifier_names]
             )
             if propensity_scores.ndim == 2:
                 # Use second column if 2D array
