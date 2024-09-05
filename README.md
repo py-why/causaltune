@@ -1,6 +1,6 @@
 # CausalTune: A library for automated Causal Inference model estimation and selection
 
-[CausalTune Docs](https://www.pywhy.org/causaltune/)
+[CausalTune Docs](https://causaltune.readthedocs.io/en/latest/)
 
 **CausalTune** is a library for automated tuning and selection for causal estimators.
 
