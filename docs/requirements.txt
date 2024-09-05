@@ -4,3 +4,4 @@ sphinx_gallery
 sphinx_rtd_theme
 myst-parser
 pypandoc_binary
+setuptools==45
