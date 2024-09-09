@@ -25,6 +25,7 @@ class TestEndToEnd(object):
             use_ray=False,
             verbose=3,
             components_verbose=2,
+            outcome_model="auto",
         )
 
         causaltune.fit(data)
