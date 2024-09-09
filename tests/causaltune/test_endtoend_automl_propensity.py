@@ -35,6 +35,7 @@ class TestEndToEndAutoMLPropensity(object):
             components_verbose=2,
             propensity_model="auto",
             resources_per_trial={"cpu": 0.5},
+            outcome_model="auto",
         )
 
         causaltune.fit(data)
@@ -67,6 +68,7 @@ class TestEndToEndAutoMLPropensity(object):
             propensity_model="auto",
             num_samples=len(estimator_list),
             components_time_budget=10,
+            outcome_model="auto",
         )
         ct.fit(data)
         # TODO add an effect() call and an effect_tt call
