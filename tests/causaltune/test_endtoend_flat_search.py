@@ -30,7 +30,7 @@ class TestEndToEnd(object):
 
         from causaltune import CausalTune  # noqa F401
 
-        ct = CausalTune(time_budget=0)  # noqa F484
+        ct = CausalTune(time_budget=0, outcome_model="auto")  # noqa F484
 
     def test_endtoend_cate(self):
         """tests if CATE model can be instantiated and fit to data"""
@@ -88,6 +88,7 @@ class TestEndToEnd(object):
             estimator_list="all",
             num_samples=len(estimator_list),
             components_time_budget=10,
+            outcome_model="auto",
         )
         ct.fit(data)
         # ct.fit(data, resume=True)
