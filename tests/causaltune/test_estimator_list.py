@@ -92,7 +92,7 @@ class TestEstimatorListGenerator:
     def test_invalid_choice_fitter(self):
         with pytest.raises(AssertionError):
             """tests if empty list is correctly handled"""
-            ct = CausalTune(components_time_budget=10)
+            ct = CausalTune(components_time_budget=10, outcome_model="auto")
             ct.fit(
                 pd.DataFrame(
                     {"treatment": [0, 1], "outcome": [0.5, 1.5], "dummy": [0.1, 0.2]}

@@ -39,6 +39,7 @@ class TestCustomPropensityModel(object):
             verbose=3,
             components_verbose=2,
             resources_per_trial={"cpu": 0.5},
+            outcome_model="auto",
         )
 
         ct.fit(data)
@@ -61,6 +62,7 @@ class TestCustomPropensityModel(object):
             estimator_list="all",
             num_samples=len(estimator_list),
             components_time_budget=10,
+            outcome_model="auto",
         )
         ct.fit(data)
         # TODO add an effect() call and an effect_tt call

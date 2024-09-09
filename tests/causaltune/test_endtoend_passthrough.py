@@ -38,6 +38,7 @@ class TestEndToEndPassthrough(object):
             components_verbose=2,
             propensity_model=passthrough_model("propensity"),
             resources_per_trial={"cpu": 0.5},
+            outcome_model="auto",
         )
 
         causaltune.fit(data)
@@ -67,6 +68,7 @@ class TestEndToEndPassthrough(object):
                     data.propensity_modifiers, include_control=include_control
                 ),
                 resources_per_trial={"cpu": 0.5},
+                outcome_model="auto",
             )
 
             causaltune.fit(data)
