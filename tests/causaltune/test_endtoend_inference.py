@@ -39,6 +39,7 @@ class TestEndToEndInference(object):
                 verbose=3,
                 components_verbose=2,
                 resources_per_trial={"cpu": 0.5},
+                outcome_model="auto",
             )
 
             causaltune.fit(data)
@@ -61,6 +62,7 @@ class TestEndToEndInference(object):
                 verbose=3,
                 components_verbose=2,
                 resources_per_trial={"cpu": 0.5},
+                outcome_model="auto",
             )
 
             causaltune.fit(data)
@@ -87,6 +89,7 @@ class TestEndToEndInference(object):
                 verbose=3,
                 components_verbose=2,
                 resources_per_trial={"cpu": 0.5},
+                outcome_model="auto",
             )
 
             causaltune.fit(data)
@@ -110,6 +113,7 @@ class TestEndToEndInference(object):
                 outcome_model="auto",
                 components_verbose=2,
                 resources_per_trial={"cpu": 0.5},
+                outcome_model="auto",
             )
 
             causaltune.fit(data)
