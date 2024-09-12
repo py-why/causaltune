@@ -46,6 +46,15 @@ class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, cd: CausalityDataset):
+        """
+        Transforms the CausalityDataset using the fitted encoder.
+        Args:
+            cd (CausalityDataset): Dataset to transform.
+        Returns:
+            CausalityDataset: Transformed dataset.
+        Raises:
+            ValueError: If processor has not been trained yet.
+        """
         if self.encoder:
             cd = self.preprocess_dataset(
                 cd,
