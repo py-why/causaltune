@@ -190,6 +190,10 @@ print(f"Best estimator: {ct.best_estimator}")
 
 ```
 
+Now if ***outcome_model="auto"*** in the CausalTune constructor, we search over a simultaneous search space for the EconML estimators and for FLAML wrappers for common regressors. The old behavior is now achieved by ***outcome_model="nested"*** (Refitting AutoML for each estimator).
+
+You can also preprocess the data in the CausalityDataset using one of the popular category encoders: ***OneHot, WoE, Label, Target***.
+
 ## Supported Models
 The package supports the following causal estimators:
 * Meta Learners:
