@@ -11,13 +11,11 @@ class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
     """
     A processor for CausalityDataset, designed to preprocess data for causal inference tasks by encoding, normalizing,
     and handling missing values.
-    
     Attributes:
         encoder_type (str): Type of encoder used for categorical feature encoding ('onehot', 'label', 'target', 'woe').
         outcome (str): The target variable used for encoding.
         encoder: Encoder object used during feature transformations.
     """
-    
     def __init__(self):
         """
         Initializes CausalityDatasetProcessor with default attributes for encoder_type, outcome, and encoder.
@@ -32,6 +30,15 @@ class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
         encoder_type: Optional[str] = "onehot",
         outcome: str = None,
     ):
+        """
+        Fits the processor by preprocessing the input CausalityDataset.
+        Args:
+            cd (CausalityDataset): The dataset for causal analysis.
+            encoder_type (str, optional): Encoder to use for categorical features. Default is 'onehot'.
+            outcome (str, optional): The target variable for encoding (needed for 'target' or 'woe'). Default is None.
+        Returns:
+            CausalityDatasetProcessor: The fitted processor instance.
+        """
         cd = copy.deepcopy(cd)
         self.preprocess_dataset(
             cd, encoder_type=encoder_type, outcome=outcome, fit_phase=True
