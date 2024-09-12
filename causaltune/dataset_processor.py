@@ -10,7 +10,7 @@ from causaltune.data_utils import CausalityDataset
 class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
     """
     A processor for CausalityDataset, designed to preprocess data for causal inference tasks by encoding, normalizing,
-    and handling missing values.
+    and handling missing values
     Attributes:
         encoder_type (str): Type of encoder used for categorical feature encoding ('onehot', 'label', 'target', 'woe').
         outcome (str): The target variable used for encoding.
