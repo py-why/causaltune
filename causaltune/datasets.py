@@ -347,6 +347,7 @@ def generate_synthetic_data(
     noisy_outcomes: bool = False,
     effect_size: Union[int, None] = None,
     add_instrument: bool = False,
+    known_propensity: bool = False
 ) -> CausalityDataset:
     """Generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.
     Supports RCT (unconfounded) and observational (confounded) data.
@@ -385,10 +386,14 @@ def generate_synthetic_data(
         p = np.clip(p, 0.1, 0.9)
         C = p > np.random.rand(n_samples)
         # print(min(p), max(p))
-
     else:
         p = 0.5 * np.ones(n_samples)
         C = np.random.binomial(n=1, p=0.5, size=n_samples)
+
+    if known_propensity:
+        known_p = np.random.beta(2, 5, size=n_samples)
+    else:
+        known_p = p
 
     if add_instrument:
         Z = np.random.binomial(n=1, p=0.5, size=n_samples)
@@ -420,7 +425,7 @@ def generate_synthetic_data(
                                 T,
                                 Y,
                                 tau,
-                                p,
+                                known_p,
                                 Y_base]).T,
                       columns=features + ["treatment",
                                           "outcome",
@@ -450,6 +455,7 @@ def generate_linear_synthetic_data(
     noisy_outcomes: bool = False,
     effect_size: Union[int, None] = None,
     add_instrument: bool = False,
+    known_propensity: bool = False
 ) -> CausalityDataset:
     """Generates synthetic dataset with linear treatment effect (CATE) and optional instrumental variable.
     Supports RCT (unconfounded) and observational (confounded) data.
@@ -494,6 +500,11 @@ def generate_linear_synthetic_data(
         p = 0.5 * np.ones(n_samples)
         C = np.random.binomial(n=1, p=0.5, size=n_samples)
 
+    if known_propensity:
+        known_p = np.random.beta(2, 5, size=n_samples)
+    else:
+        known_p = p
+
     if add_instrument:
         Z = np.random.binomial(n=1, p=0.5, size=n_samples)
         C0 = np.random.binomial(n=1, p=0.006, size=n_samples)
@@ -524,7 +535,7 @@ def generate_linear_synthetic_data(
                                 T,
                                 Y,
                                 tau,
-                                p,
+                                known_p,
                                 Y_base]).T,
                       columns=features + ["treatment",
                                           "outcome",
