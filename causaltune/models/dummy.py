@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from causaltune.models.wrapper import DoWhyMethods, DoWhyWrapper
-from causaltune.scoring import Scorer
+from causaltune.score.scoring import Scorer
 
 from dowhy.causal_estimators.instrumental_variable_estimator import (
     InstrumentalVariableEstimator,

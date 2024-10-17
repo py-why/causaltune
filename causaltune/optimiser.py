@@ -19,7 +19,7 @@ from econml.inference import BootstrapInference
 from joblib import Parallel, delayed
 
 from causaltune.search.params import SimpleParamService
-from causaltune.scoring import Scorer
+from causaltune.score.scoring import Scorer
 from causaltune.utils import treatment_is_multivalue
 from causaltune.models.monkey_patches import (
     AutoML,
@@ -179,9 +179,9 @@ class CausalTune:
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
         self._settings["try_init_configs"] = try_init_configs
-        self._settings[
-            "include_experimental_estimators"
-        ] = include_experimental_estimators
+        self._settings["include_experimental_estimators"] = (
+            include_experimental_estimators
+        )
 
         # params for FLAML on component models:
         self._settings["component_models"] = {}
@@ -515,6 +515,7 @@ class CausalTune:
                     "energy_distance",
                     "psw_energy_distance",
                     "frobenius_norm",
+                    "psw_frobenius_norm",
                     "codec",
                     "policy_risk",
                 ]
@@ -564,19 +565,24 @@ class CausalTune:
             est_name = estimates["estimator_name"]
             current_score = estimates[self.metric]
 
+            estimates["optimization_score"] = current_score
+
             # Initialize best_score if this is the first estimator for this name
             if est_name not in self._best_estimators:
                 self._best_estimators[est_name] = (
-                    np.inf
-                    if self.metric
-                    in [
-                        "energy_distance",
-                        "psw_energy_distance",
-                        "frobenius_norm",
-                        "codec",
-                        "policy_risk",
-                    ]
-                    else -np.inf,
+                    (
+                        np.inf
+                        if self.metric
+                        in [
+                            "energy_distance",
+                            "psw_energy_distance",
+                            "frobenius_norm",
+                            "psw_frobenius_norm",
+                            "codec",
+                            "policy_risk",
+                        ]
+                        else -np.inf
+                    ),
                     None,
                 )
 
@@ -587,6 +593,7 @@ class CausalTune:
                 "energy_distance",
                 "psw_energy_distance",
                 "frobenius_norm",
+                "psw_frobenius_norm",
                 "codec",
                 "policy_risk",
             ]:
@@ -609,9 +616,11 @@ class CausalTune:
             ):
                 self._best_estimators[est_name] = (
                     current_score,
-                    estimates["estimator"]
-                    if self._settings["store_all"]
-                    else estimates.pop("estimator"),
+                    (
+                        estimates["estimator"]
+                        if self._settings["store_all"]
+                        else estimates.pop("estimator")
+                    ),
                 )
 
         return estimates

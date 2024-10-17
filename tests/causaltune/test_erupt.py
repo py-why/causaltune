@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from sklearn.dummy import DummyClassifier
-from causaltune.erupt import ERUPT
+from causaltune.score.erupt_old import ERUPTOld
 
 
 def binary_erupt_df(mylen: int):
@@ -76,10 +76,10 @@ class TestErupt(object):
         self.call_erupt(df, 0.0, ["X"])
 
     def call_erupt(self, df: pd.DataFrame, target_score: float, X_names: List[str]):
-        e = ERUPT("treatment", DummyClassifier(strategy="prior"), X_names=X_names)
+        e = ERUPTOld("treatment", DummyClassifier(strategy="prior"), X_names=X_names)
         e.fit(df)
         out = e.score(df, outcome=df["outcome"], policy=df["policy"])
-        assert out == target_score, "Wrong binary ERUPT score"
+        assert out == pytest.approx(target_score, rel=1e-5), "Wrong binary ERUPT score"
 
 
 if __name__ == "__main__":

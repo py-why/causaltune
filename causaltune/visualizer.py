@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import shap
 import causaltune
 from causaltune.shap import shap_values
-from causaltune.scoring import Scorer
+from causaltune.score.scoring import Scorer
 from dowhy.causal_model import CausalEstimate
 
 

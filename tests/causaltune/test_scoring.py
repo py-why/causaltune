@@ -6,7 +6,7 @@ from sklearn.dummy import DummyClassifier
 from dowhy import CausalModel
 
 from causaltune.datasets import synth_ihdp
-from causaltune.scoring import Scorer, supported_metrics
+from causaltune.score.scoring import Scorer, supported_metrics
 
 
 def simple_model_run(rscorer=False):
