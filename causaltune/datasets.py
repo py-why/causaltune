@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import pickle
+import os
 from scipy import special
 
 # from scipy.stats import betabinom
@@ -740,3 +742,38 @@ def mlrate_experiment_synth_dgp(
     cd = CausalityDataset(data=df, outcomes=["Y"], treatment="T")
 
     return cd
+
+def save_dataset(dataset: CausalityDataset, filename: str):
+    """
+    Save a CausalityDataset object to a file using pickle.
+
+    Args:
+        dataset (CausalityDataset): The dataset to save.
+        filename (str): The name of the file to save the dataset to.
+    """
+    with open(filename, 'wb') as f:
+        pickle.dump(dataset, f)
+    print(f"Dataset saved to {filename}")
+
+
+def load_dataset(filename: str) -> CausalityDataset:
+    """
+    Load a CausalityDataset object from a file using pickle.
+
+    Args:
+        filename (str): The name of the file to load the dataset from.
+
+    Returns:
+        CausalityDataset: The loaded dataset.
+    """
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"File {filename} not found.")
+    
+    with open(filename, 'rb') as f:
+        dataset = pickle.load(f)
+    
+    if not isinstance(dataset, CausalityDataset):
+        raise ValueError(f"The file {filename} does not contain a valid CausalityDataset object.")
+    
+    print(f"Dataset loaded from {filename}")
+    return dataset

@@ -564,6 +564,8 @@ class CausalTune:
             est_name = estimates["estimator_name"]
             current_score = estimates[self.metric]
 
+            estimates['optimization_score'] = current_score
+
             # Initialize best_score if this is the first estimator for this name
             if est_name not in self._best_estimators:
                 self._best_estimators[est_name] = (

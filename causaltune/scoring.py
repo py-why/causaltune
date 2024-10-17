@@ -6,11 +6,11 @@ from typing import Optional, Dict, Union, Any, List, Callable
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import QuantileTransformer
+from sklearn.preprocessing import StandardScaler
 
 from econml.cate_interpreter import SingleTreeCateInterpreter  # noqa F401
 from dowhy.causal_estimator import CausalEstimate
 from dowhy import CausalModel
-
 
 from causaltune.thirdparty.causalml import metrics
 from causaltune.erupt import ERUPT
@@ -271,25 +271,119 @@ class Scorer:
         return Y0X, treatment_name, split_test_by
 
     # NEW:
+    # def frobenius_norm_score(
+    #     self,
+    #     estimate: CausalEstimate,
+    #     df: pd.DataFrame,
+    #     sd_threshold: float = 1e-2,
+    # ) -> float:
+    #     """
+    #     Calculate Frobenius norm-based score between treated and controls,
+    #     using propensity score weighting.
+
+    #     Args:
+    #         estimate (CausalEstimate): causal estimate to evaluate
+    #         df (pandas.DataFrame): input dataframe
+    #         sd_threshold (float): threshold for standard deviation of CATE
+    #         estimates
+
+    #     Returns:
+    #         float: Frobenius norm-based score, or np.inf if calculation is
+    #         not possible
+    #     """
+    #     # Attempt to get CATE estimates, handling potential AttributeErrors
+    #     try:
+    #         cate_estimates = estimate.estimator.effect(df)
+    #     except AttributeError:
+    #         try:
+    #             cate_estimates = estimate.estimator.effect_tt(df)
+    #         except AttributeError:
+    #             return np.inf  # Return inf if neither method is available
+
+    #     # Check if CATE estimates are consistently constant (below threshold)
+    #     if np.std(cate_estimates) <= sd_threshold:
+    #         return np.inf  # Return inf for constant CATE estimates
+
+    #     # Prepare data for treated and control groups
+    #     Y0X, treatment_name, split_test_by = self._Y0_X_potential_outcomes(
+    #         estimate, df)
+    #     Y0X_1 = Y0X[Y0X[split_test_by] == 1]  # Treated group
+    #     Y0X_0 = Y0X[Y0X[split_test_by] == 0]  # Control group
+
+    #     # Check if either group is empty
+    #     if len(Y0X_1) == 0 or len(Y0X_0) == 0:
+    #         return np.inf  # Return inf if either group is empty
+
+    #     # Select columns for analysis
+    #     select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
+
+    #     # Calculate propensity scores for treated group
+    #     propensitymodel = self.psw_estimator.estimator.propensity_model
+    #     YX_1_all_psw = propensitymodel.predict_proba(
+    #         Y0X_1[
+    #             self.causal_model.get_effect_modifiers()
+    #             + self.causal_model.get_common_causes()
+    #         ]
+    #     )
+    #     treatment_series = Y0X_1[treatment_name]
+    #     YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
+    #     for i in treatment_series.unique():
+    #         YX_1_psw[treatment_series == i] = (
+    #             YX_1_all_psw[:, i][treatment_series == i]
+    #         )
+
+    #     # Calculate propensity scores for control group
+    #     propensitymodel = self.psw_estimator.estimator.propensity_model
+    #     YX_0_psw = propensitymodel.predict_proba(
+    #         Y0X_0[
+    #             self.causal_model.get_effect_modifiers()
+    #             + self.causal_model.get_common_causes()
+    #         ]
+    #     )[:, 0]
+
+    #     # Ensure both datasets have the same number of rows
+    #     min_rows = min(len(Y0X_1), len(Y0X_0))
+    #     Y0X_1 = Y0X_1.iloc[:min_rows]
+    #     Y0X_0 = Y0X_0.iloc[:min_rows]
+    #     YX_1_psw = YX_1_psw[:min_rows]
+    #     YX_0_psw = YX_0_psw[:min_rows]
+
+    #     # Calculate the difference matrix with propensity score weights
+    #     D = (Y0X_1[select_cols].values - Y0X_0[select_cols].values) * \
+    #         np.sqrt(YX_1_psw * YX_0_psw).reshape(-1, 1)
+
+    #     # Compute Frobenius norm of the weighted difference matrix
+    #     frobenius_norm = np.linalg.norm(D, ord='fro')
+
+    #     # Normalize the Frobenius norm by sqrt(n * p) where n is number of
+    #     # samples and p is number of features
+    #     n, p = D.shape
+    #     normalized_score = frobenius_norm / np.sqrt(n * p)
+
+    #     # Return the normalized score if it's finite, otherwise return infinity
+    #     return normalized_score if np.isfinite(normalized_score) else np.inf
+
+
     def frobenius_norm_score(
         self,
         estimate: CausalEstimate,
         df: pd.DataFrame,
         sd_threshold: float = 1e-2,
+        epsilon: float = 1e-5,
+        alpha: float = 0.5
     ) -> float:
         """
-        Calculate Frobenius norm-based score between treated and controls,
-        using propensity score weighting.
-
+        Calculate propensity score weighted Frobenius norm-based score between treated and controls.
+        
         Args:
-            estimate (CausalEstimate): causal estimate to evaluate
-            df (pandas.DataFrame): input dataframe
-            sd_threshold (float): threshold for standard deviation of CATE
-            estimates
-
+        estimate (CausalEstimate): causal estimate to evaluate
+        df (pandas.DataFrame): input dataframe
+        sd_threshold (float): threshold for standard deviation of CATE estimates
+        epsilon (float): small regularization constant
+        alpha (float): weight between Frobenius norm and variance component
+        
         Returns:
-            float: Frobenius norm-based score, or np.inf if calculation is
-            not possible
+        float: Propensity-score weighted Frobenius norm-based score, or np.inf if calculation is not possible
         """
         # Attempt to get CATE estimates, handling potential AttributeErrors
         try:
@@ -302,11 +396,10 @@ class Scorer:
 
         # Check if CATE estimates are consistently constant (below threshold)
         if np.std(cate_estimates) <= sd_threshold:
-            return np.inf  # Return inf for constant CATE estimates
+            return 10#np.inf  # Return inf for constant CATE estimates
 
         # Prepare data for treated and control groups
-        Y0X, treatment_name, split_test_by = self._Y0_X_potential_outcomes(
-            estimate, df)
+        Y0X, treatment_name, split_test_by = self._Y0_X_potential_outcomes(estimate, df)
         Y0X_1 = Y0X[Y0X[split_test_by] == 1]  # Treated group
         Y0X_0 = Y0X[Y0X[split_test_by] == 0]  # Control group
 
@@ -317,7 +410,12 @@ class Scorer:
         # Select columns for analysis
         select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
 
-        # Calculate propensity scores for treated group
+        # Normalize features
+        scaler = StandardScaler()
+        Y0X_1_normalized = scaler.fit_transform(Y0X_1[select_cols])
+        Y0X_0_normalized = scaler.transform(Y0X_0[select_cols])
+
+        # Calculate propensity scores
         propensitymodel = self.psw_estimator.estimator.propensity_model
         YX_1_all_psw = propensitymodel.predict_proba(
             Y0X_1[
@@ -328,12 +426,8 @@ class Scorer:
         treatment_series = Y0X_1[treatment_name]
         YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
         for i in treatment_series.unique():
-            YX_1_psw[treatment_series == i] = (
-                YX_1_all_psw[:, i][treatment_series == i]
-            )
+            YX_1_psw[treatment_series == i] = YX_1_all_psw[:, i][treatment_series == i]
 
-        # Calculate propensity scores for control group
-        propensitymodel = self.psw_estimator.estimator.propensity_model
         YX_0_psw = propensitymodel.predict_proba(
             Y0X_0[
                 self.causal_model.get_effect_modifiers()
@@ -341,27 +435,38 @@ class Scorer:
             ]
         )[:, 0]
 
-        # Ensure both datasets have the same number of rows
-        min_rows = min(len(Y0X_1), len(Y0X_0))
-        Y0X_1 = Y0X_1.iloc[:min_rows]
-        Y0X_0 = Y0X_0.iloc[:min_rows]
-        YX_1_psw = YX_1_psw[:min_rows]
-        YX_0_psw = YX_0_psw[:min_rows]
+        # Trim propensity scores
+        YX_1_psw = np.clip(YX_1_psw, 0.01, 0.99)
+        YX_0_psw = np.clip(YX_0_psw, 0.01, 0.99)
 
-        # Calculate the difference matrix with propensity score weights
-        D = (Y0X_1[select_cols].values - Y0X_0[select_cols].values) * \
-            np.sqrt(YX_1_psw * YX_0_psw).reshape(-1, 1)
+        # Calculate pairwise differences
+        differences_xy = Y0X_1_normalized[:, np.newaxis, :] - Y0X_0_normalized[np.newaxis, :, :]
 
-        # Compute Frobenius norm of the weighted difference matrix
-        frobenius_norm = np.linalg.norm(D, ord='fro')
+        # Calculate joint weights
+        xy_psw = psw_joint_weights(YX_1_psw, YX_0_psw)
+        xy_mean_weights = np.mean(xy_psw)
 
-        # Normalize the Frobenius norm by sqrt(n * p) where n is number of
-        # samples and p is number of features
-        n, p = D.shape
-        normalized_score = frobenius_norm / np.sqrt(n * p)
+        # Weight the differences
+        weighted_differences_xy = np.reciprocal(xy_mean_weights) * np.multiply(
+            xy_psw[:, :, np.newaxis],
+            differences_xy
+        )
 
-        # Return the normalized score if it's finite, otherwise return infinity
-        return normalized_score if np.isfinite(normalized_score) else np.inf
+        # Compute Frobenius norm
+        frobenius_norm = np.sqrt(np.sum(weighted_differences_xy**2))
+
+        # Normalize
+        n_1, n_0 = len(Y0X_1), len(Y0X_0)
+        p = differences_xy.shape[-1]  # number of features
+        normalized_score = frobenius_norm / np.sqrt(n_1 * n_0 * p)
+
+        # Add regularization and combine with inverse variance
+        cate_variance = np.var(cate_estimates)
+        inverse_variance_component = 1 / (cate_variance + epsilon)
+        
+        composite_score = alpha * normalized_score + (1 - alpha) * inverse_variance_component
+
+        return composite_score if np.isfinite(composite_score) else np.inf
 
     def psw_energy_distance(
         self,
