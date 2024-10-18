@@ -515,6 +515,7 @@ class CausalTune:
                     "energy_distance",
                     "psw_energy_distance",
                     "frobenius_norm",
+                    "psw_frobenius_norm",
                     "codec",
                     "policy_risk",
                 ]
@@ -575,6 +576,7 @@ class CausalTune:
                         "energy_distance",
                         "psw_energy_distance",
                         "frobenius_norm",
+                        "psw_frobenius_norm",
                         "codec",
                         "policy_risk",
                     ]
@@ -589,6 +591,7 @@ class CausalTune:
                 "energy_distance",
                 "psw_energy_distance",
                 "frobenius_norm",
+                "psw_frobenius_norm",
                 "codec",
                 "policy_risk",
             ]:

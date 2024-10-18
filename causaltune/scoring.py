@@ -62,7 +62,9 @@ def supported_metrics(
                 "energy_distance",
                 "psw_energy_distance",
                 "frobenius_norm",  # NEW
-                "codec"  # NEW
+                "psw_frobenius_norm",  # NEW
+                "codec",  # NEW
+                "bite"
             ]
             if not scores_only:
                 metrics.append("ate")
@@ -272,9 +274,60 @@ class Scorer:
         Y0X = copy.deepcopy(df)
 
         return Y0X, treatment_name, split_test_by
-
+    
     # NEW:
     def frobenius_norm_score(
+        self,
+        estimate: CausalEstimate,
+        df: pd.DataFrame,
+        sd_threshold: float = 1e-2,
+        epsilon: float = 1e-5,
+        alpha: float = 0.5
+    ) -> float:
+        """
+        Calculate Frobenius norm-based without propensity weighting.
+        """
+        try:
+            cate_estimates = estimate.estimator.effect(df)
+        except AttributeError:
+            try:
+                cate_estimates = estimate.estimator.effect_tt(df)
+            except AttributeError:
+                return np.inf
+
+        if np.std(cate_estimates) <= sd_threshold:
+            return np.inf
+
+        Y0X, _, split_test_by = self._Y0_X_potential_outcomes(estimate, df)
+        Y0X_1 = Y0X[Y0X[split_test_by] == 1]
+        Y0X_0 = Y0X[Y0X[split_test_by] == 0]
+
+        if len(Y0X_1) == 0 or len(Y0X_0) == 0:
+            return np.inf
+
+        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
+
+        scaler = StandardScaler()
+        Y0X_1_normalized = scaler.fit_transform(Y0X_1[select_cols])
+        Y0X_0_normalized = scaler.transform(Y0X_0[select_cols])
+
+        differences_xy = Y0X_1_normalized[:, np.newaxis, :] - Y0X_0_normalized[np.newaxis, :, :]
+
+        frobenius_norm = np.sqrt(np.sum(differences_xy**2))
+
+        n_1, n_0 = len(Y0X_1), len(Y0X_0)
+        p = differences_xy.shape[-1]
+        normalized_score = frobenius_norm / np.sqrt(n_1 * n_0 * p)
+
+        cate_variance = np.var(cate_estimates)
+        inverse_variance_component = 1 / (cate_variance + epsilon)
+        
+        composite_score = alpha * normalized_score + (1 - alpha) * inverse_variance_component
+
+        return composite_score if np.isfinite(composite_score) else np.inf
+
+    # NEW:
+    def psw_frobenius_norm_score(
         self,
         estimate: CausalEstimate,
         df: pd.DataFrame,
@@ -479,13 +532,12 @@ class Scorer:
             - np.mean(distance_yy))
         return psw_energy_distance
 
-    # NEW:
+
     @staticmethod
     def default_policy(cate: np.ndarray) -> np.ndarray:
         """Default policy that assigns treatment if CATE > 0."""
         return (cate > 0).astype(int)
 
-    # NEW:
     def policy_risk_score(
         self,
         estimate: CausalEstimate,
@@ -494,81 +546,57 @@ class Scorer:
         outcome_name: str,
         policy: Optional[Callable[[np.ndarray], np.ndarray]] = None,
         rct_indices: Optional[pd.Index] = None,
-        sd_threshold: float = 1e-2,
+        sd_threshold: float = 1e-4,
         clip: float = 0.05
     ) -> float:
-        # Use default_policy if no custom policy is provided
+        # Ensure cate_estimate is a 1D array
+        cate_estimate = np.squeeze(cate_estimate)
+        
+        # Handle constant or near-constant CATE estimates
+        if np.std(cate_estimate) <= sd_threshold:
+            return np.inf  # Return infinity for constant estimates
+        
+        # Use default_policy if no policy is provided
         if policy is None:
             policy = self.default_policy
 
-        # If no specific RCT indices are provided, use all indices
-        if rct_indices is None:
-            rct_indices = df.index
-
-        # Ensure cate_estimate is a 1D array for consistent processing
-        cate_estimate = np.squeeze(cate_estimate)
-
-        # Return 0 if CATE estimates are consistently constant (below
-        # threshold)
-        if np.std(cate_estimate) <= sd_threshold:
-            return 0  # This indicates no heterogeneity in treatment effects
-
-        # Apply the policy to get treatment assignments based on CATE estimates
+        # Apply the policy to get treatment assignments
         policy_treatment = policy(cate_estimate)
 
-        # Validate that the propensity model is properly fitted
-        if not hasattr(
-                self.psw_estimator,
-                'estimator') or not hasattr(
-                self.psw_estimator.estimator,
-                'propensity_model'):
-            raise ValueError(
-                "Propensity model fitting failed. Please check the setup.")
-        else:
-            # Calculate propensity scores using the pre-fitted propensity model
-            propensity_scores = (
-                self.psw_estimator.estimator.propensity_model.predict_proba(
-                    df[['random'] + self.psw_estimator._effect_modifier_names]
-                )
-            )
-            if propensity_scores.ndim == 2:
-                # Use second column if 2D array
-                propensity_scores = propensity_scores[:, 1]
-
-            # Clip propensity scores to avoid extreme weights
-            propensity_scores = np.clip(propensity_scores, clip, 1 - clip)
-
+        # Calculate propensity scores
+        if not hasattr(self.psw_estimator, 'estimator') or not hasattr(self.psw_estimator.estimator, 'propensity_model'):
+            raise ValueError("Propensity model fitting failed. Please check the setup.")
+        
+        propensity_scores = self.psw_estimator.estimator.propensity_model.predict_proba(
+            df[self.causal_model.get_effect_modifiers() + self.causal_model.get_common_causes()]
+        )
+        if propensity_scores.ndim == 2:
+            propensity_scores = propensity_scores[:, 1]
+        propensity_scores = np.clip(propensity_scores, clip, 1 - clip)
+        
         treatment_name = self.psw_estimator._treatment_name
 
-        # Calculate inverse probability weights
-        weights = np.where(df[treatment_name] == 1,
-                           1 / propensity_scores,
+        # Calculate weights
+        weights = np.where(df[treatment_name] == 1, 
+                           1 / propensity_scores, 
                            1 / (1 - propensity_scores))
 
-        # Prepare RCT subset for analysis
-        rct_df = df.loc[rct_indices].copy()
-        rct_df['weight'] = weights[rct_indices]
-        rct_df['policy_treatment'] = policy_treatment[rct_indices]
+        # Prepare RCT subset
+        rct_df = df.loc[rct_indices].copy() if rct_indices is not None else df.copy()
+        rct_df['weight'] = weights
+        rct_df['policy_treatment'] = policy_treatment
 
-        # Compute policy value using inverse probability weighting
+        # Compute policy value
         value_policy = (
-            (
-                (rct_df[outcome_name] * (rct_df[treatment_name] == 1)
-                 * (rct_df['policy_treatment'] == 1)
-                 * rct_df['weight']).sum()
-                / rct_df['weight'].sum()
-                * (rct_df['policy_treatment'] == 1).mean()
-            ) + (
-                (rct_df[outcome_name] * (rct_df[treatment_name] == 0)
-                 * (rct_df['policy_treatment'] == 0)
-                 * rct_df['weight']).sum()
-                / rct_df['weight'].sum()
-                * (rct_df['policy_treatment'] == 0).mean()
-            )
+            (rct_df[outcome_name] * (rct_df[treatment_name] == 1) * (rct_df['policy_treatment'] == 1) * rct_df['weight']).sum() / rct_df['weight'].sum() * (rct_df['policy_treatment'] == 1).mean() +
+            (rct_df[outcome_name] * (rct_df[treatment_name] == 0) * (rct_df['policy_treatment'] == 0) * rct_df['weight']).sum() / rct_df['weight'].sum() * (rct_df['policy_treatment'] == 0).mean()
         )
 
-        # Compute Policy Risk (1 - policy value)
-        policy_risk = 1 - value_policy
+        # Compute naive policy value (treating everyone)
+        naive_value = rct_df[outcome_name].mean()
+
+        # Compute normalized policy risk
+        policy_risk = max(0, (naive_value - value_policy) / abs(naive_value))
 
         return policy_risk
 
@@ -1257,21 +1285,17 @@ class Scorer:
                 )
                 out["prob_erupt"] = prob_erupt_score
 
-            if "frobenius_norm" in metrics_to_report:
-                out["frobenius_norm"] = self.frobenius_norm_score(estimate, df)
+            # if "frobenius_norm" in metrics_to_report:
+            #     out["frobenius_norm"] = self.frobenius_norm_score(estimate, df)
 
             if "policy_risk" in metrics_to_report:
-                try:
-                    out["policy_risk"] = self.policy_risk_score(
-                        estimate=estimate,
-                        df=df,
-                        cate_estimate=cate_estimate,
-                        outcome_name=outcome_name,
-                        policy=None
-                    )
-                except Exception as e:
-                    e
-                    pass
+                out["policy_risk"] = self.policy_risk_score(
+                    estimate=estimate,
+                    df=df,
+                    cate_estimate=cate_estimate,
+                    outcome_name=outcome_name,
+                    policy=None
+                )
 
             if "qini" in metrics_to_report:
                 out["qini"] = Scorer.qini_make_score(
@@ -1279,6 +1303,10 @@ class Scorer:
 
             if "auc" in metrics_to_report:
                 out["auc"] = Scorer.auc_make_score(estimate, df, cate_estimate)
+
+            if "bite" in metrics_to_report:
+                bite_score = self.bite_score(estimate, df)
+                out["bite"] = bite_score
 
             if r_scorer is not None:
                 out["r_score"] = Scorer.r_make_score(
@@ -1306,6 +1334,13 @@ class Scorer:
         if "codec" in metrics_to_report:
             temp = self.codec_score(estimate, df)
             out["codec"] = temp
+
+        if "frobenius_norm" in metrics_to_report:
+            out["frobenius_norm"] = self.frobenius_norm_score(estimate, df)
+
+        if "psw_frobenius_norm" in metrics_to_report:
+            out["psw_frobenius_norm"] = self.psw_frobenius_norm_score(estimate, df)
+
 
         del df
         return out

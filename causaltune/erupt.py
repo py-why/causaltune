@@ -142,7 +142,7 @@ class ERUPT:
                 np.random.normal(treatment_effects, treatment_std_devs),
                 index=treatment_effects.index
             )
-
+            
             # Define policy: treat if sampled effect is positive
             # Note: A more conservative policy could use: sampled_effects > 2 *
             # treatment_std_devs
