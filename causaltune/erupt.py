@@ -4,6 +4,8 @@ import copy
 import pandas as pd
 import numpy as np
 
+from dowhy.causal_estimator import CausalEstimate
+
 # implementation of https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957
 # we assume treatment takes integer values from 0 to n
 
@@ -95,80 +97,224 @@ class ERUPT:
         assert not np.isnan(weight.sum()), "NaNs in ERUPT weights"
 
         return pd.Series(index=df.index, data=weight)
+    
 
-        # NEW:
+    # def probabilistic_erupt_score(
+    #     self, 
+    #     df: pd.DataFrame, 
+    #     outcome: pd.Series,
+    #     estimate: CausalEstimate,
+    #     cate_estimate: np.ndarray,
+    #     sd_threshold: float = 1e-2,
+    #     iterations: int = 1000
+    # ) -> float:
+    #     """
+    #     Calculate the Probabilistic ERUPT score using Thompson sampling to select 
+    #     optimal treatments under uncertainty.
+        
+    #     This implementation utilizes Thompson sampling by selecting treatments that 
+    #     maximize expected outcomes based on sampled treatment effects. For each iteration, 
+    #     effects are sampled from posterior distributions and treatments are assigned 
+    #     to maximize the expected outcome.
+
+    #     Args:
+    #         df (pd.DataFrame): Input dataframe with treatment data
+    #         outcome (pd.Series): Observed outcomes for each unit
+    #         estimate (CausalEstimate): Causal estimate to evaluate
+    #         cate_estimate (np.ndarray): Array with CATE estimates
+    #         sd_threshold (float): Minimum standard deviation to consider meaningful variation
+    #         iterations (int): Number of Thompson sampling iterations
+
+    #     Returns:
+    #         float: Probabilistic ERUPT score or 0 if variance estimation not available
+    #     """
+    #     est = estimate.estimator
+        
+    #     # Check if estimator supports inference
+    #     if not hasattr(est, 'inference') or not hasattr(est, 'effect_stderr'):
+    #         return 0
+            
+    #     try:
+    #         # Get standard errors
+    #         effect_stds = est.effect_stderr(df)
+            
+    #         # Check if we got valid standard errors
+    #         if effect_stds is None:
+    #             return 0
+                
+    #         # Check for meaningful heterogeneity in treatment effects
+    #         cate_std = np.std(cate_estimate)
+    #         if cate_std < sd_threshold:
+    #             return 0
+
+    #         unique_treatments = df[self.treatment_name].unique()
+    #         treatment_scores = {treatment: [] for treatment in unique_treatments}
+            
+    #         # Normalize standard errors relative to effect size variation
+    #         effect_stds = np.maximum(effect_stds, cate_std * 0.1)  # Prevent overconfidence
+            
+    #         # Calculate baseline outcome for reference
+    #         baseline_outcome = outcome[df[self.treatment_name] == 0].mean()
+
+    #         # Perform Thompson sampling iterations
+    #         for _ in range(iterations):
+    #             # Sample effects while maintaining relative relationships
+    #             sampled_effects = np.random.normal(cate_estimate, effect_stds)
+                
+    #             # Apply treatment policy based on sampled effects
+    #             policy = (sampled_effects > np.median(sampled_effects)).astype(int)
+                
+    #             # Calculate weights for this policy
+    #             weights = self.weights(df, policy)
+                
+    #             # Skip if weights sum to zero
+    #             if weights.sum() == 0:
+    #                 continue
+                    
+    #             # Calculate mean outcome under this policy
+    #             weighted_outcome = (weights * outcome).sum() / weights.sum()
+    #             treatment_scores[1].append(weighted_outcome)  # Store under treatment=1
+                
+    #         # If no valid iterations, return 0
+    #         if not any(scores for scores in treatment_scores.values()):
+    #             return 0
+
+    #         # Calculate improvement over baseline
+    #         average_treatment_outcome = np.mean(treatment_scores[1])
+    #         relative_improvement = (average_treatment_outcome - baseline_outcome) / abs(baseline_outcome)
+            
+    #         return relative_improvement
+            
+    #     except (AttributeError, ValueError) as e:
+    #         return 0
 
     def probabilistic_erupt_score(
-        self,
-        df: pd.DataFrame,
+        self, 
+        df: pd.DataFrame, 
         outcome: pd.Series,
-        treatment_effects: pd.Series,
-        treatment_std_devs: pd.Series,
+        estimate: CausalEstimate,
+        cate_estimate: np.ndarray,
+        sd_threshold: float = 1e-2,
         iterations: int = 1000
     ) -> float:
-        """
-        Calculate the Probabilistic ERUPT (Expected Response Under Proposed
-        Treatments) score.
+        """[Previous docstring remains the same]"""
+        est = estimate.estimator
+        
+        print(f"\nDebugging Probabilistic ERUPT for estimator: {est.__class__.__name__}")
+        print(f"CATE estimate summary:")
+        print(f"Mean: {np.mean(cate_estimate):.4f}")
+        print(f"Std: {np.std(cate_estimate):.4f}")
+        print(f"Min: {np.min(cate_estimate):.4f}")
+        print(f"Max: {np.max(cate_estimate):.4f}")
+        
+        try:
+            # Different approaches to get standard errors based on estimator type
+            effect_stds = None
+            
+            # For DML and DR learners
+            if hasattr(est, 'effect_stderr'):
+                try:
+                    effect_stds = est.effect_stderr(df)
+                    if effect_stds is not None:
+                        # Ensure correct shape
+                        effect_stds = np.squeeze(effect_stds)
+                    print("Got std errors from effect_stderr")
+                except Exception as e:
+                    print(f"effect_stderr failed: {str(e)}")
+            
+            # For metalearners
+            if effect_stds is None and hasattr(est, 'effect_inference'):
+                try:
+                    inference_result = est.effect_inference(df)
+                    if hasattr(inference_result, 'stderr'):
+                        effect_stds = inference_result.stderr
+                        effect_stds = np.squeeze(effect_stds)
+                    print("Got std errors from effect_inference")
+                except Exception as e:
+                    print(f"effect_inference failed: {str(e)}")
+            
+            # If we still don't have valid standard errors, try inference method
+            if effect_stds is None and hasattr(est, 'inference'):
+                try:
+                    inference_result = est.inference()
+                    if hasattr(inference_result, 'stderr'):
+                        effect_stds = inference_result.stderr
+                        effect_stds = np.squeeze(effect_stds)
+                    print("Got std errors from inference")
+                except Exception as e:
+                    print(f"inference failed: {str(e)}")
+            
+            # Final check if we got valid standard errors
+            if effect_stds is None:
+                print("Could not obtain valid standard errors")
+                return 0
+                
+            # Check shapes match
+            if effect_stds.shape != cate_estimate.shape:
+                print(f"Shape mismatch: effect_stds {effect_stds.shape} vs cate_estimate {cate_estimate.shape}")
+                effect_stds = np.broadcast_to(effect_stds, cate_estimate.shape)
+                
+            print(f"\nStandard errors summary:")
+            print(f"Mean: {np.mean(effect_stds):.4f}")
+            print(f"Std: {np.std(effect_stds):.4f}")
+            print(f"Min: {np.min(effect_stds):.4f}")
+            print(f"Max: {np.max(effect_stds):.4f}")
+            
+            # Check for meaningful heterogeneity
+            cate_std = np.std(cate_estimate)
+            if cate_std < sd_threshold:
+                print(f"CATE std {cate_std:.4f} below threshold {sd_threshold} - returning 0")
+                return 0
 
-        This method uses Monte Carlo simulation to estimate the expected
-        outcome under a probabilistic treatment policy, accounting for
-        uncertainty in treatment effects. It balances potential improvements
-        against estimation uncertainty and treatment rates.
+            unique_treatments = df[self.treatment_name].unique()
+            print(f"\nUnique treatments: {unique_treatments}")
+            treatment_scores = {treatment: [] for treatment in unique_treatments}
+            
+            # Normalize standard errors relative to effect size variation
+            effect_stds = np.maximum(effect_stds, cate_std * 0.1)
+            
+            # Calculate baseline
+            baseline_outcome = outcome[df[self.treatment_name] == 0].mean()
+            print(f"Baseline outcome: {baseline_outcome:.4f}")
 
-        Args:
-            df (pd.DataFrame): The input dataframe containing treatment
-            information.
-            outcome (pd.Series): The observed outcomes for each unit.
-            treatment_effects (pd.Series): Estimated treatment effects for
-            each unit.
-            treatment_std_devs (pd.Series): Standard deviations of treatment
-            effects.
-            iterations (int): Number of Monte Carlo iterations (default: 1000).
+            print("\nStarting Thompson sampling iterations...")
+            
+            # Perform Thompson sampling iterations
+            for _ in range(iterations):
+                # Sample effects from posterior distributions for each treatment
+                sampled_effects = {
+                    treatment: np.random.normal(cate_estimate, effect_stds)
+                    for treatment in unique_treatments
+                }
+                
+                # Select treatment with highest sampled effect
+                chosen_treatment = max(sampled_effects, key=lambda k: np.mean(sampled_effects[k]))
+                
+                # Calculate weights for the chosen treatment policy
+                weights = self.weights(
+                    df, 
+                    lambda x: np.array([chosen_treatment] * len(x))
+                )
+                
+                # Calculate mean outcome under this policy
+                if weights.sum() > 0:
+                    mean_outcome = (weights * outcome).sum() / weights.sum()
+                    treatment_scores[chosen_treatment].append(mean_outcome)
 
-        Returns:
-            float: The Probabilistic ERUPT score, representing the relative
-            improvement over the baseline outcome, adjusted for uncertainty.
-        """
-        # Calculate the baseline outcome (mean outcome for untreated units)
-        baseline_outcome = outcome[df[self.treatment_name] == 0].mean()
-
-        policy_values = []
-        treatment_decisions = []
-
-        # Perform Monte Carlo simulation
-        for _ in range(iterations):
-            # Sample treatment effects from normal distributions
-            sampled_effects = pd.Series(
-                np.random.normal(treatment_effects, treatment_std_devs),
-                index=treatment_effects.index
+            # Calculate final score
+            if not any(scores for scores in treatment_scores.values()):
+                print("No valid treatment scores")
+                return 0
+                
+            average_outcomes = np.mean(
+                [np.mean(scores) for scores in treatment_scores.values() if scores]
             )
             
-            # Define policy: treat if sampled effect is positive
-            # Note: A more conservative policy could use: sampled_effects > 2 *
-            # treatment_std_devs
-            policy = (sampled_effects > 0).astype(int)
-
-            # Calculate expected outcome under this policy
-            expected_outcome = (
-                baseline_outcome
-                + (policy * sampled_effects).mean()
-            )
-
-            policy_values.append(expected_outcome)
-            treatment_decisions.append(policy.mean())
-
-        # Calculate mean and standard error of policy values
-        mean_value = np.mean(policy_values)
-        se_value = np.std(policy_values) / np.sqrt(iterations)
-
-        # Placeholder for potential treatment rate penalty
-        treatment_penalty = 0
-
-        # Calculate score: mean value minus 2 standard errors, adjusted for
-        # treatment penalty
-        score = (mean_value - 2 * se_value) * (1 - treatment_penalty)
-
-        # Calculate relative improvement over baseline
-        improvement = (score - baseline_outcome) / baseline_outcome
-
-        return improvement
+            relative_improvement = (average_outcomes - baseline_outcome) / abs(baseline_outcome)
+            print(f"Final relative improvement: {relative_improvement:.4f}")
+            
+            return relative_improvement
+            
+        except Exception as e:
+            print(f"Exception occurred: {str(e)}")
+            return 0

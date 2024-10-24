@@ -62,9 +62,8 @@ def supported_metrics(
                 "energy_distance",
                 "psw_energy_distance",
                 "frobenius_norm",  # NEW
-                "psw_frobenius_norm",  # NEW
                 "codec",  # NEW
-                "bite"
+                "bite" # NEW
             ]
             if not scores_only:
                 metrics.append("ate")
@@ -285,8 +284,23 @@ class Scorer:
         alpha: float = 0.5
     ) -> float:
         """
-        Calculate Frobenius norm-based without propensity weighting.
+        Calculate adaptive Frobenius norm-based score between treated and controls.
+        Automatically determines whether to use propensity score weighting based on:
+        1. Problem type (IV vs backdoor)
+        2. Data characteristics (presence of propensity modifiers/instruments)
+        3. Estimator properties
+        
+        Args:
+            estimate (CausalEstimate): causal estimate to evaluate
+            df (pandas.DataFrame): input dataframe
+            sd_threshold (float): threshold for standard deviation of CATE estimates
+            epsilon (float): small regularization constant 
+            alpha (float): weight between Frobenius norm and variance component
+        
+        Returns:
+            float: Frobenius norm-based score, with propensity weighting if applicable
         """
+        # Get CATE estimates
         try:
             cate_estimates = estimate.estimator.effect(df)
         except AttributeError:
@@ -298,138 +312,112 @@ class Scorer:
         if np.std(cate_estimates) <= sd_threshold:
             return np.inf
 
-        Y0X, _, split_test_by = self._Y0_X_potential_outcomes(estimate, df)
+        # Get data splits and check validity
+        Y0X, treatment_name, split_test_by = self._Y0_X_potential_outcomes(estimate, df)
         Y0X_1 = Y0X[Y0X[split_test_by] == 1]
         Y0X_0 = Y0X[Y0X[split_test_by] == 0]
 
         if len(Y0X_1) == 0 or len(Y0X_0) == 0:
             return np.inf
 
-        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
-
-        scaler = StandardScaler()
-        Y0X_1_normalized = scaler.fit_transform(Y0X_1[select_cols])
-        Y0X_0_normalized = scaler.transform(Y0X_0[select_cols])
-
-        differences_xy = Y0X_1_normalized[:, np.newaxis, :] - Y0X_0_normalized[np.newaxis, :, :]
-
-        frobenius_norm = np.sqrt(np.sum(differences_xy**2))
-
-        n_1, n_0 = len(Y0X_1), len(Y0X_0)
-        p = differences_xy.shape[-1]
-        normalized_score = frobenius_norm / np.sqrt(n_1 * n_0 * p)
-
-        cate_variance = np.var(cate_estimates)
-        inverse_variance_component = 1 / (cate_variance + epsilon)
-        
-        composite_score = alpha * normalized_score + (1 - alpha) * inverse_variance_component
-
-        return composite_score if np.isfinite(composite_score) else np.inf
-
-    # NEW:
-    def psw_frobenius_norm_score(
-        self,
-        estimate: CausalEstimate,
-        df: pd.DataFrame,
-        sd_threshold: float = 1e-2,
-        epsilon: float = 1e-5,
-        alpha: float = 0.5
-    ) -> float:
-        """
-        Calculate propensity score weighted Frobenius norm-based score between treated and controls.
-        
-        Args:
-        estimate (CausalEstimate): causal estimate to evaluate
-        df (pandas.DataFrame): input dataframe
-        sd_threshold (float): threshold for standard deviation of CATE estimates
-        epsilon (float): small regularization constant
-        alpha (float): weight between Frobenius norm and variance component
-        
-        Returns:
-        float: Propensity-score weighted Frobenius norm-based score, or np.inf if calculation is not possible
-        """
-        # Attempt to get CATE estimates, handling potential AttributeErrors
-        try:
-            cate_estimates = estimate.estimator.effect(df)
-        except AttributeError:
-            try:
-                cate_estimates = estimate.estimator.effect_tt(df)
-            except AttributeError:
-                return np.inf  # Return inf if neither method is available
-
-        # Check if CATE estimates are consistently constant (below threshold)
-        if np.std(cate_estimates) <= sd_threshold:
-            return np.inf  # Return inf for constant CATE estimates
-
-        # Prepare data for treated and control groups
-        Y0X, treatment_name, split_test_by = self._Y0_X_potential_outcomes(estimate, df)
-        Y0X_1 = Y0X[Y0X[split_test_by] == 1]  # Treated group
-        Y0X_0 = Y0X[Y0X[split_test_by] == 0]  # Control group
-
-        # Check if either group is empty
-        if len(Y0X_1) == 0 or len(Y0X_0) == 0:
-            return np.inf  # Return inf if either group is empty
-
-        # Select columns for analysis
-        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
+        # Determine if propensity weighting should be used
+        use_propensity = self._should_use_propensity(estimate)
 
         # Normalize features
+        select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
         scaler = StandardScaler()
         Y0X_1_normalized = scaler.fit_transform(Y0X_1[select_cols])
         Y0X_0_normalized = scaler.transform(Y0X_0[select_cols])
-
-        # Calculate propensity scores
-        propensitymodel = self.psw_estimator.estimator.propensity_model
-        YX_1_all_psw = propensitymodel.predict_proba(
-            Y0X_1[
-                self.causal_model.get_effect_modifiers()
-                + self.causal_model.get_common_causes()
-            ]
-        )
-        treatment_series = Y0X_1[treatment_name]
-        YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
-        for i in treatment_series.unique():
-            YX_1_psw[treatment_series == i] = YX_1_all_psw[:, i][treatment_series == i]
-
-        YX_0_psw = propensitymodel.predict_proba(
-            Y0X_0[
-                self.causal_model.get_effect_modifiers()
-                + self.causal_model.get_common_causes()
-            ]
-        )[:, 0]
-
-        # Trim propensity scores
-        YX_1_psw = np.clip(YX_1_psw, 0.01, 0.99)
-        YX_0_psw = np.clip(YX_0_psw, 0.01, 0.99)
-
+        
         # Calculate pairwise differences
         differences_xy = Y0X_1_normalized[:, np.newaxis, :] - Y0X_0_normalized[np.newaxis, :, :]
 
-        # Calculate joint weights
-        xy_psw = psw_joint_weights(YX_1_psw, YX_0_psw)
-        xy_mean_weights = np.mean(xy_psw)
+        if use_propensity:
+            try:
+                # Calculate and apply propensity weights
+                propensitymodel = self.psw_estimator.estimator.propensity_model
+                YX_1_all_psw = propensitymodel.predict_proba(
+                    Y0X_1[
+                        self.causal_model.get_effect_modifiers()
+                        + self.causal_model.get_common_causes()
+                    ]
+                )
+                treatment_series = Y0X_1[treatment_name]
+                YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
+                for i in treatment_series.unique():
+                    YX_1_psw[treatment_series == i] = YX_1_all_psw[:, i][treatment_series == i]
 
-        # Weight the differences
-        weighted_differences_xy = np.reciprocal(xy_mean_weights) * np.multiply(
-            xy_psw[:, :, np.newaxis],
-            differences_xy
-        )
+                YX_0_psw = propensitymodel.predict_proba(
+                    Y0X_0[
+                        self.causal_model.get_effect_modifiers()
+                        + self.causal_model.get_common_causes()
+                    ]
+                )[:, 0]
+
+                # Trim propensity scores
+                YX_1_psw = np.clip(YX_1_psw, 0.01, 0.99)
+                YX_0_psw = np.clip(YX_0_psw, 0.01, 0.99)
+
+                # Calculate joint weights and apply them
+                xy_psw = psw_joint_weights(YX_1_psw, YX_0_psw)
+                xy_mean_weights = np.mean(xy_psw)
+                weighted_differences_xy = np.reciprocal(xy_mean_weights) * np.multiply(
+                    xy_psw[:, :, np.newaxis],
+                    differences_xy
+                )
+            except (AttributeError, KeyError):
+                # Fallback to unweighted if propensity weighting fails
+                weighted_differences_xy = differences_xy
+        else:
+            weighted_differences_xy = differences_xy
 
         # Compute Frobenius norm
         frobenius_norm = np.sqrt(np.sum(weighted_differences_xy**2))
 
         # Normalize
         n_1, n_0 = len(Y0X_1), len(Y0X_0)
-        p = differences_xy.shape[-1]  # number of features
+        p = differences_xy.shape[-1]
         normalized_score = frobenius_norm / np.sqrt(n_1 * n_0 * p)
 
-        # Add regularization and combine with inverse variance
+        # Add regularization and variance component
         cate_variance = np.var(cate_estimates)
         inverse_variance_component = 1 / (cate_variance + epsilon)
         
         composite_score = alpha * normalized_score + (1 - alpha) * inverse_variance_component
 
         return composite_score if np.isfinite(composite_score) else np.inf
+
+    def _should_use_propensity(self, estimate: CausalEstimate) -> bool:
+        """
+        Determine if propensity score weighting should be used based on:
+        1. Problem type
+        2. Data characteristics
+        3. Estimator properties
+        
+        Args:
+            estimate (CausalEstimate): causal estimate being evaluated
+            
+        Returns:
+            bool: True if propensity weighting should be used
+        """
+        # Don't use propensity for IV problems
+        if self.problem == "iv":
+            return False
+            
+        # Check if we have a backdoor problem with propensity modifiers
+        if self.problem == "backdoor":
+            data = self.causal_model
+            has_propensity = (
+                hasattr(data, "get_propensity_modifiers") and 
+                len(data.get_propensity_modifiers()) > 0
+            )
+            has_confounders = len(data.get_common_causes()) > 0
+            
+            # Use propensity if we have modifiers or confounders
+            return has_propensity or has_confounders
+            
+        # Default to no propensity weighting
+        return False
 
     def psw_energy_distance(
         self,
@@ -1069,24 +1057,24 @@ class Scorer:
     # NEW:
     def bite_score(
         self,
-        estimate: CausalEstimate,
+        estimate: CausalEstimate, 
         df: pd.DataFrame,
         N_values: Optional[List[int]] = None,
     ) -> float:
         """
         Calculate the BITE (Bins-induced Kendall's Tau Evaluation) score.
-
+        
         Args:
             estimate (CausalEstimate): The causal estimate to evaluate.
             df (pd.DataFrame): The test dataframe.
             N_values (Optional[List[int]]): List of bin counts to evaluate.
-
+            
         Returns:
             float: The BITE score.
         """
         if N_values is None:
             N_values = (
-                list(range(10, 21))
+                list(range(10, 21)) 
                 + list(range(25, 51, 5))
                 + list(range(60, 101, 10))
             )
@@ -1097,17 +1085,19 @@ class Scorer:
             treatment_name = treatment_name[0]
         outcome_name = est._outcome_name
 
+        # Create a copy of df to avoid modifying original
+        working_df = df.copy()
+
         # Estimated ITEs (cate_estimate) on test data
         cate_estimate = est.effect(df)
         if len(cate_estimate.shape) > 1 and cate_estimate.shape[1] == 1:
             cate_estimate = cate_estimate.reshape(-1)
-        df = df.copy()
-        df['estimated_ITE'] = cate_estimate
+        working_df['estimated_ITE'] = cate_estimate
 
         # Propensity scores on test data
         if hasattr(self.psw_estimator.estimator, 'propensity_model'):
             propensity_model = self.psw_estimator.estimator.propensity_model
-            df['propensity'] = propensity_model.predict_proba(
+            working_df['propensity'] = propensity_model.predict_proba(
                 df[
                     self.causal_model.get_effect_modifiers()
                     + self.causal_model.get_common_causes()
@@ -1117,68 +1107,77 @@ class Scorer:
             raise ValueError("Propensity model is not available.")
 
         # Weights on test data
-        df['weights'] = np.where(
-            df[treatment_name] == 1,
-            1 / df['propensity'],
-            1 / (1 - df['propensity']),
+        working_df['weights'] = np.where(
+            working_df[treatment_name] == 1,
+            1 / working_df['propensity'],
+            1 / (1 - working_df['propensity']),
         )
 
         kendall_tau_values = []
+        
+        def compute_naive_estimate(group_data):
+            treated = group_data[group_data[treatment_name] == 1]
+            control = group_data[group_data[treatment_name] == 0]
+            
+            if len(treated) == 0 or len(control) == 0:
+                return np.nan
+                
+            # Weighted averages
+            y1 = np.average(treated[outcome_name], weights=treated['weights'])
+            y0 = np.average(control[outcome_name], weights=control['weights'])
+            return y1 - y0
 
         for N in N_values:
-            # Bin the data into N bins according to estimated ITE quantiles
+            # Create a fresh copy for each iteration
+            iter_df = working_df.copy()
+            
             try:
-                df['ITE_bin'] = pd.qcut(
-                    df['estimated_ITE'], q=N, labels=False, duplicates='drop'
+                # Bin the data into N bins according to estimated ITE quantiles
+                iter_df['ITE_bin'] = pd.qcut(
+                    iter_df['estimated_ITE'], 
+                    q=N, 
+                    labels=False, 
+                    duplicates='drop'
                 )
+                
+                # Compute statistics per bin
+                bin_stats = []
+                for bin_idx in iter_df['ITE_bin'].unique():
+                    bin_data = iter_df[iter_df['ITE_bin'] == bin_idx]
+                    naive_est = compute_naive_estimate(bin_data)
+                    avg_est_ite = np.average(
+                        bin_data['estimated_ITE'], 
+                        weights=bin_data['weights']
+                    )
+                    if not np.isnan(naive_est):
+                        bin_stats.append({
+                            'ITE_bin': bin_idx,
+                            'naive_estimate': naive_est,
+                            'average_estimated_ITE': avg_est_ite
+                        })
+                
+                bin_stats_df = pd.DataFrame(bin_stats)
+                
+                # Calculate Kendall's Tau between naive estimate and average estimated ITE
+                if len(bin_stats_df) >= 2:
+                    tau, _ = kendalltau(
+                        bin_stats_df['naive_estimate'],
+                        bin_stats_df['average_estimated_ITE']
+                    )
+                    kendall_tau_values.append(tau)
+                    
             except ValueError:
                 # Not enough unique values to bin, skip this N
                 continue
 
-            def compute_naive_estimate(x):
-                treated = x[x[treatment_name] == 1]
-                control = x[x[treatment_name] == 0]
-                if len(treated) == 0 or len(control) == 0:
-                    return np.nan
-                # Weighted averages
-                y1 = np.average(
-                    treated[outcome_name], weights=treated['weights']
-                )
-                y0 = np.average(
-                    control[outcome_name], weights=control['weights']
-                )
-                return y1 - y0
-
-            bin_stats = df.groupby('ITE_bin').apply(
-                lambda x: pd.Series(
-                    {
-                        'naive_estimate': compute_naive_estimate(x),
-                        'average_estimated_ITE': np.average(
-                            x['estimated_ITE'], weights=x['weights']
-                        ),
-                    }
-                )
-            ).reset_index()
-
-            # Drop bins where naive estimate is NaN
-            bin_stats = bin_stats.dropna()
-
-            # Calculate Kendall's Tau between naive estimate and average estimated ITE
-            if len(bin_stats) < 2:
-                continue
-            tau, _ = kendalltau(
-                bin_stats['naive_estimate'], bin_stats['average_estimated_ITE']
-            )
-            kendall_tau_values.append(tau)
-
         # Calculate BITE Score
         if len(kendall_tau_values) == 0:
             return np.nan
-
+            
         top_3_taus = sorted(kendall_tau_values, reverse=True)[:3]
         bite_score = np.mean(top_3_taus)
+        
         return bite_score
-
 
     def make_scores(
         self,
@@ -1275,15 +1274,12 @@ class Scorer:
                 out["norm_erupt"] = norm_erupt_score
 
             if "prob_erupt" in metrics_to_report:
-                treatment_effects = pd.Series(cate_estimate, index=df.index)
-                treatment_std_devs = pd.Series(
-                    cate_estimate.std(), index=df.index)
-                prob_erupt_score = self.erupt.probabilistic_erupt_score(
-                    df, df[outcome_name],
-                    treatment_effects,
-                    treatment_std_devs
+                out["prob_erupt"] = self.erupt.probabilistic_erupt_score(
+                    df,
+                    df[est._outcome_name],
+                    estimate,
+                    cate_estimate
                 )
-                out["prob_erupt"] = prob_erupt_score
 
             # if "frobenius_norm" in metrics_to_report:
             #     out["frobenius_norm"] = self.frobenius_norm_score(estimate, df)
@@ -1338,8 +1334,8 @@ class Scorer:
         if "frobenius_norm" in metrics_to_report:
             out["frobenius_norm"] = self.frobenius_norm_score(estimate, df)
 
-        if "psw_frobenius_norm" in metrics_to_report:
-            out["psw_frobenius_norm"] = self.psw_frobenius_norm_score(estimate, df)
+        # if "psw_frobenius_norm" in metrics_to_report:
+        #     out["psw_frobenius_norm"] = self.psw_frobenius_norm_score(estimate, df)
 
 
         del df
