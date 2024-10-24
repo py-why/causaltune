@@ -202,7 +202,7 @@ class ERUPT:
         print(
             f"\nDebugging Probabilistic ERUPT for estimator: {est.__class__.__name__}"
         )
-        print(f"CATE estimate summary:")
+        print("CATE estimate summary:")
         print(f"Mean: {np.mean(cate_estimate):.4f}")
         print(f"Std: {np.std(cate_estimate):.4f}")
         print(f"Min: {np.min(cate_estimate):.4f}")
@@ -257,7 +257,7 @@ class ERUPT:
                 )
                 effect_stds = np.broadcast_to(effect_stds, cate_estimate.shape)
 
-            print(f"\nStandard errors summary:")
+            print("\nStandard errors summary:")
             print(f"Mean: {np.mean(effect_stds):.4f}")
             print(f"Std: {np.std(effect_stds):.4f}")
             print(f"Min: {np.min(effect_stds):.4f}")
