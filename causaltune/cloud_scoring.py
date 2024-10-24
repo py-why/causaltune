@@ -24,8 +24,9 @@ from sklearn.neighbors import NearestNeighbors
 
 
 class DummyEstimator:
-    def __init__(self, cate_estimate: np.ndarray,
-                 effect_intervals: Optional[np.ndarray] = None):
+    def __init__(
+        self, cate_estimate: np.ndarray, effect_intervals: Optional[np.ndarray] = None
+    ):
         self.cate_estimate = cate_estimate
         self.effect_intervals = effect_intervals
 
@@ -33,10 +34,7 @@ class DummyEstimator:
         return self.cate_estimate
 
 
-def supported_metrics(
-        problem: str,
-        multivalue: bool,
-        scores_only: bool) -> List[str]:
+def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List[str]:
     if problem == "iv":
         metrics = ["energy_distance", "frobenius_norm", "codec"]
         if not scores_only:
@@ -59,7 +57,7 @@ def supported_metrics(
                 "energy_distance",
                 "psw_energy_distance",
                 "frobenius_norm",  # NEW
-                "codec"  # NEW
+                "codec",  # NEW
             ]
             if not scores_only:
                 metrics.append("ate")
@@ -109,13 +107,12 @@ class Scorer:
                 },
             ).estimator
 
-            if not hasattr(
-                    self.psw_estimator,
-                    'estimator') or not hasattr(
-                    self.psw_estimator.estimator,
-                    'propensity_model'):
+            if not hasattr(self.psw_estimator, "estimator") or not hasattr(
+                self.psw_estimator.estimator, "propensity_model"
+            ):
                 raise ValueError(
-                    "Propensity model fitting failed. Please check the setup.")
+                    "Propensity model fitting failed. Please check the setup."
+                )
             else:
                 print("Propensity Model Fitted Successfully")
 
@@ -171,8 +168,7 @@ class Scorer:
 
         """
 
-        metrics = supported_metrics(
-            self.problem, self.multivalue, scores_only=True)
+        metrics = supported_metrics(self.problem, self.multivalue, scores_only=True)
 
         if metric not in metrics:
             logging.warning(
@@ -200,16 +196,12 @@ class Scorer:
             List[str]: list of valid metrics.
         """
 
-        metrics = supported_metrics(
-            self.problem,
-            self.multivalue,
-            scores_only=False)
+        metrics = supported_metrics(self.problem, self.multivalue, scores_only=False)
 
         if metrics_to_report is None:
             return metrics
         else:
-            metrics_to_report = sorted(
-                list(set(metrics_to_report + [scoring_metric])))
+            metrics_to_report = sorted(list(set(metrics_to_report + [scoring_metric])))
             for m in metrics_to_report.copy():
                 if m not in metrics:
                     logging.warning(
@@ -305,8 +297,7 @@ class Scorer:
             return np.inf  # Return inf for constant CATE estimates
 
         # Prepare data for treated and control groups
-        Y0X, treatment_name, split_test_by = self._Y0_X_potential_outcomes(
-            estimate, df)
+        Y0X, treatment_name, split_test_by = self._Y0_X_potential_outcomes(estimate, df)
         Y0X_1 = Y0X[Y0X[split_test_by] == 1]  # Treated group
         Y0X_0 = Y0X[Y0X[split_test_by] == 0]  # Control group
 
@@ -328,9 +319,7 @@ class Scorer:
         treatment_series = Y0X_1[treatment_name]
         YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
         for i in treatment_series.unique():
-            YX_1_psw[treatment_series == i] = (
-                YX_1_all_psw[:, i][treatment_series == i]
-            )
+            YX_1_psw[treatment_series == i] = YX_1_all_psw[:, i][treatment_series == i]
 
         # Calculate propensity scores for control group
         propensitymodel = self.psw_estimator.estimator.propensity_model
@@ -349,11 +338,12 @@ class Scorer:
         YX_0_psw = YX_0_psw[:min_rows]
 
         # Calculate the difference matrix with propensity score weights
-        D = (Y0X_1[select_cols].values - Y0X_0[select_cols].values) * \
-            np.sqrt(YX_1_psw * YX_0_psw).reshape(-1, 1)
+        D = (Y0X_1[select_cols].values - Y0X_0[select_cols].values) * np.sqrt(
+            YX_1_psw * YX_0_psw
+        ).reshape(-1, 1)
 
         # Compute Frobenius norm of the weighted difference matrix
-        frobenius_norm = np.linalg.norm(D, ord='fro')
+        frobenius_norm = np.linalg.norm(D, ord="fro")
 
         # Normalize the Frobenius norm by sqrt(n * p) where n is number of
         # samples and p is number of features
@@ -407,9 +397,7 @@ class Scorer:
 
         YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
         for i in treatment_series.unique():
-            YX_1_psw[treatment_series == i] = (
-                YX_1_all_psw[:, i][treatment_series == i]
-            )
+            YX_1_psw[treatment_series == i] = YX_1_all_psw[:, i][treatment_series == i]
 
         propensitymodel = self.psw_estimator.estimator.propensity_model
         YX_0_psw = propensitymodel.predict_proba(
@@ -452,16 +440,16 @@ class Scorer:
             ),
         )
         distance_yy = np.reciprocal(yy_mean_weights) * np.multiply(
-            yy_psw, dcor.distances.pairwise_distances(
-                Y0X_1[select_cols], exponent=exponent), )
+            yy_psw,
+            dcor.distances.pairwise_distances(Y0X_1[select_cols], exponent=exponent),
+        )
         distance_xx = np.reciprocal(xx_mean_weights) * np.multiply(
-            xx_psw, dcor.distances.pairwise_distances(
-                Y0X_0[select_cols], exponent=exponent), )
+            xx_psw,
+            dcor.distances.pairwise_distances(Y0X_0[select_cols], exponent=exponent),
+        )
         psw_energy_distance = (
-            2
-            * np.mean(distance_xy)
-            - np.mean(distance_xx)
-            - np.mean(distance_yy))
+            2 * np.mean(distance_xy) - np.mean(distance_xx) - np.mean(distance_yy)
+        )
         return psw_energy_distance
 
     # NEW:
@@ -480,7 +468,7 @@ class Scorer:
         policy: Optional[Callable[[np.ndarray], np.ndarray]] = None,
         rct_indices: Optional[pd.Index] = None,
         sd_threshold: float = 1e-2,
-        clip: float = 0.05
+        clip: float = 0.05,
     ) -> float:
         # Use default_policy if no custom policy is provided
         if policy is None:
@@ -502,18 +490,15 @@ class Scorer:
         policy_treatment = policy(cate_estimate)
 
         # Validate that the propensity model is properly fitted
-        if not hasattr(
-                self.psw_estimator,
-                'estimator') or not hasattr(
-                self.psw_estimator.estimator,
-                'propensity_model'):
-            raise ValueError(
-                "Propensity model fitting failed. Please check the setup.")
+        if not hasattr(self.psw_estimator, "estimator") or not hasattr(
+            self.psw_estimator.estimator, "propensity_model"
+        ):
+            raise ValueError("Propensity model fitting failed. Please check the setup.")
         else:
             # Calculate propensity scores using the pre-fitted propensity model
             propensity_scores = (
                 self.psw_estimator.estimator.propensity_model.predict_proba(
-                    df[['random'] + self.psw_estimator._effect_modifier_names]
+                    df[["random"] + self.psw_estimator._effect_modifier_names]
                 )
             )
             if propensity_scores.ndim == 2:
@@ -526,30 +511,34 @@ class Scorer:
         treatment_name = self.psw_estimator._treatment_name
 
         # Calculate inverse probability weights
-        weights = np.where(df[treatment_name] == 1,
-                           1 / propensity_scores,
-                           1 / (1 - propensity_scores))
+        weights = np.where(
+            df[treatment_name] == 1, 1 / propensity_scores, 1 / (1 - propensity_scores)
+        )
 
         # Prepare RCT subset for analysis
         rct_df = df.loc[rct_indices].copy()
-        rct_df['weight'] = weights[rct_indices]
-        rct_df['policy_treatment'] = policy_treatment[rct_indices]
+        rct_df["weight"] = weights[rct_indices]
+        rct_df["policy_treatment"] = policy_treatment[rct_indices]
 
         # Compute policy value using inverse probability weighting
         value_policy = (
             (
-                (rct_df[outcome_name] * (rct_df[treatment_name] == 1)
-                 * (rct_df['policy_treatment'] == 1)
-                 * rct_df['weight']).sum()
-                / rct_df['weight'].sum()
-                * (rct_df['policy_treatment'] == 1).mean()
-            ) + (
-                (rct_df[outcome_name] * (rct_df[treatment_name] == 0)
-                 * (rct_df['policy_treatment'] == 0)
-                 * rct_df['weight']).sum()
-                / rct_df['weight'].sum()
-                * (rct_df['policy_treatment'] == 0).mean()
-            )
+                rct_df[outcome_name]
+                * (rct_df[treatment_name] == 1)
+                * (rct_df["policy_treatment"] == 1)
+                * rct_df["weight"]
+            ).sum()
+            / rct_df["weight"].sum()
+            * (rct_df["policy_treatment"] == 1).mean()
+        ) + (
+            (
+                rct_df[outcome_name]
+                * (rct_df[treatment_name] == 0)
+                * (rct_df["policy_treatment"] == 0)
+                * rct_df["weight"]
+            ).sum()
+            / rct_df["weight"].sum()
+            * (rct_df["policy_treatment"] == 0).mean()
         )
 
         # Compute Policy Risk (1 - policy value)
@@ -638,25 +627,26 @@ class Scorer:
         W = np.hstack((X, Z))
 
         # Compute the nearest neighbor of X
-        nn_X = NearestNeighbors(n_neighbors=3, algorithm='auto').fit(X)
+        nn_X = NearestNeighbors(n_neighbors=3, algorithm="auto").fit(X)
         nn_dists_X, nn_indices_X = nn_X.kneighbors(X)
         nn_index_X = nn_indices_X[:, 1]
 
         # Handle repeated data
         repeat_data = np.where(nn_dists_X[:, 1] == 0)[0]
-        df_X = pd.DataFrame(
-            {'id': repeat_data, 'group': nn_indices_X[repeat_data, 0]})
-        df_X['rnn'] = df_X.groupby('group')['id'].transform(Scorer.randomNN)
-        nn_index_X[repeat_data] = df_X['rnn'].values
+        df_X = pd.DataFrame({"id": repeat_data, "group": nn_indices_X[repeat_data, 0]})
+        df_X["rnn"] = df_X.groupby("group")["id"].transform(Scorer.randomNN)
+        nn_index_X[repeat_data] = df_X["rnn"].values
 
         # Nearest neighbors with ties
         ties = np.where(nn_dists_X[:, 1] == nn_dists_X[:, 2])[0]
         ties = np.setdiff1d(ties, repeat_data)
 
         if len(ties) > 0:
+
             def helper_ties(a):
-                distances = distance.cdist(X[a].reshape(
-                    1, -1), np.delete(X, a, axis=0)).flatten()
+                distances = distance.cdist(
+                    X[a].reshape(1, -1), np.delete(X, a, axis=0)
+                ).flatten()
                 ids = np.where(distances == distances.min())[0]
                 x = np.random.choice(ids)
                 return x + (x >= a)
@@ -664,15 +654,14 @@ class Scorer:
             nn_index_X[ties] = [helper_ties(a) for a in ties]
 
         # Compute the nearest neighbor of W
-        nn_W = NearestNeighbors(n_neighbors=3, algorithm='auto').fit(W)
+        nn_W = NearestNeighbors(n_neighbors=3, algorithm="auto").fit(W)
         nn_dists_W, nn_indices_W = nn_W.kneighbors(W)
         nn_index_W = nn_indices_W[:, 1]
 
         repeat_data = np.where(nn_dists_W[:, 1] == 0)[0]
-        df_W = pd.DataFrame(
-            {'id': repeat_data, 'group': nn_indices_W[repeat_data, 0]})
-        df_W['rnn'] = df_W.groupby('group')['id'].transform(Scorer.randomNN)
-        nn_index_W[repeat_data] = df_W['rnn'].values
+        df_W = pd.DataFrame({"id": repeat_data, "group": nn_indices_W[repeat_data, 0]})
+        df_W["rnn"] = df_W.groupby("group")["id"].transform(Scorer.randomNN)
+        nn_index_W[repeat_data] = df_W["rnn"].values
 
         # Nearest neighbors with ties
         ties = np.where(nn_dists_W[:, 1] == nn_dists_W[:, 2])[0]
@@ -683,8 +672,10 @@ class Scorer:
 
         # Estimate Q
         R_Y = np.argsort(np.argsort(Y))  # Rank Y with ties method 'max'
-        Q_n = (np.sum(np.minimum(R_Y, R_Y[nn_index_W]))
-               - np.sum(np.minimum(R_Y, R_Y[nn_index_X]))) / (n**2)
+        Q_n = (
+            np.sum(np.minimum(R_Y, R_Y[nn_index_W]))
+            - np.sum(np.minimum(R_Y, R_Y[nn_index_X]))
+        ) / (n**2)
 
         return Q_n
 
@@ -710,25 +701,26 @@ class Scorer:
         n = len(Y)
 
         # Compute the nearest neighbor of X
-        nn_X = NearestNeighbors(n_neighbors=3, algorithm='auto').fit(X)
+        nn_X = NearestNeighbors(n_neighbors=3, algorithm="auto").fit(X)
         nn_dists_X, nn_indices_X = nn_X.kneighbors(X)
         nn_index_X = nn_indices_X[:, 1]
 
         # Handle repeated data
         repeat_data = np.where(nn_dists_X[:, 1] == 0)[0]
-        df_X = pd.DataFrame(
-            {'id': repeat_data, 'group': nn_indices_X[repeat_data, 0]})
-        df_X['rnn'] = df_X.groupby('group')['id'].transform(Scorer.randomNN)
-        nn_index_X[repeat_data] = df_X['rnn'].values
+        df_X = pd.DataFrame({"id": repeat_data, "group": nn_indices_X[repeat_data, 0]})
+        df_X["rnn"] = df_X.groupby("group")["id"].transform(Scorer.randomNN)
+        nn_index_X[repeat_data] = df_X["rnn"].values
 
         # Nearest neighbors with ties
         ties = np.where(nn_dists_X[:, 1] == nn_dists_X[:, 2])[0]
         ties = np.setdiff1d(ties, repeat_data)
 
         if len(ties) > 0:
+
             def helper_ties(a):
-                distances = distance.cdist(X[a].reshape(
-                    1, -1), np.delete(X, a, axis=0)).flatten()
+                distances = distance.cdist(
+                    X[a].reshape(1, -1), np.delete(X, a, axis=0)
+                ).flatten()
                 ids = np.where(distances == distances.min())[0]
                 x = np.random.choice(ids)
                 return x + (x >= a)
@@ -812,8 +804,7 @@ class Scorer:
 
             n = len(Y)
             if n < 2:
-                raise ValueError(
-                    "Number of rows with no NAs should be greater than 1.")
+                raise ValueError("Number of rows with no NAs should be greater than 1.")
 
             return Scorer.estimateConditionalQ(Y, Z, np.zeros((n, 0)))
 
@@ -824,23 +815,20 @@ class Scorer:
             X = np.array(X)
         if not isinstance(Z, np.ndarray):
             Z = np.array(Z)
-        if len(Y) != X.shape[0] or len(
-                Y) != Z.shape[0] or X.shape[0] != Z.shape[0]:
+        if len(Y) != X.shape[0] or len(Y) != Z.shape[0] or X.shape[0] != Z.shape[0]:
             raise ValueError("Number of rows of Y, X, and Z should be equal.")
 
         n = len(Y)
         if n < 2:
-            raise ValueError(
-                "Number of rows with no NAs should be greater than 1.")
+            raise ValueError("Number of rows with no NAs should be greater than 1.")
 
         return Scorer.estimateConditionalT(Y, Z, X)
 
     # NEW
     @staticmethod
     def identify_confounders(
-            df: pd.DataFrame,
-            treatment_col: str,
-            outcome_col: str) -> list:
+        df: pd.DataFrame, treatment_col: str, outcome_col: str
+    ) -> list:
         """
         Identify confounders in a DataFrame.
 
@@ -854,11 +842,10 @@ class Scorer:
         """
 
         confounders = [
-            col for col in df.columns if col not in [
-                treatment_col,
-                outcome_col,
-                "random",
-                "index"]]
+            col
+            for col in df.columns
+            if col not in [treatment_col, outcome_col, "random", "index"]
+        ]
         return confounders
 
     # NEW
@@ -874,11 +861,13 @@ class Scorer:
             float: CODEC score
         """
         est = estimate.estimator
-        treatment_name = est._treatment_name if isinstance(
-            est._treatment_name, str) else est._treatment_name[0]
+        treatment_name = (
+            est._treatment_name
+            if isinstance(est._treatment_name, str)
+            else est._treatment_name[0]
+        )
         outcome_name = est._outcome_name
-        confounders = Scorer.identify_confounders(
-            df, treatment_name, outcome_name)
+        confounders = Scorer.identify_confounders(df, treatment_name, outcome_name)
 
         ########
         cate_est = est.effect(df)
@@ -948,10 +937,8 @@ class Scorer:
 
     @staticmethod
     def r_make_score(
-            estimate: CausalEstimate,
-            df: pd.DataFrame,
-            cate_estimate: np.ndarray,
-            r_scorer) -> float:
+        estimate: CausalEstimate, df: pd.DataFrame, cate_estimate: np.ndarray, r_scorer
+    ) -> float:
         """
         Calculate r_score.
 
@@ -1085,46 +1072,35 @@ class Scorer:
                 # simple_ate = simple_ate[0]
                 # .reset_index(drop=True)
                 propensitymodel = self.psw_estimator.estimator.propensity_model
-                values["p"] = (
-                    propensitymodel.predict_proba(
-                        df[
-                            self.causal_model.get_effect_modifiers()
-                            + self.causal_model.get_common_causes()
-                        ]
-                    )[:, 1]
-                )
+                values["p"] = propensitymodel.predict_proba(
+                    df[
+                        self.causal_model.get_effect_modifiers()
+                        + self.causal_model.get_common_causes()
+                    ]
+                )[:, 1]
                 values["policy"] = cate_estimate > 0
                 values["norm_policy"] = cate_estimate > simple_ate
-                values["weights"] = self.erupt.weights(
-                    df, lambda x: cate_estimate > 0
-                )
+                values["weights"] = self.erupt.weights(df, lambda x: cate_estimate > 0)
             else:
                 pass
                 # TODO: what do we do here if multiple treatments?
 
             if "erupt" in metrics_to_report:
-                erupt_score = self.erupt.score(
-                    df, df[outcome_name], cate_estimate > 0)
+                erupt_score = self.erupt.score(df, df[outcome_name], cate_estimate > 0)
                 out["erupt"] = erupt_score
 
             if "norm_erupt" in metrics_to_report:
                 norm_erupt_score = (
-                    self.erupt.score(
-                        df,
-                        df[outcome_name],
-                        cate_estimate > simple_ate
-                    ) - simple_ate * values["norm_policy"].mean()
+                    self.erupt.score(df, df[outcome_name], cate_estimate > simple_ate)
+                    - simple_ate * values["norm_policy"].mean()
                 )
                 out["norm_erupt"] = norm_erupt_score
 
             if "prob_erupt" in metrics_to_report:
                 treatment_effects = pd.Series(cate_estimate, index=df.index)
-                treatment_std_devs = pd.Series(
-                    cate_estimate.std(), index=df.index)
+                treatment_std_devs = pd.Series(cate_estimate.std(), index=df.index)
                 prob_erupt_score = self.erupt.probabilistic_erupt_score(
-                    df, df[outcome_name],
-                    treatment_effects,
-                    treatment_std_devs
+                    df, df[outcome_name], treatment_effects, treatment_std_devs
                 )
                 out["prob_erupt"] = prob_erupt_score
 
@@ -1138,15 +1114,14 @@ class Scorer:
                         df=df,
                         cate_estimate=cate_estimate,
                         outcome_name=outcome_name,
-                        policy=None
+                        policy=None,
                     )
                 except Exception as e:
                     e
                     pass
 
             if "qini" in metrics_to_report:
-                out["qini"] = Scorer.qini_make_score(
-                    estimate, df, cate_estimate)
+                out["qini"] = Scorer.qini_make_score(estimate, df, cate_estimate)
 
             if "auc" in metrics_to_report:
                 out["auc"] = Scorer.auc_make_score(estimate, df, cate_estimate)
@@ -1157,8 +1132,7 @@ class Scorer:
                 )
 
             # values = values.rename(columns={treatment_name: "treated"})
-            assert len(values) == len(
-                df), "Index weirdness when adding columns!"
+            assert len(values) == len(df), "Index weirdness when adding columns!"
             values = values.copy()
             out["values"] = values
 
@@ -1222,15 +1196,16 @@ class Scorer:
                 if "estimator_name" in v and v["estimator_name"] == name
             ]
             best[name] = (
-                min(
-                    est_scores,
-                    key=lambda x: x[metric]) if metric in [
+                min(est_scores, key=lambda x: x[metric])
+                if metric
+                in [
                     "energy_distance",
                     "psw_energy_distance",
                     "frobenius_norm",
                     "codec",
-                    "policy_risk"] else max(
-                    est_scores,
-                    key=lambda x: x[metric]))
+                    "policy_risk",
+                ]
+                else max(est_scores, key=lambda x: x[metric])
+            )
 
         return best
