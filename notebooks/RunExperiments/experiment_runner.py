@@ -1,10 +1,5 @@
 import os
 import sys
-
-# Ensure CausalTune is in the Python path
-root_path = os.path.realpath("../../../..")
-sys.path.append(os.path.join(root_path, "causaltune"))
-
 import pickle
 import numpy as np
 import matplotlib
@@ -17,11 +12,14 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from causaltune import CausalTune
-from causaltune.datasets import (
-    load_dataset,
-)
-from causaltune.models.passthrough import passthrough_model
+# Ensure CausalTune is in the Python path
+root_path = os.path.realpath("../../../..")
+sys.path.append(os.path.join(root_path, "causaltune"))  # noqa: E402
+
+# Import CausalTune and other custom modules after setting up the path
+from causaltune import CausalTune  # noqa: E402
+from causaltune.datasets import load_dataset  # noqa: E402
+from causaltune.models.passthrough import passthrough_model  # noqa: E402
 
 
 def parse_arguments():
