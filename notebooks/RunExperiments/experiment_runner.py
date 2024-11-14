@@ -96,13 +96,20 @@ def run_experiment(args):
 
     print(f"Loaded datasets: {list(data_sets.keys())}")
 
-    # Set time budget
+    # Set time budgets properly
     if args.time_budget is not None and args.components_time_budget is not None:
         raise ValueError(
             "Please specify either time_budget or components_time_budget, not both."
         )
     elif args.time_budget is None and args.components_time_budget is None:
-        args.time_budget = 60
+        args.components_time_budget = 30  # Set default components budget
+
+    # If only time_budget is specified, derive components_time_budget from it
+    if args.time_budget is not None:
+        args.components_time_budget = max(
+            30, args.time_budget / 4
+        )  # Ensure minimum budget
+        args.time_budget = None  # Use only components_time_budget
 
     for dataset_name, cd in data_sets.items():
         for i_run in range(1, args.n_runs + 1):
@@ -125,8 +132,8 @@ def run_experiment(args):
                     metric=metric,
                     estimator_list=get_estimator_list(dataset_name),
                     num_samples=-1,
-                    time_budget=args.time_budget,
-                    components_time_budget=args.components_time_budget,
+                    time_budget=None,  # Don't use this
+                    components_time_budget=args.components_time_budget,  # Use this instead
                     metrics_to_report=args.metrics,
                     verbose=1,
                     components_verbose=1,

@@ -30,12 +30,32 @@ class ERUPT:
         self,
         treatment_name: str,
         propensity_model,
-        X_names: None = Optional[List[str]],
+        X_names: Optional[List[str]] = None,
         clip: float = 0.05,
         remove_tiny: bool = True,
+        time_budget: Optional[float] = 30.0,  # Add default time budget
     ):
+        """
+        Initialize ERUPT with thompson sampling capability.
+
+        Args:
+            treatment_name (str): Name of treatment column
+            propensity_model: Model for estimating propensity scores
+            X_names (Optional[List[str]]): Names of feature columns
+            clip (float): Clipping threshold for propensity scores
+            remove_tiny (bool): Whether to remove tiny weights
+            time_budget (Optional[float]): Time budget for AutoML propensity fitting
+        """
         self.treatment_name = treatment_name
         self.propensity_model = copy.deepcopy(propensity_model)
+
+        # If propensity model is AutoML, ensure it has time_budget
+        if (
+            hasattr(self.propensity_model, "time_budget")
+            and self.propensity_model.time_budget is None
+        ):
+            self.propensity_model.time_budget = time_budget
+
         self.X_names = X_names
         self.clip = clip
         self.remove_tiny = remove_tiny
@@ -97,6 +117,117 @@ class ERUPT:
         assert not np.isnan(weight.sum()), "NaNs in ERUPT weights"
 
         return pd.Series(index=df.index, data=weight)
+
+    def probabilistic_erupt_score(
+        self,
+        df: pd.DataFrame,
+        outcome: pd.Series,
+        estimate: CausalEstimate,
+        n_samples: int = 1000,
+        clip: Optional[float] = None,
+    ) -> float:
+        """
+        Calculate ERUPT score using Thompson sampling to create a probabilistic policy.
+
+        Args:
+            df (pd.DataFrame): Input dataframe
+            outcome (pd.Series): Observed outcomes
+            estimate (CausalEstimate): Causal estimate containing the estimator
+            n_samples (int): Number of Thompson sampling iterations
+            clip (float): Optional clipping value for effect std estimates
+
+        Returns:
+            float: Thompson sampling ERUPT score
+        """
+        est = estimate.estimator
+        cate_estimate = est.effect(df)
+        if len(cate_estimate.shape) > 1 and cate_estimate.shape[1] == 1:
+            cate_estimate = cate_estimate.reshape(-1)
+
+        # Get standard errors using established methods if available
+        try:
+            if "Econml" in str(type(est)):
+                effect_stds = est.effect_stderr(df)
+            else:
+                # Use empirical std as proxy for uncertainty
+                effect_stds = np.std(cate_estimate) * np.ones_like(cate_estimate) * 0.5
+
+            effect_stds = np.squeeze(effect_stds)
+            if clip:
+                effect_stds = np.clip(effect_stds, clip, None)
+
+        except Exception:
+            # If standard error estimation fails, use empirical std
+            effect_stds = np.std(cate_estimate) * np.ones_like(cate_estimate) * 0.5
+            if clip:
+                effect_stds = np.clip(effect_stds, clip, None)
+
+        # Ensure propensity scores are available
+        if not hasattr(self, "propensity_model"):
+            return 0.0
+
+        # Cache propensity predictions to avoid recomputing
+        try:
+            if isinstance(self.propensity_model, DummyPropensity):
+                p = self.propensity_model.predict_proba()
+            else:
+                p = self.propensity_model.predict_proba(df[self.X_names])
+            p = np.maximum(p, 1e-4)
+        except Exception:
+            return 0.0
+
+        # Perform Thompson sampling using matrix operations
+        n_units = len(df)
+        scores = np.zeros(n_samples)
+
+        # Pre-calculate base weights
+        W = df[self.treatment_name].astype(int)
+        base_weights = np.zeros(len(df))
+        for i in W.unique():
+            base_weights[W == i] = 1 / p[:, i][W == i]
+
+        # Sample n_samples sets of effects
+        samples = np.random.normal(
+            loc=cate_estimate.reshape(-1, 1),
+            scale=effect_stds.reshape(-1, 1),
+            size=(n_units, n_samples),
+        )
+
+        # Convert sampled effects to binary policies
+        sampled_policies = (samples > 0).astype(int)
+
+        # Calculate scores efficiently
+        for i in range(n_samples):
+            policy = sampled_policies[:, i]
+            weights = base_weights.copy()
+            weights[policy != W] = 0.0
+
+            if self.remove_tiny:
+                weights[weights > 1 / self.clip] = 0.0
+            else:
+                weights[weights > 1 / self.clip] = 1 / self.clip
+
+            if weights.sum() > 0:
+                weights *= len(df) / weights.sum()
+                scores[i] = (weights * outcome.values).mean()
+
+        # Return mean non-zero score
+        valid_scores = scores[scores != 0]
+        if len(valid_scores) > 0:
+            return np.mean(valid_scores)
+        return 0.0
+
+    def thompson_weights(
+        self,
+        df: pd.DataFrame,
+        cate_estimate: np.ndarray,
+        effect_stds: np.ndarray,
+        n_samples: int = 1,
+    ) -> pd.Series:
+        """Helper method to get weights for a single Thompson sampling iteration"""
+        samples = np.random.normal(cate_estimate, effect_stds)
+        policy = (samples > 0).astype(int)
+        return self.weights(df, lambda x: policy)
 
     # def probabilistic_erupt_score(
     #     self,
@@ -187,142 +318,142 @@ class ERUPT:
     #     except (AttributeError, ValueError) as e:
     #         return 0
 
-    def probabilistic_erupt_score(
-        self,
-        df: pd.DataFrame,
-        outcome: pd.Series,
-        estimate: CausalEstimate,
-        cate_estimate: np.ndarray,
-        sd_threshold: float = 1e-2,
-        iterations: int = 1000,
-    ) -> float:
-        """[Previous docstring remains the same]"""
-        est = estimate.estimator
+    # def probabilistic_erupt_score(
+    #     self,
+    #     df: pd.DataFrame,
+    #     outcome: pd.Series,
+    #     estimate: CausalEstimate,
+    #     cate_estimate: np.ndarray,
+    #     sd_threshold: float = 1e-2,
+    #     iterations: int = 1000,
+    # ) -> float:
+    #     """[Previous docstring remains the same]"""
+    #     est = estimate.estimator
 
-        print(
-            f"\nDebugging Probabilistic ERUPT for estimator: {est.__class__.__name__}"
-        )
-        print("CATE estimate summary:")
-        print(f"Mean: {np.mean(cate_estimate):.4f}")
-        print(f"Std: {np.std(cate_estimate):.4f}")
-        print(f"Min: {np.min(cate_estimate):.4f}")
-        print(f"Max: {np.max(cate_estimate):.4f}")
+    #     print(
+    #         f"\nDebugging Probabilistic ERUPT for estimator: {est.__class__.__name__}"
+    #     )
+    #     print("CATE estimate summary:")
+    #     print(f"Mean: {np.mean(cate_estimate):.4f}")
+    #     print(f"Std: {np.std(cate_estimate):.4f}")
+    #     print(f"Min: {np.min(cate_estimate):.4f}")
+    #     print(f"Max: {np.max(cate_estimate):.4f}")
 
-        try:
-            # Different approaches to get standard errors based on estimator type
-            effect_stds = None
+    #     try:
+    #         # Different approaches to get standard errors based on estimator type
+    #         effect_stds = None
 
-            # For DML and DR learners
-            if hasattr(est, "effect_stderr"):
-                try:
-                    effect_stds = est.effect_stderr(df)
-                    if effect_stds is not None:
-                        # Ensure correct shape
-                        effect_stds = np.squeeze(effect_stds)
-                    print("Got std errors from effect_stderr")
-                except Exception as e:
-                    print(f"effect_stderr failed: {str(e)}")
+    #         # For DML and DR learners
+    #         if hasattr(est, "effect_stderr"):
+    #             try:
+    #                 effect_stds = est.effect_stderr(df)
+    #                 if effect_stds is not None:
+    #                     # Ensure correct shape
+    #                     effect_stds = np.squeeze(effect_stds)
+    #                 print("Got std errors from effect_stderr")
+    #             except Exception as e:
+    #                 print(f"effect_stderr failed: {str(e)}")
 
-            # For metalearners
-            if effect_stds is None and hasattr(est, "effect_inference"):
-                try:
-                    inference_result = est.effect_inference(df)
-                    if hasattr(inference_result, "stderr"):
-                        effect_stds = inference_result.stderr
-                        effect_stds = np.squeeze(effect_stds)
-                    print("Got std errors from effect_inference")
-                except Exception as e:
-                    print(f"effect_inference failed: {str(e)}")
+    #         # For metalearners
+    #         if effect_stds is None and hasattr(est, "effect_inference"):
+    #             try:
+    #                 inference_result = est.effect_inference(df)
+    #                 if hasattr(inference_result, "stderr"):
+    #                     effect_stds = inference_result.stderr
+    #                     effect_stds = np.squeeze(effect_stds)
+    #                 print("Got std errors from effect_inference")
+    #             except Exception as e:
+    #                 print(f"effect_inference failed: {str(e)}")
 
-            # If we still don't have valid standard errors, try inference method
-            if effect_stds is None and hasattr(est, "inference"):
-                try:
-                    inference_result = est.inference()
-                    if hasattr(inference_result, "stderr"):
-                        effect_stds = inference_result.stderr
-                        effect_stds = np.squeeze(effect_stds)
-                    print("Got std errors from inference")
-                except Exception as e:
-                    print(f"inference failed: {str(e)}")
+    #         # If we still don't have valid standard errors, try inference method
+    #         if effect_stds is None and hasattr(est, "inference"):
+    #             try:
+    #                 inference_result = est.inference()
+    #                 if hasattr(inference_result, "stderr"):
+    #                     effect_stds = inference_result.stderr
+    #                     effect_stds = np.squeeze(effect_stds)
+    #                 print("Got std errors from inference")
+    #             except Exception as e:
+    #                 print(f"inference failed: {str(e)}")
 
-            # Final check if we got valid standard errors
-            if effect_stds is None:
-                print("Could not obtain valid standard errors")
-                return 0
+    #         # Final check if we got valid standard errors
+    #         if effect_stds is None:
+    #             print("Could not obtain valid standard errors")
+    #             return 0
 
-            # Check shapes match
-            if effect_stds.shape != cate_estimate.shape:
-                print(
-                    f"Shape mismatch: effect_stds {effect_stds.shape} vs cate_estimate {cate_estimate.shape}"
-                )
-                effect_stds = np.broadcast_to(effect_stds, cate_estimate.shape)
+    #         # Check shapes match
+    #         if effect_stds.shape != cate_estimate.shape:
+    #             print(
+    #                 f"Shape mismatch: effect_stds {effect_stds.shape} vs cate_estimate {cate_estimate.shape}"
+    #             )
+    #             effect_stds = np.broadcast_to(effect_stds, cate_estimate.shape)
 
-            print("\nStandard errors summary:")
-            print(f"Mean: {np.mean(effect_stds):.4f}")
-            print(f"Std: {np.std(effect_stds):.4f}")
-            print(f"Min: {np.min(effect_stds):.4f}")
-            print(f"Max: {np.max(effect_stds):.4f}")
+    #         print("\nStandard errors summary:")
+    #         print(f"Mean: {np.mean(effect_stds):.4f}")
+    #         print(f"Std: {np.std(effect_stds):.4f}")
+    #         print(f"Min: {np.min(effect_stds):.4f}")
+    #         print(f"Max: {np.max(effect_stds):.4f}")
 
-            # Check for meaningful heterogeneity
-            cate_std = np.std(cate_estimate)
-            if cate_std < sd_threshold:
-                print(
-                    f"CATE std {cate_std:.4f} below threshold {sd_threshold} - returning 0"
-                )
-                return 0
+    #         # Check for meaningful heterogeneity
+    #         cate_std = np.std(cate_estimate)
+    #         if cate_std < sd_threshold:
+    #             print(
+    #                 f"CATE std {cate_std:.4f} below threshold {sd_threshold} - returning 0"
+    #             )
+    #             return 0
 
-            unique_treatments = df[self.treatment_name].unique()
-            print(f"\nUnique treatments: {unique_treatments}")
-            treatment_scores = {treatment: [] for treatment in unique_treatments}
+    #         unique_treatments = df[self.treatment_name].unique()
+    #         print(f"\nUnique treatments: {unique_treatments}")
+    #         treatment_scores = {treatment: [] for treatment in unique_treatments}
 
-            # Normalize standard errors relative to effect size variation
-            effect_stds = np.maximum(effect_stds, cate_std * 0.1)
+    #         # Normalize standard errors relative to effect size variation
+    #         effect_stds = np.maximum(effect_stds, cate_std * 0.1)
 
-            # Calculate baseline
-            baseline_outcome = outcome[df[self.treatment_name] == 0].mean()
-            print(f"Baseline outcome: {baseline_outcome:.4f}")
+    #         # Calculate baseline
+    #         baseline_outcome = outcome[df[self.treatment_name] == 0].mean()
+    #         print(f"Baseline outcome: {baseline_outcome:.4f}")
 
-            print("\nStarting Thompson sampling iterations...")
+    #         print("\nStarting Thompson sampling iterations...")
 
-            # Perform Thompson sampling iterations
-            for _ in range(iterations):
-                # Sample effects from posterior distributions for each treatment
-                sampled_effects = {
-                    treatment: np.random.normal(cate_estimate, effect_stds)
-                    for treatment in unique_treatments
-                }
+    #         # Perform Thompson sampling iterations
+    #         for _ in range(iterations):
+    #             # Sample effects from posterior distributions for each treatment
+    #             sampled_effects = {
+    #                 treatment: np.random.normal(cate_estimate, effect_stds)
+    #                 for treatment in unique_treatments
+    #             }
 
-                # Select treatment with highest sampled effect
-                chosen_treatment = max(
-                    sampled_effects, key=lambda k: np.mean(sampled_effects[k])
-                )
+    #             # Select treatment with highest sampled effect
+    #             chosen_treatment = max(
+    #                 sampled_effects, key=lambda k: np.mean(sampled_effects[k])
+    #             )
 
-                # Calculate weights for the chosen treatment policy
-                weights = self.weights(
-                    df, lambda x: np.array([chosen_treatment] * len(x))
-                )
+    #             # Calculate weights for the chosen treatment policy
+    #             weights = self.weights(
+    #                 df, lambda x: np.array([chosen_treatment] * len(x))
+    #             )
 
-                # Calculate mean outcome under this policy
-                if weights.sum() > 0:
-                    mean_outcome = (weights * outcome).sum() / weights.sum()
-                    treatment_scores[chosen_treatment].append(mean_outcome)
+    #             # # Calculate mean outcome under this policy
+    #             if weights.sum() > 0:
+    #                 mean_outcome = (weights * outcome).sum() / weights.sum()
+    #                 treatment_scores[chosen_treatment].append(mean_outcome)
 
-            # Calculate final score
-            if not any(scores for scores in treatment_scores.values()):
-                print("No valid treatment scores")
-                return 0
+    #         # Calculate final score
+    #         if not any(scores for scores in treatment_scores.values()):
+    #             print("No valid treatment scores")
+    #             return 0
 
-            average_outcomes = np.mean(
-                [np.mean(scores) for scores in treatment_scores.values() if scores]
-            )
+    #         average_outcomes = np.mean(
+    #             [np.mean(scores) for scores in treatment_scores.values() if scores]
+    #         )
 
-            relative_improvement = (average_outcomes - baseline_outcome) / abs(
-                baseline_outcome
-            )
-            print(f"Final relative improvement: {relative_improvement:.4f}")
+    #         relative_improvement = (average_outcomes - baseline_outcome) / abs(
+    #             baseline_outcome
+    #         )
+    #         print(f"Final relative improvement: {relative_improvement:.4f}")
 
-            return relative_improvement
+    #         return relative_improvement
 
-        except Exception as e:
-            print(f"Exception occurred: {str(e)}")
-            return 0
+    #     except Exception as e:
+    #         print(f"Exception occurred: {str(e)}")
+    #         return 0

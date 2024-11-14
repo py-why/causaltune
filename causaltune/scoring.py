@@ -1078,7 +1078,7 @@ class Scorer:
             N_values (Optional[List[int]]): List of bin counts to evaluate.
 
         Returns:
-            float: The BITE score.
+            float: The BITE score. Higher values indicate better model performance.
         """
         if N_values is None:
             N_values = (
@@ -1094,13 +1094,13 @@ class Scorer:
         # Create a copy of df to avoid modifying original
         working_df = df.copy()
 
-        # Estimated ITEs (cate_estimate) on test data
+        # Estimated ITEs on test data
         cate_estimate = est.effect(df)
         if len(cate_estimate.shape) > 1 and cate_estimate.shape[1] == 1:
             cate_estimate = cate_estimate.reshape(-1)
         working_df["estimated_ITE"] = cate_estimate
 
-        # Propensity scores on test data
+        # Get propensity scores
         if hasattr(self.psw_estimator.estimator, "propensity_model"):
             propensity_model = self.psw_estimator.estimator.propensity_model
             working_df["propensity"] = propensity_model.predict_proba(
@@ -1112,76 +1112,104 @@ class Scorer:
         else:
             raise ValueError("Propensity model is not available.")
 
-        # Weights on test data
+        # Calculate weights with clipping to avoid extremes
         working_df["weights"] = np.where(
             working_df[treatment_name] == 1,
-            1 / working_df["propensity"],
-            1 / (1 - working_df["propensity"]),
+            1 / np.clip(working_df["propensity"], 0.05, 0.95),
+            1 / np.clip(1 - working_df["propensity"], 0.05, 0.95),
         )
 
         kendall_tau_values = []
 
         def compute_naive_estimate(group_data):
+            """Compute naive estimate for a group with safeguards against edge cases."""
             treated = group_data[group_data[treatment_name] == 1]
             control = group_data[group_data[treatment_name] == 0]
 
             if len(treated) == 0 or len(control) == 0:
                 return np.nan
 
-            # Weighted averages
-            y1 = np.average(treated[outcome_name], weights=treated["weights"])
-            y0 = np.average(control[outcome_name], weights=control["weights"])
-            return y1 - y0
+            treated_weights = treated["weights"].values
+            control_weights = control["weights"].values
+
+            # Check if weights sum to 0 or if all weights are 0
+            if (
+                treated_weights.sum() == 0
+                or control_weights.sum() == 0
+                or not (treated_weights > 0).any()
+                or not (control_weights > 0).any()
+            ):
+                return np.nan
+
+            # Weighted averages with explicit handling of edge cases
+            try:
+                y1 = np.average(treated[outcome_name], weights=treated_weights)
+                y0 = np.average(control[outcome_name], weights=control_weights)
+                return y1 - y0
+            except ZeroDivisionError:
+                return np.nan
 
         for N in N_values:
-            # Create a fresh copy for each iteration
             iter_df = working_df.copy()
 
             try:
-                # Bin the data into N bins according to estimated ITE quantiles
+                # Ensure enough unique values for binning
+                unique_ites = np.unique(iter_df["estimated_ITE"])
+                if len(unique_ites) < N:
+                    continue
+
+                # Create bins
                 iter_df["ITE_bin"] = pd.qcut(
                     iter_df["estimated_ITE"], q=N, labels=False, duplicates="drop"
                 )
 
-                # Compute statistics per bin
+                # Compute bin statistics
                 bin_stats = []
                 for bin_idx in iter_df["ITE_bin"].unique():
                     bin_data = iter_df[iter_df["ITE_bin"] == bin_idx]
+
+                    # Skip if bin is too small
+                    if len(bin_data) < 2:
+                        continue
+
                     naive_est = compute_naive_estimate(bin_data)
-                    avg_est_ite = np.average(
-                        bin_data["estimated_ITE"], weights=bin_data["weights"]
-                    )
-                    if not np.isnan(naive_est):
-                        bin_stats.append(
-                            {
-                                "ITE_bin": bin_idx,
-                                "naive_estimate": naive_est,
-                                "average_estimated_ITE": avg_est_ite,
-                            }
-                        )
 
+                    # Only compute average ITE if weights are valid
+                    bin_weights = bin_data["weights"].values
+                    if bin_weights.sum() > 0 and not np.isnan(naive_est):
+                        try:
+                            avg_est_ite = np.average(
+                                bin_data["estimated_ITE"], weights=bin_weights
+                            )
+                            bin_stats.append(
+                                {
+                                    "ITE_bin": bin_idx,
+                                    "naive_estimate": naive_est,
+                                    "average_estimated_ITE": avg_est_ite,
+                                }
+                            )
+                        except ZeroDivisionError:
+                            continue
+
+                # Calculate Kendall's Tau if we have enough valid bins
                 bin_stats_df = pd.DataFrame(bin_stats)
-
-                # Calculate Kendall's Tau between naive estimate and average estimated ITE
                 if len(bin_stats_df) >= 2:
                     tau, _ = kendalltau(
                         bin_stats_df["naive_estimate"],
                         bin_stats_df["average_estimated_ITE"],
                     )
-                    kendall_tau_values.append(tau)
+                    if not np.isnan(tau):
+                        kendall_tau_values.append(tau)
 
-            except ValueError:
-                # Not enough unique values to bin, skip this N
+            except (ValueError, ZeroDivisionError):
                 continue
 
-        # Calculate BITE Score
+        # Return final score
         if len(kendall_tau_values) == 0:
-            return np.nan
+            return -np.inf  # Return -inf for failed computations
 
         top_3_taus = sorted(kendall_tau_values, reverse=True)[:3]
-        bite_score = np.mean(top_3_taus)
-
-        return bite_score
+        return np.mean(top_3_taus)
 
     def make_scores(
         self,
@@ -1269,10 +1297,16 @@ class Scorer:
                 )
                 out["norm_erupt"] = norm_erupt_score
 
+            # if "prob_erupt" in metrics_to_report:
+            #     out["prob_erupt"] = self.erupt.probabilistic_erupt_score(
+            #         df, df[est._outcome_name], estimate, cate_estimate
+            #     )
+
             if "prob_erupt" in metrics_to_report:
-                out["prob_erupt"] = self.erupt.probabilistic_erupt_score(
-                    df, df[est._outcome_name], estimate, cate_estimate
+                prob_erupt_score = self.erupt.probabilistic_erupt_score(
+                    df, df[outcome_name], estimate
                 )
+                out["prob_erupt"] = prob_erupt_score
 
             # if "frobenius_norm" in metrics_to_report:
             #     out["frobenius_norm"] = self.frobenius_norm_score(estimate, df)
