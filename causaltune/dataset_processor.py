@@ -16,6 +16,7 @@ class CausalityDatasetProcessor(BaseEstimator, TransformerMixin):
         outcome (str): The target variable used for encoding.
         encoder: Encoder object used during feature transformations.
     """
+
     def __init__(self):
         """
         Initializes CausalityDatasetProcessor with default attributes for encoder_type, outcome, and encoder.

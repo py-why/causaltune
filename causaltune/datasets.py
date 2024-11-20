@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import pickle
+import os
 from scipy import special
 
 # from scipy.stats import betabinom
@@ -12,10 +14,8 @@ from causaltune.utils import generate_psdmat
 
 
 def linear_multi_dataset(
-        n_points=10000,
-        impact=None,
-        include_propensity=False,
-        include_control=False) -> CausalityDataset:
+    n_points=10000, impact=None, include_propensity=False, include_control=False
+) -> CausalityDataset:
     if impact is None:
         impact = {0: 0.0, 1: 2.0, 2: 1.0}
     df = pd.DataFrame(
@@ -80,8 +80,9 @@ def nhefs() -> CausalityDataset:
     df = df.loc[~missing]
 
     df = df[covariates + ["qsmk"] + ["wt82_71"]]
-    df.rename(columns={c: "x" + str(i + 1)
-                       for i, c in enumerate(covariates)}, inplace=True)
+    df.rename(
+        columns={c: "x" + str(i + 1) for i, c in enumerate(covariates)}, inplace=True
+    )
 
     return CausalityDataset(df, treatment="qsmk", outcomes=["wt82_71"])
 
@@ -172,8 +173,7 @@ def amazon_reviews(rating="pos") -> CausalityDataset:
             gdown.download(url, "amazon_" + rating + ".csv", fuzzy=True)
             df = pd.read_csv("amazon_" + rating + ".csv")
         df.drop(df.columns[[2, 3, 4]], axis=1, inplace=True)
-        df.columns = ["treatment", "y_factual"] + \
-            ["x" + str(i) for i in range(1, 301)]
+        df.columns = ["treatment", "y_factual"] + ["x" + str(i) for i in range(1, 301)]
         return CausalityDataset(df, "treatment", ["y_factual"])
     else:
         print(
@@ -226,14 +226,10 @@ def synth_ihdp(return_df=False) -> CausalityDataset:
     data.columns = col
     # drop the columns we don't care about
     ignore_patterns = ["y_cfactual", "mu"]
-    ignore_cols = [c for c in data.columns if any(
-        [s in c for s in ignore_patterns])]
+    ignore_cols = [c for c in data.columns if any([s in c for s in ignore_patterns])]
     data = data.drop(columns=ignore_cols)
 
-    return CausalityDataset(
-        data,
-        "treatment",
-        ["y_factual"]) if not return_df else data
+    return CausalityDataset(data, "treatment", ["y_factual"]) if not return_df else data
 
 
 def synth_acic(condition=1) -> CausalityDataset:
@@ -347,6 +343,7 @@ def generate_synthetic_data(
     noisy_outcomes: bool = False,
     effect_size: Union[int, None] = None,
     add_instrument: bool = False,
+    known_propensity: bool = False,
 ) -> CausalityDataset:
     """Generates synthetic dataset with conditional treatment effect (CATE) and optional instrumental variable.
     Supports RCT (unconfounded) and observational (confounded) data.
@@ -385,10 +382,14 @@ def generate_synthetic_data(
         p = np.clip(p, 0.1, 0.9)
         C = p > np.random.rand(n_samples)
         # print(min(p), max(p))
-
     else:
         p = 0.5 * np.ones(n_samples)
         C = np.random.binomial(n=1, p=0.5, size=n_samples)
+
+    if known_propensity:
+        known_p = np.random.beta(2, 5, size=n_samples)
+    else:
+        known_p = p
 
     if add_instrument:
         Z = np.random.binomial(n=1, p=0.5, size=n_samples)
@@ -416,18 +417,11 @@ def generate_synthetic_data(
     Y = tau * T + Y_base
 
     features = [f"X{i+1}" for i in range(n_covariates)]
-    df = pd.DataFrame(np.array([*X.T,
-                                T,
-                                Y,
-                                tau,
-                                p,
-                                Y_base]).T,
-                      columns=features + ["treatment",
-                                          "outcome",
-                                          "true_effect",
-                                          "propensity",
-                                          "base_outcome"],
-                      )
+    df = pd.DataFrame(
+        np.array([*X.T, T, Y, tau, known_p, Y_base]).T,
+        columns=features
+        + ["treatment", "outcome", "true_effect", "propensity", "base_outcome"],
+    )
     data = CausalityDataset(
         data=df,
         treatment="treatment",
@@ -450,6 +444,7 @@ def generate_linear_synthetic_data(
     noisy_outcomes: bool = False,
     effect_size: Union[int, None] = None,
     add_instrument: bool = False,
+    known_propensity: bool = False,
 ) -> CausalityDataset:
     """Generates synthetic dataset with linear treatment effect (CATE) and optional instrumental variable.
     Supports RCT (unconfounded) and observational (confounded) data.
@@ -494,6 +489,11 @@ def generate_linear_synthetic_data(
         p = 0.5 * np.ones(n_samples)
         C = np.random.binomial(n=1, p=0.5, size=n_samples)
 
+    if known_propensity:
+        known_p = np.random.beta(2, 5, size=n_samples)
+    else:
+        known_p = p
+
     if add_instrument:
         Z = np.random.binomial(n=1, p=0.5, size=n_samples)
         C0 = np.random.binomial(n=1, p=0.006, size=n_samples)
@@ -520,18 +520,11 @@ def generate_linear_synthetic_data(
     Y = tau * T + Y_base
 
     features = [f"X{i+1}" for i in range(n_covariates)]
-    df = pd.DataFrame(np.array([*X.T,
-                                T,
-                                Y,
-                                tau,
-                                p,
-                                Y_base]).T,
-                      columns=features + ["treatment",
-                                          "outcome",
-                                          "true_effect",
-                                          "propensity",
-                                          "base_outcome"],
-                      )
+    df = pd.DataFrame(
+        np.array([*X.T, T, Y, tau, known_p, Y_base]).T,
+        columns=features
+        + ["treatment", "outcome", "true_effect", "propensity", "base_outcome"],
+    )
     data = CausalityDataset(
         data=df,
         treatment="treatment",
@@ -641,16 +634,8 @@ def generate_non_random_dataset(num_samples=1000):
     )
     treatment = np.random.binomial(1, propensity)
     outcome = (
-        0.2
-        * treatment
-        + 0.5
-        * x1
-        - 0.2
-        * x2
-        + np.random.normal(
-            0,
-            1,
-            num_samples))
+        0.2 * treatment + 0.5 * x1 - 0.2 * x2 + np.random.normal(0, 1, num_samples)
+    )
 
     dataset = {
         "T": treatment,
@@ -729,3 +714,41 @@ def mlrate_experiment_synth_dgp(
     cd = CausalityDataset(data=df, outcomes=["Y"], treatment="T")
 
     return cd
+
+
+def save_dataset(dataset: CausalityDataset, filename: str):
+    """
+    Save a CausalityDataset object to a file using pickle.
+
+    Args:
+        dataset (CausalityDataset): The dataset to save.
+        filename (str): The name of the file to save the dataset to.
+    """
+    with open(filename, "wb") as f:
+        pickle.dump(dataset, f)
+    print(f"Dataset saved to {filename}")
+
+
+def load_dataset(filename: str) -> CausalityDataset:
+    """
+    Load a CausalityDataset object from a file using pickle.
+
+    Args:
+        filename (str): The name of the file to load the dataset from.
+
+    Returns:
+        CausalityDataset: The loaded dataset.
+    """
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"File {filename} not found.")
+
+    with open(filename, "rb") as f:
+        dataset = pickle.load(f)
+
+    if not isinstance(dataset, CausalityDataset):
+        raise ValueError(
+            f"The file {filename} does not contain a valid CausalityDataset object."
+        )
+
+    print(f"Dataset loaded from {filename}")
+    return dataset
