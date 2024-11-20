@@ -70,7 +70,7 @@ class ERUPT:
     ) -> pd.Series:
         # TODO: make it accept both array and callable as policy
         w = self.weights(df, policy)
-        return (w * outcome).mean()
+        return np.round((w * outcome).mean(), decimals=12)
 
     def weights(
         self, df: pd.DataFrame, policy: Union[Callable, np.ndarray, pd.Series]
