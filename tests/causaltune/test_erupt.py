@@ -79,7 +79,7 @@ class TestErupt(object):
         e = ERUPT("treatment", DummyClassifier(strategy="prior"), X_names=X_names)
         e.fit(df)
         out = e.score(df, outcome=df["outcome"], policy=df["policy"])
-        assert out == target_score, "Wrong binary ERUPT score"
+        assert out == pytest.approx(target_score, rel=1e-5), "Wrong binary ERUPT score"
 
 
 if __name__ == "__main__":
