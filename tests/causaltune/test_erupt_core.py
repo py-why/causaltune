@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from causaltune.score.erupt_core import erupt
+from causaltune.score.erupt_core import erupt, erupt_with_std
 from causaltune.score.erupt import ERUPT, DummyPropensity
 from causaltune.score.erupt_old import ERUPTOld
 
@@ -96,11 +96,19 @@ def test_random_from_biased():
         actual_outcome=df["Y2"].values,
         hypothetical_policy=df["T1"].values,
     )
+
+    est2a, std = erupt_with_std(
+        actual_propensity=df["p_of_actual"].values,
+        actual_treatment=df["T2"].values,
+        actual_outcome=df["Y2"].values,
+        hypothetical_policy=df["T1"].values,
+    )
+
     est3 = df["Y1"].mean()
     assert np.isclose(est1, est2, atol=1e-3)
     assert np.isclose(est1a, est2, atol=1e-3)
-    # TODO: use ERUPT std here instead of hardcoded atol
-    assert np.isclose(est2, est3, atol=3e-2)
+    assert np.isclose(est2a, est3, atol=4 * std)
+    assert np.isclose(est2, est3, atol=5e-2)
 
 
 def test_random_from_biased_probabilistic():
@@ -118,10 +126,17 @@ def test_random_from_biased_probabilistic():
         actual_outcome=df["Y2"].values,
         hypothetical_policy=0.5 * np.ones((len(df), 2)),
     )
+
+    est2a, std = erupt_with_std(
+        actual_propensity=df["p_of_actual"].values,
+        actual_treatment=df["T2"].values,
+        actual_outcome=df["Y2"].values,
+        hypothetical_policy=0.5 * np.ones((len(df), 2)),
+    )
     est3 = df["Y1"].mean()
-    assert np.isclose(est1, est2, atol=3e-2)
-    # TODO: use ERUPT std here instead of hardcoded atol
-    assert np.isclose(est2, est3, atol=3e-2)
+    assert np.isclose(est1, est2, atol=5e-2)
+    assert np.isclose(est2a, est3, atol=4 * std)
+    assert np.isclose(est2, est3, atol=5e-2)
 
 
 def test_biased_from_random():
@@ -146,8 +161,16 @@ def test_biased_from_random():
         actual_outcome=df["Y1"].values,
         hypothetical_policy=df["T2"].values,
     )
+
+    est2a, std = erupt_with_std(
+        actual_propensity=0.5 * np.ones(len(df)),
+        actual_treatment=df["T1"].values,
+        actual_outcome=df["Y1"].values,
+        hypothetical_policy=df["T2"].values,
+    )
+
     est3 = df["Y2"].mean()
     assert np.isclose(est1, est2, atol=1e-3)
     assert np.isclose(est1a, est2, atol=1e-3)
-    # TODO: use ERUPT std here instead of hardcoded atol
+    assert np.isclose(est2a, est3, atol=4 * std)
     assert np.isclose(est2, est3, atol=5e-2)

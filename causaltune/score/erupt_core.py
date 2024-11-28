@@ -1,4 +1,60 @@
+from typing import Tuple
+
 import numpy as np
+
+
+def shuffle_and_split(N, k):
+    """
+    Shuffle the numbers from 0 to N-1 and split them into k approximately equal parts.
+
+    :param N: int, the range of numbers
+    :param k: int, the number of parts to split into
+    :return:  k np.ndarrays, each containing integers
+    """
+    # Create an array of numbers from 1 to N
+    numbers = np.arange(0, N)
+
+    # Shuffle the array
+    np.random.shuffle(numbers)
+
+    # Split the array into k approximately equal parts
+    try:
+        split_arrays = np.array_split(numbers, k)
+    except Exception:
+        print("ow!")
+
+    return split_arrays
+
+
+def erupt_with_std(
+    actual_propensity: np.ndarray,
+    actual_treatment: np.ndarray,
+    actual_outcome: np.ndarray,
+    hypothetical_policy: np.ndarray,
+    num_splits: int = 5,
+    resamples: int = 100,
+    clip: float = 0.05,
+    remove_tiny: bool = True,
+) -> Tuple[float, float]:
+    std = 0.0
+    mean = 0.0
+    for _ in range(resamples):
+        splits = shuffle_and_split(len(actual_propensity), num_splits)
+        means = [
+            erupt(
+                actual_propensity[s],
+                actual_treatment[s],
+                actual_outcome[s],
+                hypothetical_policy[s],
+                clip,
+                remove_tiny,
+            )
+            for s in splits
+        ]
+        mean += np.mean(means)
+        std += np.std(means) / np.sqrt(num_splits)  # Standard error of the mean
+
+    return mean / resamples, std / resamples
 
 
 def erupt(
@@ -68,3 +124,8 @@ def erupt(
     estimate = np.sum(new_weight * actual_outcome) / np.sum(new_weight)
 
     return estimate
+
+
+if __name__ == "__main__":
+    out = shuffle_and_split(1001, 5)
+    print("yay!")
