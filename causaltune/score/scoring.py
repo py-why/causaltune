@@ -47,17 +47,17 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
         # print("backdoor")
         if multivalue:
             # TODO: support other metrics for the multivalue case
-            return ["energy_distance", "psw_energy_distance"]
+            return ["psw_energy_distance", "energy_distance"]  # TODO: add erupt
         else:
             metrics = [
                 "erupt",
                 "norm_erupt",
-                "prob_erupt",  # NEW
+                # "prob_erupt",  # regular erupt was made probabilistic, no need for a separate one
                 "policy_risk",  # NEW
                 "qini",
                 "auc",
                 # "r_scorer",
-                "energy_distance",
+                "energy_distance",  # is broken without propensity weighting
                 "psw_energy_distance",
                 "frobenius_norm",  # NEW
                 "codec",  # NEW
@@ -1281,7 +1281,7 @@ class Scorer:
                 )[:, 1]
                 values["policy"] = cate_estimate > 0
                 values["norm_policy"] = cate_estimate > simple_ate
-                values["weights"] = self.erupt.weights(df, lambda x: cate_estimate > 0)
+                # values["weights"] = self.erupt.weights(df, lambda x: cate_estimate > 0)
             else:
                 pass
                 # TODO: what do we do here if multiple treatments?
@@ -1296,17 +1296,6 @@ class Scorer:
                     - simple_ate * values["norm_policy"].mean()
                 )
                 out["norm_erupt"] = norm_erupt_score
-
-            # if "prob_erupt" in metrics_to_report:
-            #     out["prob_erupt"] = self.erupt.probabilistic_erupt_score(
-            #         df, df[est._outcome_name], estimate, cate_estimate
-            #     )
-
-            if "prob_erupt" in metrics_to_report:
-                prob_erupt_score = self.erupt.probabilistic_erupt_score(
-                    df, df[outcome_name], estimate
-                )
-                out["prob_erupt"] = prob_erupt_score
 
             # if "frobenius_norm" in metrics_to_report:
             #     out["frobenius_norm"] = self.frobenius_norm_score(estimate, df)
