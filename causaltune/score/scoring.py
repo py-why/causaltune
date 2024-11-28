@@ -11,7 +11,7 @@ from econml.cate_interpreter import SingleTreeCateInterpreter  # noqa F401
 from dowhy.causal_estimator import CausalEstimate
 from dowhy import CausalModel
 
-
+from causaltune.score.thompson import thompson_policy, extract_means_stds
 from causaltune.thirdparty.causalml import metrics
 from causaltune.score.erupt import ERUPT
 from causaltune.utils import treatment_values, psw_joint_weights
@@ -52,7 +52,7 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
             metrics = [
                 "erupt",
                 "norm_erupt",
-                # "prob_erupt",  # regular erupt was made probabilistic, no need for a separate one
+                "greedy_erupt",  # regular erupt was made probabilistic, no need for a separate one
                 "policy_risk",  # NEW
                 "qini",
                 "auc",
@@ -1287,7 +1287,21 @@ class Scorer:
                 # TODO: what do we do here if multiple treatments?
 
             if "erupt" in metrics_to_report:
-                erupt_score = self.erupt.score(df, df[outcome_name], cate_estimate > 0)
+                # create standard deviations for thompson sampling
+                # what is this for?
+                if len(cate_estimate.shape) > 1 and cate_estimate.shape[1] == 1:
+                    cate_estimate = cate_estimate.reshape(-1)
+
+                # Get standard errors using established methods if available
+                # TODO: pass num-treatments around cleanly
+                num_treatments = df[treatment_name].nunique()
+                # TODO: can I not get the values in one fell swoop?
+                effect_means, effect_stds = extract_means_stds(
+                    est, df, treatment_name, num_treatments
+                )
+                policy = thompson_policy(means=effect_means, stds=effect_stds)
+
+                erupt_score = self.erupt.score(df, df[outcome_name], policy)
                 out["erupt"] = erupt_score
 
             if "norm_erupt" in metrics_to_report:

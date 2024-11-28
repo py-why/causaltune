@@ -557,7 +557,7 @@ class CausalTune:
         Returns:
             (dict): values of metrics after optimisation
         """
-        estimates = Parallel(n_jobs=2, backend="threading")(
+        estimates = Parallel(n_jobs=1, backend="threading")(
             delayed(self._estimate_effect)(config) for i in range(1)
         )[0]
 

@@ -17,7 +17,7 @@ class TestEndToEndInference(object):
 
     def test_endtoend_inference_nobootstrap(self):
         """tests if CATE model can be instantiated and fit to data"""
-        data = linear_multi_dataset(1000)
+        data = linear_multi_dataset(1000, impact={0: 0.0, 1: 2.0})
         data.preprocess_dataset()
 
         cfg = SimpleParamService(
@@ -29,8 +29,10 @@ class TestEndToEndInference(object):
         estimator_list = cfg.estimator_names_from_patterns(
             "backdoor", "cheap_inference", len(data.data)
         )
+        print("estimators: ", estimator_list)
 
         for e in estimator_list:
+            print(e)
             causaltune = CausalTune(
                 num_samples=4,
                 components_time_budget=10,
@@ -44,6 +46,7 @@ class TestEndToEndInference(object):
 
             causaltune.fit(data)
             causaltune.effect_stderr(data.data)
+            causaltune.score_dataset(data.data, "test")
 
     def test_endtoend_inference_bootstrap(self):
         """tests if CATE model can be instantiated and fit to data"""
@@ -94,7 +97,9 @@ class TestEndToEndInference(object):
 
             causaltune.fit(data)
             causaltune.effect_stderr(data.data)
-
+            causaltune.effect(data.data)
+            scores = causaltune.score_dataset(data.data, "test")
+            print(scores)
         # TODO add an effect() call and an effect_tt call
         print("yay!")
 

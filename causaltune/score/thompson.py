@@ -1,8 +1,47 @@
+import copy
 import numpy as np
 from scipy.stats import norm
+from causaltune.models.monkey_patches import effect_stderr
 
 
-def thompson_policy(means: np.ndarray, stds: np.ndarray, num_samples: int = 10000):
+def prepend_zero_column(mat: np.ndarray, fill: float):
+    """
+    Append a column of zeros to a matrix
+    :param mat: np.ndarray
+    :return: np.ndarray
+    """
+    if len(mat.shape) == 1:
+        mat = mat[:, np.newaxis]
+
+    return np.concatenate((fill * np.ones((mat.shape[0], 1)), mat), axis=1)
+
+
+def extract_means_stds(est, df, treatment_name, num_treatments):
+    # TODO: test this properly for the multivalue case
+    means = np.squeeze(est.effect(df))
+    means = prepend_zero_column(means, 0.0)
+
+    if "Econml" in str(type(est)):
+        est.__class__.effect_stderr = effect_stderr
+        try:
+            stds = np.squeeze(est.effect_stderr(df))
+        except Exception as e:
+            stds = None
+    else:
+        stds = None
+
+    if stds is None:
+        # Ignore the first column, it just describes the control group
+        typical_std = 0.1 * max(1e-6, np.mean(np.abs(means[1:]))) + np.std(means[:, 1:])
+        stds = typical_std * np.ones_like(means[:, 1:]) * 0.5
+    stds = prepend_zero_column(stds, 1e-6 * np.median(np.abs(means)))
+
+    return means, stds
+
+
+def thompson_policy(
+    means: np.ndarray, stds: np.ndarray, num_samples: int = 10000, clip=1e-3
+):
     """
     Thompson sampling policy
     :param means: np.ndarray
@@ -13,6 +52,9 @@ def thompson_policy(means: np.ndarray, stds: np.ndarray, num_samples: int = 1000
     assert len(means.shape) == 2
     assert len(stds.shape) == 2
     assert means.shape == stds.shape
+
+    if clip:
+        stds = np.clip(stds, clip, None)
 
     policy = np.zeros_like(means)
     for _ in range(num_samples):
