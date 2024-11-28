@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 from scipy.stats import norm
 from causaltune.models.monkey_patches import effect_stderr
@@ -25,7 +24,7 @@ def extract_means_stds(est, df, treatment_name, num_treatments):
         est.__class__.effect_stderr = effect_stderr
         try:
             stds = np.squeeze(est.effect_stderr(df))
-        except Exception as e:
+        except Exception:
             stds = None
     else:
         stds = None
