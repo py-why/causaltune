@@ -2,6 +2,7 @@ import copy
 import warnings
 from typing import List, Optional, Union
 from collections import defaultdict
+import time
 
 import traceback
 import pandas as pd
@@ -19,16 +20,21 @@ from econml.inference import BootstrapInference
 from joblib import Parallel, delayed
 
 from causaltune.search.params import SimpleParamService
-from causaltune.scoring import Scorer
+from causaltune.score.scoring import Scorer
 from causaltune.utils import treatment_is_multivalue
 from causaltune.models.monkey_patches import (
     AutoML,
     apply_multitreatment,
     effect_stderr,
 )
+
+# from causaltune.models.monkey_patch_flaml import run
+
 from causaltune.data_utils import CausalityDataset
 from causaltune.dataset_processor import CausalityDatasetProcessor
 from causaltune.models.passthrough import feature_filter
+
+# tune.run = run
 
 
 # Patched from sklearn.linear_model._base to adjust rtol and atol values
@@ -114,7 +120,6 @@ class CausalTune:
             metric (str): metric to optimise.
                 Defaults to "erupt" for CATE, "energy_distance" for IV
             metrics_to_report (list): additional metrics to compute and report.
-            metrics_to_report (list): additional metrics to compute and report.
                 Defaults to ["qini","auc","ate","erupt", "norm_erupt"] for CATE
                 or ["energy_distance"] for IV
             time_budget (float): a number of the time budget in seconds. -1 if no limit.
@@ -179,9 +184,9 @@ class CausalTune:
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
         self._settings["try_init_configs"] = try_init_configs
-        self._settings[
-            "include_experimental_estimators"
-        ] = include_experimental_estimators
+        self._settings["include_experimental_estimators"] = (
+            include_experimental_estimators
+        )
 
         # params for FLAML on component models:
         self._settings["component_models"] = {}
@@ -497,38 +502,69 @@ class CausalTune:
             # append init_cfgs that have not yet been evaluated
             for cfg in init_cfg:
                 self.resume_cfg.append(cfg) if cfg not in self.resume_cfg else None
-
-        self.results = tune.run(
-            self._tune_with_config,
-            search_space,
-            metric=self.metric,
-            points_to_evaluate=(
-                init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
-            ),
-            evaluated_rewards=(
-                [] if len(self.resume_scores) == 0 else self.resume_scores
-            ),
-            mode=(
-                "min"
-                if self.metric
-                in [
-                    "energy_distance",
-                    "psw_energy_distance",
-                    "frobenius_norm",
-                    "codec",
-                    "policy_risk",
-                ]
-                else "max"
-            ),
-            low_cost_partial_config={},
-            **self._settings["tuner"],
-        )
-
-        if self.results.get_best_trial() is None:
-            raise Exception(
-                "Optimization failed! Did you set large enough time_budget and components_budget?"
+        try:
+            self.results = tune.run(
+                self._tune_with_config,
+                search_space,
+                metric=self.metric,
+                cost_attr="evaluation_cost",
+                points_to_evaluate=(
+                    init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
+                ),
+                evaluated_rewards=(
+                    [] if len(self.resume_scores) == 0 else self.resume_scores
+                ),
+                mode=(
+                    "min"
+                    if self.metric
+                    in [
+                        "energy_distance",
+                        "psw_energy_distance",
+                        "frobenius_norm",
+                        "psw_frobenius_norm",
+                        "codec",
+                        "policy_risk",
+                    ]
+                    else "max"
+                ),
+                low_cost_partial_config={},
+                **self._settings["tuner"],
             )
 
+            if self.results.get_best_trial() is None:
+                raise Exception(
+                    "Optimization failed! Did you set large enough time_budget and components_budget?"
+                )
+        except Exception:
+            # we must have an older FLAML version that doesn't support the cost_attr parameter
+            self.results = tune.run(
+                self._tune_with_config,
+                search_space,
+                metric=self.metric,
+                points_to_evaluate=(
+                    init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
+                ),
+                evaluated_rewards=(
+                    [] if len(self.resume_scores) == 0 else self.resume_scores
+                ),
+                mode=(
+                    "min"
+                    if self.metric
+                    in [
+                        "energy_distance",
+                        "psw_energy_distance",
+                        "frobenius_norm",
+                        "psw_frobenius_norm",
+                        "codec",
+                        "policy_risk",
+                    ]
+                    else "max"
+                ),
+                low_cost_partial_config={},
+                **self._settings["tuner"],
+            )
+            # print("Optimization failed!\n", traceback.format_exc())
+            # raise e
         self.update_summary_scores()
 
     def update_summary_scores(self):
@@ -564,19 +600,27 @@ class CausalTune:
             est_name = estimates["estimator_name"]
             current_score = estimates[self.metric]
 
+            estimates["optimization_score"] = current_score
+            estimates["evaluation_cost"] = (
+                1e8  # will be overwritten for successful runs
+            )
+
             # Initialize best_score if this is the first estimator for this name
             if est_name not in self._best_estimators:
                 self._best_estimators[est_name] = (
-                    np.inf
-                    if self.metric
-                    in [
-                        "energy_distance",
-                        "psw_energy_distance",
-                        "frobenius_norm",
-                        "codec",
-                        "policy_risk",
-                    ]
-                    else -np.inf,
+                    (
+                        np.inf
+                        if self.metric
+                        in [
+                            "energy_distance",
+                            "psw_energy_distance",
+                            "frobenius_norm",
+                            "psw_frobenius_norm",
+                            "codec",
+                            "policy_risk",
+                        ]
+                        else -np.inf
+                    ),
                     None,
                 )
 
@@ -587,6 +631,7 @@ class CausalTune:
                 "energy_distance",
                 "psw_energy_distance",
                 "frobenius_norm",
+                "psw_frobenius_norm",
                 "codec",
                 "policy_risk",
             ]:
@@ -609,10 +654,14 @@ class CausalTune:
             ):
                 self._best_estimators[est_name] = (
                     current_score,
-                    estimates["estimator"]
-                    if self._settings["store_all"]
-                    else estimates.pop("estimator"),
+                    (
+                        estimates["estimator"]
+                        if self._settings["store_all"]
+                        else estimates.pop("estimator")
+                    ),
                 )
+            if "Dummy" not in est_name:
+                estimates["evaluation_cost"] = estimates.pop("elapsed_time")
 
         return estimates
 
@@ -639,6 +688,7 @@ class CausalTune:
 
         try:  #
             # This calls the causal model's estimate_effect method
+            start_time = time.time()
             estimate = self._est_effect_stub(method_params)
             scores = {
                 "estimator_name": self.estimator_name,
@@ -651,7 +701,7 @@ class CausalTune:
                     self.test_df,
                 ),
             }
-
+            elapsed_time = time.time() - start_time
             return {
                 self.metric: scores["validation"][self.metric],
                 "estimator": estimate,
@@ -659,6 +709,7 @@ class CausalTune:
                 "scores": scores,
                 # TODO: return full config!
                 "config": config,
+                "elapsed_time": elapsed_time,
             }
         except Exception as e:
             print("Evaluation failed!\n", config, traceback.format_exc())

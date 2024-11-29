@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from causaltune.models.wrapper import DoWhyMethods, DoWhyWrapper
-from causaltune.scoring import Scorer
+from causaltune.score.scoring import Scorer
 
 from dowhy.causal_estimators.instrumental_variable_estimator import (
     InstrumentalVariableEstimator,
@@ -47,16 +47,21 @@ class DummyModel(DoWhyMethods):
         self.effect_modifiers = effect_modifiers
         self.treatment_name = treatment_name
         self.outcome_name = outcome_name
+        self.mean = None
 
     def fit(
         self,
         df: pd.DataFrame,
     ):
-        pass
+        # ONLY WORKS FOR BINARY TREATMENT
+        self.mean, _, _ = Scorer.naive_ate(
+            df[self.treatment_name], df[self.outcome_name]
+        )
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        mean_, _, _ = Scorer.naive_ate(X[self.treatment_name], X[self.outcome_name])
-        return np.ones(len(X)) * mean_ * (1 + 10e-5 * np.random.normal(size=(len(X),)))
+        return (
+            np.ones(len(X)) * self.mean * (1 + 10e-5 * np.random.normal(size=(len(X),)))
+        )
 
 
 class PropensityScoreWeighter(DoWhyMethods):
