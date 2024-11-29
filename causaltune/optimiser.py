@@ -535,7 +535,7 @@ class CausalTune:
                 raise Exception(
                     "Optimization failed! Did you set large enough time_budget and components_budget?"
                 )
-        except Exception as e:
+        except Exception:
             # we must have an older FLAML version that doesn't support the cost_attr parameter
             self.results = tune.run(
                 self._tune_with_config,
