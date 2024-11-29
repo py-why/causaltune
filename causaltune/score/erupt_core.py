@@ -18,10 +18,7 @@ def shuffle_and_split(N, k):
     np.random.shuffle(numbers)
 
     # Split the array into k approximately equal parts
-    try:
-        split_arrays = np.array_split(numbers, k)
-    except Exception:
-        print("ow!")
+    split_arrays = np.array_split(numbers, k)
 
     return split_arrays
 

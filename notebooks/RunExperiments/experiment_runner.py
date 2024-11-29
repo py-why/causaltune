@@ -20,6 +20,7 @@ sys.path.append(os.path.join(root_path, "causaltune"))  # noqa: E402
 from causaltune import CausalTune  # noqa: E402
 from causaltune.datasets import load_dataset  # noqa: E402
 from causaltune.models.passthrough import passthrough_model  # noqa: E402
+from causaltune.search.params import SimpleParamService
 
 
 def parse_arguments():
@@ -37,6 +38,9 @@ def parse_arguments():
         help="Datasets to use (format: Size Name, e.g., Small Linear_RCT)",
     )
     parser.add_argument("--n_runs", type=int, default=1, help="Number of runs")
+    parser.add_argument(
+        "--outcome_model", type=str, default="nested", help="Outcome model type"
+    )
     parser.add_argument("--test_size", type=float, default=0.33, help="Test set size")
     parser.add_argument(
         "--time_budget", type=int, default=None, help="Time budget for optimization"
@@ -55,25 +59,37 @@ def parse_arguments():
 
 def get_estimator_list(dataset_name):
     if "IV" in dataset_name:
-        return [
-            "iv.econml.iv.dr.LinearDRIV",
-            "iv.econml.iv.dml.DMLIV",
-            "iv.econml.iv.dr.SparseLinearDRIV",
-            "iv.econml.iv.dr.LinearIntentToTreatDRIV",
-        ]
+        problem = "iv"
     else:
-        return [
-            "Dummy",
-            "SparseLinearDML",
-            "ForestDRLearner",
-            "TransformedOutcome",
-            "CausalForestDML",
-            ".LinearDML",
-            "DomainAdaptationLearner",
-            "SLearner",
-            "XLearner",
-            "TLearner",
-        ]
+        problem = "backdoor"
+
+    cfg = SimpleParamService(
+        n_jobs=-1,
+        include_experimental=False,
+        multivalue=False,
+    )
+    estimator_list = cfg.estimator_names_from_patterns(problem, "all", 1001)
+    return [est for est in estimator_list if "Dummy" not in est]
+
+    #     return [
+    #         "iv.econml.iv.dr.LinearDRIV",
+    #         "iv.econml.iv.dml.DMLIV",
+    #         "iv.econml.iv.dr.SparseLinearDRIV",
+    #         "iv.econml.iv.dr.LinearIntentToTreatDRIV",
+    #     ]
+    # else:
+    #     return [
+    #         # "Dummy", # Let's exclude this until the FLAML PR for attr_cost is in
+    #         "SparseLinearDML",
+    #         "ForestDRLearner",
+    #         "TransformedOutcome",
+    #         "CausalForestDML",
+    #         ".LinearDML",
+    #         "DomainAdaptationLearner",
+    #         "SLearner",
+    #         "XLearner",
+    #         "TLearner",
+    #     ]
 
 
 def run_experiment(args):
@@ -131,13 +147,13 @@ def run_experiment(args):
                 ct = CausalTune(
                     metric=metric,
                     estimator_list=get_estimator_list(dataset_name),
-                    num_samples=-1,
+                    num_samples=args.num_samples,
                     components_time_budget=args.components_time_budget,  # Use this instead
-                    metrics_to_report=args.metrics,
                     verbose=1,
                     components_verbose=1,
                     store_all_estimators=True,
                     propensity_model=propensity_model,
+                    outcome_model=args.outcome_model,
                 )
 
                 ct.fit(
@@ -162,6 +178,7 @@ def compute_scores(ct, metric, test_df):
     datasets = {"train": ct.train_df, "validation": ct.test_df, "test": test_df}
     estimator_scores = {est: [] for est in ct.scores.keys() if "NewDummy" not in est}
 
+    all_scores = []
     for trial in ct.results.trials:
         estimator_name = trial.last_result["estimator_name"]
         if trial.last_result["estimator"]:
@@ -174,16 +191,29 @@ def compute_scores(ct, metric, test_df):
                     df,
                     metrics_to_report=ct.metrics_to_report,
                 )
-                scores[ds_name]["CATE_estimate"] = estimator.estimator.effect(df)
-                scores[ds_name]["CATE_groundtruth"] = df["true_effect"]
-                scores[ds_name][metric] = est_scores[metric]
+                est_scores["estimator_name"] = estimator_name
+
+                scores[ds_name]["CATE_estimate"] = np.squeeze(
+                    estimator.estimator.effect(df)
+                )
+                scores[ds_name]["CATE_groundtruth"] = np.squeeze(df["true_effect"])
+                est_scores["MSE"] = np.mean(
+                    (
+                        scores[ds_name]["CATE_estimate"]
+                        - scores[ds_name]["CATE_groundtruth"]
+                    )
+                    ** 2
+                )
+                scores[ds_name]["scores"] = est_scores
             scores["optimization_score"] = trial.last_result.get("optimization_score")
-            estimator_scores[estimator_name].append(scores)
+            estimator_scores[estimator_name].append(copy.deepcopy(scores))
+            # Will use this in the nex
+            all_scores.append(scores)
 
     for k in estimator_scores.keys():
         estimator_scores[k] = sorted(
             estimator_scores[k],
-            key=lambda x: x["validation"][metric],
+            key=lambda x: x["validation"]["scores"][metric],
             reverse=metric
             not in [
                 "energy_distance",
@@ -201,6 +231,7 @@ def compute_scores(ct, metric, test_df):
         "best_score": ct.best_score,
         "optimised_metric": metric,
         "scores_per_estimator": estimator_scores,
+        "all_scores": all_scores,
     }
 
 
@@ -401,7 +432,10 @@ def generate_plots(out_dir, metrics, datasets, n_runs):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    args.identifier = "Egor_test"
-
+    # args.identifier = "Egor_test"
+    # args.metrics = ["psw_energy_distance"]
+    # args.num_samples = 40
+    # args.outcome_model = "auto"  # or use "nested" for the old-style nested model
     runs = run_experiment(args)
+    # Plots should be supplied with the directory name pattern where the files live, load the rest from there
     generate_plots(runs, args.metrics, args.datasets, args.n_runs)
