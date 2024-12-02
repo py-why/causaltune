@@ -51,13 +51,13 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
         else:
             metrics = [
                 "erupt",
-                "norm_erupt",
-                "greedy_erupt",  # regular erupt was made probabilistic, no need for a separate one
+                # "norm_erupt",
+                # "greedy_erupt",  # regular erupt was made probabilistic, no need for a separate one
                 "policy_risk",  # NEW
                 "qini",
                 "auc",
                 # "r_scorer",
-                "energy_distance",  # is broken without propensity weighting
+                # "energy_distance",  # is broken without propensity weighting
                 "psw_energy_distance",
                 "frobenius_norm",  # NEW
                 "codec",  # NEW
@@ -66,6 +66,17 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
             if not scores_only:
                 metrics.append("ate")
             return metrics
+
+
+def metrics_to_minimize():
+    return [
+        "energy_distance",
+        "psw_energy_distance",
+        "codec",
+        "frobenius_norm",
+        "psw_frobenius_norm",
+        "policy_risk",
+    ]
 
 
 class Scorer:
