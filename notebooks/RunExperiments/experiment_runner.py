@@ -493,13 +493,13 @@ def generate_plots(out_dir):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    args.identifier = "Egor_test"
-    args.metrics = supported_metrics("backdoor", False, False)
-    # run_experiment assumes we don't mix large and small datasets in the same call
-    args.datasets = ["Large Linear_RCT", "Large NonLinear_RCT"]
-    args.num_samples = 100
-    args.timestamp_in_dirname = False
-    args.outcome_model = "auto"  # or use "nested" for the old-style nested model
+    # args.identifier = "Egor_test"
+    # args.metrics = supported_metrics("backdoor", False, False)
+    # # run_experiment assumes we don't mix large and small datasets in the same call
+    # args.datasets = ["Large Linear_RCT", "Large NonLinear_RCT"]
+    # args.num_samples = 100
+    # args.timestamp_in_dirname = False
+    # args.outcome_model = "auto"  # or use "nested" for the old-style nested model
     out_dir = run_experiment(args)
     # Plots should be supplied with the directory name pattern where the files live, load the rest from there
     generate_plots(os.path.join(out_dir, "RCT"))
