@@ -61,7 +61,7 @@ def joint_config(data_size: Tuple[int, int], estimator_list=None):
         cfg, init_params, low_cost_init_params = flaml_config_to_tune_config(
             cls.search_space(data_size=data_size, task=task)
         )
-
+        cfg, init_params = tweak_config(cfg, init_params, name)
         # Test if the estimator instantiates fine
         try:
             cls(task=task, **init_params)
@@ -74,6 +74,25 @@ def joint_config(data_size: Tuple[int, int], estimator_list=None):
             print(f"Error instantiating {name}: {e}")
 
     return tune.choice(joint_cfg), joint_init_params, joint_low_cost_init_params
+
+
+def tweak_config(cfg: dict, init_params: dict, estimator_name: str):
+    """
+    Tweak built-in FLAML search spaces to limit the number of estimators
+    :param cfg:
+    :param estimator_name:
+    :return:
+    """
+    out = copy.deepcopy(cfg)
+    if "xgboost" in estimator_name or estimator_name in [
+        "random_forest",
+        "extra_trees",
+        "lgbm",
+        "catboost",
+    ]:
+        out["n_estimators"] = tune.lograndint(4, 1000)
+        init_params["n_estimators"] = 100
+    return out, init_params
 
 
 def model_from_cfg(cfg: dict):
