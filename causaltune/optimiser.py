@@ -20,7 +20,7 @@ from econml.inference import BootstrapInference
 from joblib import Parallel, delayed
 
 from causaltune.search.params import SimpleParamService
-from causaltune.score.scoring import Scorer
+from causaltune.score.scoring import Scorer, metrics_to_minimize
 from causaltune.utils import treatment_is_multivalue
 from causaltune.models.monkey_patches import (
     AutoML,
@@ -514,19 +514,7 @@ class CausalTune:
                 evaluated_rewards=(
                     [] if len(self.resume_scores) == 0 else self.resume_scores
                 ),
-                mode=(
-                    "min"
-                    if self.metric
-                    in [
-                        "energy_distance",
-                        "psw_energy_distance",
-                        "frobenius_norm",
-                        "psw_frobenius_norm",
-                        "codec",
-                        "policy_risk",
-                    ]
-                    else "max"
-                ),
+                mode=("min" if self.metric in metrics_to_minimize() else "max"),
                 low_cost_partial_config={},
                 **self._settings["tuner"],
             )
@@ -547,19 +535,7 @@ class CausalTune:
                 evaluated_rewards=(
                     [] if len(self.resume_scores) == 0 else self.resume_scores
                 ),
-                mode=(
-                    "min"
-                    if self.metric
-                    in [
-                        "energy_distance",
-                        "psw_energy_distance",
-                        "frobenius_norm",
-                        "psw_frobenius_norm",
-                        "codec",
-                        "policy_risk",
-                    ]
-                    else "max"
-                ),
+                mode=("min" if self.metric in metrics_to_minimize() else "max"),
                 low_cost_partial_config={},
                 **self._settings["tuner"],
             )

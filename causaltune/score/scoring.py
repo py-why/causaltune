@@ -37,7 +37,7 @@ class DummyEstimator:
         return self.cate_estimate
 
 
-def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List[str]:
+def supported_metrics(problem: str, multivalue: bool, scores_only: bool, constant_ptt: bool=False) -> List[str]:
     if problem == "iv":
         metrics = ["energy_distance", "frobenius_norm", "codec"]
         if not scores_only:
@@ -51,13 +51,13 @@ def supported_metrics(problem: str, multivalue: bool, scores_only: bool) -> List
         else:
             metrics = [
                 "erupt",
-                # "norm_erupt",
+                "norm_erupt",
                 # "greedy_erupt",  # regular erupt was made probabilistic, no need for a separate one
                 "policy_risk",  # NEW
                 "qini",
                 "auc",
                 # "r_scorer",
-                # "energy_distance",  # is broken without propensity weighting
+                "energy_distance",  # should only be used in iv problems
                 "psw_energy_distance",
                 "frobenius_norm",  # NEW
                 "codec",  # NEW
@@ -101,6 +101,10 @@ class Scorer:
         self.identified_estimand = causal_model.identify_effect(
             proceed_when_unidentifiable=True
         )
+        if "Dummy" in propensity_model.__class__.__name__:
+            self.constant_ptt = True
+        else:
+            self.constant_ptt = False
 
         if problem == "backdoor":
             print(
