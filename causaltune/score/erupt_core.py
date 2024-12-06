@@ -50,8 +50,8 @@ def erupt_with_std(
         ]
         mean += np.mean(means)
         std += np.std(means) / np.sqrt(num_splits)  # Standard error of the mean
-
-    return mean / resamples, std / resamples
+    # 1.5 is an empirical factor to make the confidence interval wider
+    return mean / resamples, 1.5 * std / resamples
 
 
 def erupt(

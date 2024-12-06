@@ -88,7 +88,6 @@ def get_estimator_list(dataset_name):
     return [est for est in estimator_list if "Dummy" not in est]
 
 
-
 def run_experiment(args):
     # Process datasets
     data_sets = {}
@@ -281,10 +280,12 @@ def get_all_test_scores(out_dir, dataset_name):
     return out
 
 
-def generate_plots(out_dir: str,
-                   log_scale: List[str]|None = None,
-                   upper_bounds: dict|None = None,
-                   lower_bounds: dict|None=None):
+def generate_plots(
+    out_dir: str,
+    log_scale: List[str] | None = None,
+    upper_bounds: dict | None = None,
+    lower_bounds: dict | None = None,
+):
     if log_scale is None:
         log_scale = ["energy_distance", "psw_energy_distance", "frobenius_norm"]
     metrics, datasets = extract_metrics_datasets(out_dir)
@@ -404,13 +405,12 @@ def generate_plots(out_dir: str,
         legend_elements = []
         for j, dataset in enumerate(datasets):
             df = get_all_test_scores(out_dir, dataset)
-            for m, value  in upper_bounds.items():
+            for m, value in upper_bounds.items():
                 if m in df.columns:
                     df = df[df[m] < value].copy()
             for m, value in lower_bounds.items():
                 if m in df.columns:
                     df = df[df[m] > value].copy()
-
 
             for i, metric in enumerate(all_metrics):
                 ax = axs[i, j]
@@ -502,4 +502,6 @@ if __name__ == "__main__":
     out_dir = run_experiment(args)
     # upper_bounds = {"MSE": 1e2, "policy_risk": 0.2}
     # lower_bounds = {"erupt": 0.06, "bite": 0.75}
-    generate_plots(os.path.join(out_dir, "RCT"))#, upper_bounds=upper_bounds, lower_bounds=lower_bounds)
+    generate_plots(
+        os.path.join(out_dir, "RCT")
+    )  # , upper_bounds=upper_bounds, lower_bounds=lower_bounds)
