@@ -14,10 +14,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-warnings.filterwarnings("ignore")
-
 # Ensure CausalTune is in the Python path
-root_path = os.path.realpath("../../../..")
+root_path = os.path.realpath("../../../..")  # noqa: E402
 sys.path.append(os.path.join(root_path, "causaltune"))  # noqa: E402
 
 # Import CausalTune and other custom modules after setting up the path
@@ -28,7 +26,10 @@ from causaltune.search.params import SimpleParamService  # noqa: E402
 from causaltune.score.scoring import (
     metrics_to_minimize,  # noqa: E402
     supported_metrics,  # noqa: E402
-)  # noqa: E402
+)
+
+# Configure warnings
+warnings.filterwarnings("ignore")
 
 
 def parse_arguments():
