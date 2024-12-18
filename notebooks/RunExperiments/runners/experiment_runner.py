@@ -15,7 +15,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # Ensure CausalTune is in the Python path
-root_path = os.path.realpath("../../../..")  # noqa: E402
+root_path = os.path.realpath("../../../../..")  # noqa: E402
 sys.path.append(os.path.join(root_path, "causaltune"))  # noqa: E402
 
 # Import CausalTune and other custom modules after setting up the path
@@ -51,9 +51,7 @@ def parse_arguments():
         "--num_samples", type=int, default=-1, help="Maximum number of iterations"
     )
 
-    parser.add_argument(
-        "--outcome_model", type=str, default="nested", help="Outcome model type"
-    )
+    parser.add_argument("--outcome_model", type=str, default="nested", help="Outcome model type")
     parser.add_argument(
         "--timestamp_in_dirname",
         type=bool,
@@ -92,7 +90,7 @@ def get_estimator_list(dataset_name):
     return [est for est in estimator_list if "Dummy" not in est]
 
 
-def run_experiment(args):
+def run_experiment(args, dataset_path: str, use_ray: bool = False):
     # Process datasets
     data_sets = {}
     for dataset in args.datasets:
@@ -103,7 +101,7 @@ def run_experiment(args):
             )
         size = parts[0]
         name = " ".join(parts[1:])
-        file_path = f"RunDatasets/{size}/{name}.pkl"
+        file_path = f"{dataset_path}/{size}/{name}.pkl"
         data_sets[f"{size} {name}"] = load_dataset(file_path)
 
     if args.timestamp_in_dirname:
@@ -113,24 +111,20 @@ def run_experiment(args):
         out_dir = f"EXPERIMENT_RESULTS_{args.identifier}"
 
     os.makedirs(out_dir, exist_ok=True)
-    out_dir = os.path.join(out_dir, size)
+    out_dir = os.path.realpath(os.path.join(out_dir, size))
     os.makedirs(out_dir, exist_ok=True)
 
     print(f"Loaded datasets: {list(data_sets.keys())}")
 
     # Set time budgets properly
     if args.time_budget is not None and args.components_time_budget is not None:
-        raise ValueError(
-            "Please specify either time_budget or components_time_budget, not both."
-        )
+        raise ValueError("Please specify either time_budget or components_time_budget, not both.")
     elif args.time_budget is None and args.components_time_budget is None:
         args.components_time_budget = 30  # Set default components budget
 
     # If only time_budget is specified, derive components_time_budget from it
     if args.time_budget is not None:
-        args.components_time_budget = max(
-            30, args.time_budget / 4
-        )  # Ensure minimum budget
+        args.components_time_budget = max(30, args.time_budget / 4)  # Ensure minimum budget
         args.time_budget = None  # Use only components_time_budget
 
     for dataset_name, cd in data_sets.items():
@@ -187,6 +181,7 @@ def run_experiment(args):
                         store_all_estimators=True,
                         propensity_model=propensity_model,
                         outcome_model=args.outcome_model,
+                        use_ray=use_ray,
                     )
 
                     ct.fit(
@@ -226,21 +221,14 @@ def compute_scores(ct, metric, test_df):
                     )
                     est_scores["estimator_name"] = estimator_name
 
-                    scores[ds_name]["CATE_estimate"] = np.squeeze(
-                        estimator.estimator.effect(df)
-                    )
+                    scores[ds_name]["CATE_estimate"] = np.squeeze(estimator.estimator.effect(df))
                     scores[ds_name]["CATE_groundtruth"] = np.squeeze(df["true_effect"])
                     est_scores["MSE"] = np.mean(
-                        (
-                            scores[ds_name]["CATE_estimate"]
-                            - scores[ds_name]["CATE_groundtruth"]
-                        )
+                        (scores[ds_name]["CATE_estimate"] - scores[ds_name]["CATE_groundtruth"])
                         ** 2
                     )
                     scores[ds_name]["scores"] = est_scores
-                scores["optimization_score"] = trial.last_result.get(
-                    "optimization_score"
-                )
+                scores["optimization_score"] = trial.last_result.get("optimization_score")
                 estimator_scores[estimator_name].append(copy.deepcopy(scores))
             # Will use this in the nex
             all_scores.append(scores)
@@ -291,11 +279,7 @@ def get_all_test_scores(out_dir, dataset_name):
             results = pickle.load(f)
             for x in results["all_scores"]:
                 all_scores.append(
-                    {
-                        k: v
-                        for k, v in x["test"]["scores"].items()
-                        if k not in ["values"]
-                    }
+                    {k: v for k, v in x["test"]["scores"].items() if k not in ["values"]}
                 )
     out = pd.DataFrame(all_scores)
     return out
@@ -495,12 +479,8 @@ def generate_plots(
         )
         # Adjust spacing between subplots
         plt.tight_layout(rect=[0.1, 0, 1, 0.96], h_pad=1.0, w_pad=0.5)
-        plt.savefig(
-            os.path.join(out_dir, "CATE_grid.pdf"), format="pdf", bbox_inches="tight"
-        )
-        plt.savefig(
-            os.path.join(out_dir, "CATE_grid.png"), format="png", bbox_inches="tight"
-        )
+        plt.savefig(os.path.join(out_dir, "CATE_grid.pdf"), format="pdf", bbox_inches="tight")
+        plt.savefig(os.path.join(out_dir, "CATE_grid.png"), format="png", bbox_inches="tight")
         plt.close()
 
     def plot_mse_grid(title):
@@ -508,10 +488,7 @@ def generate_plots(
         est_names = sorted(df["estimator_name"].unique())
 
         # Problem type already determined at top level
-        all_metrics = [
-            c
-            for c in df.columns
-            if c in supported_metrics(problem, False, False) and c.lower() != "ate"
+        all_metrics = [c for c in df.columns if c in supported_metrics(problem, False, False)and c.lower() != "ate"
         ]
 
         fig, axs = plt.subplots(
@@ -605,28 +582,74 @@ def generate_plots(
 
         # Match spacing style with plot_grid
         plt.tight_layout(rect=[0.1, 0, 1, 0.96], h_pad=1.0, w_pad=0.5)
-        plt.savefig(
-            os.path.join(out_dir, "MSE_grid.pdf"), format="pdf", bbox_inches="tight"
-        )
-        plt.savefig(
-            os.path.join(out_dir, "MSE_grid.png"), format="png", bbox_inches="tight"
-        )
+        plt.savefig(os.path.join(out_dir, "MSE_grid.pdf"), format="pdf", bbox_inches="tight")
+        plt.savefig(os.path.join(out_dir, "MSE_grid.png"), format="png", bbox_inches="tight")
         plt.close()
 
+        # # Create separate legend
+        # fig_legend, ax_legend = plt.subplots(figsize=(6, 6))
+        # ax_legend.legend(handles=legend_elements, loc="center", fontsize=10)
+        # ax_legend.axis("off")
+        # plt.savefig(os.path.join(out_dir, "MSE_legend.pdf"), format="pdf", bbox_inches="tight")
+        # plt.savefig(os.path.join(out_dir, "MSE_legend.png"), format="png", bbox_inches="tight")
+        # plt.close()
+
+    # Generate plots
     plot_grid("Experiment Results")
     plot_mse_grid("Experiment Results")
 
 
-if __name__ == "__main__":
+def run_batch(
+    identifier: str,
+    kind: str,
+    metrics: List[str],
+    dataset_path: str,
+):
     args = parse_arguments()
-    # args.identifier = "Egor_test"
-    # args.metrics = supported_metrics("backdoor", False, False)
-    # # run_experiment assumes we don't mix large and small datasets in the same call
-    # args.datasets = ["Large Linear_RCT", "Large NonLinear_RCT"]
-    # args.num_samples = 100
-    # args.timestamp_in_dirname = False
-    # args.outcome_model = "auto"  # or use "nested" for the old-style nested model
-    out_dir = run_experiment(args)
+    args.identifier = identifier
+    args.metrics = metrics
+    # run_experiment assumes we don't mix large and small datasets in the same call
+    args.datasets = [f"Large Linear_{kind}", f"Large NonLinear_{kind}"]
+    args.num_samples = 100
+    args.timestamp_in_dirname = False
+    args.outcome_model = "auto"  # or use "nested" for the old-style nested model
+
+    # os.environ["RAY_ADDRESS"] = "ray://127.0.0.1:8265"
+
+    use_ray = True
+    if use_ray:
+        import ray
+
+        # Assuming we port-mapped already by running ray dashboard
+        ray.init(
+            "ray://localhost:10001", runtime_env={"pip": ["causaltune", "catboost"]}
+        )  # "34.82.184.148:6379"
+    out_dir = run_experiment(args, dataset_path=dataset_path, use_ray=use_ray)
+    return out_dir
+
+
+if __name__ == "__main__":
+
+    args = parse_arguments()
+    args.identifier = "Egor_test"
+    args.metrics = supported_metrics("backdoor", False, False)
+    # run_experiment assumes we don't mix large and small datasets in the same call
+    args.datasets = ["Large Linear_RCT", "Large NonLinear_RCT"]
+    args.num_samples = 100
+    args.timestamp_in_dirname = False
+    args.outcome_model = "auto"  # or use "nested" for the old-style nested model
+
+    use_ray = True
+    if use_ray:
+        import ray
+
+        ray.init()
+    out_dir = run_experiment(args, dataset_path="../RunDatasets", use_ray=use_ray)
+
+    # plot results
+    upper_bounds = {"MSE": 1e2, "policy_risk": 0.2}
+    lower_bounds = {"erupt": 0.06, "bite": 0.75}
+
     # Determine case from datasets
     if any("IV" in dataset for dataset in args.datasets):
         case = "IV"

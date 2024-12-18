@@ -17,7 +17,7 @@ class ElasticNetEstimator(SKLearnEstimator):
     ITER_HP = "max_iter"
 
     @classmethod
-    def search_space(cls, data_size, task="regresssion", **params):
+    def search_space(cls, data_size, task="regression", **params):
         return {
             "alpha": {
                 "domain": tune.loguniform(lower=0.0001, upper=1.0),
