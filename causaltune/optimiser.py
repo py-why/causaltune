@@ -32,8 +32,6 @@ from causaltune.data_utils import CausalityDataset
 from causaltune.dataset_processor import CausalityDatasetProcessor
 from causaltune.models.passthrough import feature_filter
 
-# tune.run = run
-
 
 # Patched from sklearn.linear_model._base to adjust rtol and atol values
 def _check_precomputed_gram_matrix(X, precompute, X_offset, X_scale, rtol=1e-4, atol=1e-2):
@@ -489,10 +487,12 @@ class CausalTune:
                 self._tune_with_config,
                 search_space,
                 metric=self.metric,
+                # use_ray=self.use_ray,
                 cost_attr="evaluation_cost",
                 points_to_evaluate=(init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg),
                 evaluated_rewards=([] if len(self.resume_scores) == 0 else self.resume_scores),
                 mode=("min" if self.metric in metrics_to_minimize() else "max"),
+                # resources_per_trial= {"cpu": 1} if self.use_ray else None,
                 low_cost_partial_config={},
                 **self._settings["tuner"],
             )
@@ -544,7 +544,12 @@ class CausalTune:
         """
         from causaltune.remote import remote_exec
 
-        estimates = remote_exec(CausalTune._estimate_effect, (self, config), self.use_ray)
+        if self.use_ray:
+            # flaml.tune handles the interaction with Ray itself
+            # estimates = self._estimate_effect(config)
+            estimates = remote_exec(CausalTune._estimate_effect, (self, config), self.use_ray)
+        else:
+            estimates = remote_exec(CausalTune._estimate_effect, (self, config), self.use_ray)
 
         #     Parallel(n_jobs=2, backend="threading")(
         #     delayed(self._estimate_effect)(config) for i in range(1)

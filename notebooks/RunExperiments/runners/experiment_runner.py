@@ -18,7 +18,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Ensure CausalTune is in the Python path
-root_path = os.path.realpath("../../../..")
+root_path = os.path.realpath("../../../../..")
 sys.path.append(os.path.join(root_path, "causaltune"))  # noqa: E402
 
 # Import CausalTune and other custom modules after setting up the path
@@ -86,7 +86,7 @@ def get_estimator_list(dataset_name):
     return [est for est in estimator_list if "Dummy" not in est]
 
 
-def run_experiment(args, use_ray: bool = False):
+def run_experiment(args, dataset_path: str, use_ray: bool = False):
     # Process datasets
     data_sets = {}
     for dataset in args.datasets:
@@ -97,7 +97,7 @@ def run_experiment(args, use_ray: bool = False):
             )
         size = parts[0]
         name = " ".join(parts[1:])
-        file_path = f"RunDatasets/{size}/{name}.pkl"
+        file_path = f"{dataset_path}/{size}/{name}.pkl"
         data_sets[f"{size} {name}"] = load_dataset(file_path)
 
     if args.timestamp_in_dirname:
@@ -107,7 +107,7 @@ def run_experiment(args, use_ray: bool = False):
         out_dir = f"EXPERIMENT_RESULTS_{args.identifier}"
 
     os.makedirs(out_dir, exist_ok=True)
-    out_dir = os.path.join(out_dir, size)
+    out_dir = os.path.realpath(os.path.join(out_dir, size))
     os.makedirs(out_dir, exist_ok=True)
 
     print(f"Loaded datasets: {list(data_sets.keys())}")
@@ -460,6 +460,35 @@ def generate_plots(
     plot_mse_grid("Experiment Results")
 
 
+def run_batch(
+    identifier: str,
+    kind: str,
+    metrics: List[str],
+    dataset_path: str,
+):
+    args = parse_arguments()
+    args.identifier = identifier
+    args.metrics = metrics
+    # run_experiment assumes we don't mix large and small datasets in the same call
+    args.datasets = [f"Large Linear_{kind}", f"Large NonLinear_{kind}"]
+    args.num_samples = 100
+    args.timestamp_in_dirname = False
+    args.outcome_model = "auto"  # or use "nested" for the old-style nested model
+
+    # os.environ["RAY_ADDRESS"] = "ray://127.0.0.1:8265"
+
+    use_ray = True
+    if use_ray:
+        import ray
+
+        # Assuming we port-mapped already by running ray dashboard
+        ray.init(
+            "ray://localhost:10001", runtime_env={"pip": ["causaltune", "catboost"]}
+        )  # "34.82.184.148:6379"
+    out_dir = run_experiment(args, dataset_path=dataset_path, use_ray=use_ray)
+    return out_dir
+
+
 if __name__ == "__main__":
 
     args = parse_arguments()
@@ -476,7 +505,7 @@ if __name__ == "__main__":
         import ray
 
         ray.init()
-    out_dir = run_experiment(args, use_ray=use_ray)
+    out_dir = run_experiment(args, dataset_path="../RunDatasets", use_ray=use_ray)
 
     # plot results
     upper_bounds = {"MSE": 1e2, "policy_risk": 0.2}
