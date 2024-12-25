@@ -92,7 +92,7 @@ def get_estimator_list(dataset_name):
     return [est for est in estimator_list if "Dummy" not in est]
 
 
-def run_experiment(args, dataset_path: str, use_ray: bool):
+def run_experiment(args, dataset_path: str, use_ray: bool, ray_get_retries: int = 3):
     # Process datasets
     data_sets = {}
     for dataset in args.datasets:
@@ -164,7 +164,27 @@ def run_experiment(args, dataset_path: str, use_ray: bool):
                 )
                 out.append(results)
     if use_ray:
-        out = ray.get(tasks)
+        remaining_tasks = tasks
+        n_fetch_errors = 0
+        out = []
+
+        while remaining_tasks:
+            print(f"Ray: {len(remaining_tasks)} tasks still running...")
+            ready_tasks, remaining_tasks = ray.wait(remaining_tasks, num_returns=1, timeout=5)
+            for ready_task in ready_tasks:
+                print(f"Ray: task ready: {ready_task}")
+                for retry in range(ray_get_retries + 1):
+                    try:
+                        result = ray.get(ready_task)
+                        results.append(result)
+                        break
+                    except Exception as e:
+                        print(
+                            f"Ray: error fetching task {ready_task} result (retry {retry} of {ray_get_retries}): {e}"
+                        )
+                        if retry == ray_get_retries:
+                            print("Ray: error: task result could not be fetched")
+        print(f"Ray: tasks completed with {n_fetch_errors} fetch errors")
 
     for out_fn, results in out:
         with open(out_fn, "wb") as f:
@@ -533,6 +553,27 @@ def run_batch(
 @ray.remote
 def remote_single_run(*args):
     return single_run(*args)
+
+
+@ray.remote
+class TaskRunner:
+    def __init__(self):
+        self.futures = {}
+
+    def remote_single_run(self, *args):
+        ref = remote_single_run(*args)
+        self.futures[ref.hex()] = ref
+        return ref.hex()
+
+    def get_results(self):
+        return ray.get(list(self.futures.values()))
+
+    def get_single_result(self, ref_hex):
+        return ray.get(self.futures[ref_hex])
+
+    def is_ready(self, ref_hex):
+        ready, _ = ray.wait([self.futures[ref_hex]], timeout=0)
+        return bool(ready)
 
 
 def single_run(
