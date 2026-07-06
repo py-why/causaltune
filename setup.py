@@ -13,27 +13,28 @@ setup(
     url="https://github.com/py-why/causaltune",
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
+    python_requires=">=3.10,<3.13",
     install_requires=[
-        "dowhy==0.9.1",
-        "econml==0.14.1",
-        "FLAML==2.2.0",
-        "xgboost==1.7.6",
-        "numpy==1.23.5",
-        "pandas",
+        # Tightly-coupled / version-sensitive: pinned exactly.
+        "dowhy==0.14",
+        "econml==0.16.0",
+        "FLAML==2.6.0",
+        "xgboost==2.1.4",
+        "numpy==2.2.6",
+        # Loosely-coupled: floors (with caps where an upstream ceiling is real).
+        "pandas>=2,<3",
+        "scikit_learn>=1.4,<1.7",
+        "category_encoders>=2.6.3",
         "pytest",
-        "scikit_learn",
         "matplotlib",
         "dcor",
         "holidays",
-        "setuptools==65.5.1",
         "wise-pizza",
         "seaborn",
-        "category_encoders==2.6.3",
     ],
     extras_require={
         "test": [
@@ -45,7 +46,7 @@ setup(
             "pytest-cov",
             "nbmake",
         ],
-        "ray": ["ray[tune]~=1.11.0"],
+        "ray": ["ray[tune]>=2.9"],
     },
     packages=find_packages(
         include=["causaltune", "causaltune.*"],

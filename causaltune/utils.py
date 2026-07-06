@@ -7,6 +7,22 @@ import pandas as pd
 from causaltune.memoizer import MemoizingWrapper
 
 
+def is_sequence(seq: Any) -> bool:
+    """Faithful reimplementation of ``numpy.distutils.misc_util.is_sequence``.
+
+    ``numpy.distutils`` was removed in numpy 2.0, so we vendor the tiny helper
+    causaltune relied on. A value is a sequence if it is *not* a string and has
+    a length (list/tuple/ndarray/Series/dict); scalars and strings are not.
+    """
+    if isinstance(seq, str):
+        return False
+    try:
+        len(seq)
+    except Exception:
+        return False
+    return True
+
+
 def clean_config(params: dict):
     # TODO: move this to formal constraints in tune?
     if "subforest_size" in params and "n_estimators" in params:

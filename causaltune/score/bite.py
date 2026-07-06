@@ -50,13 +50,17 @@ def bite(
                 if len(bin_data) < 2:
                     continue
 
-                naive_est = compute_naive_estimate(bin_data, treatment_name, outcome_name)
+                naive_est = compute_naive_estimate(
+                    bin_data, treatment_name, outcome_name
+                )
 
                 # Only compute average ITE if weights are valid
                 bin_weights = bin_data["weights"].values
                 if bin_weights.sum() > 0 and not np.isnan(naive_est):
                     try:
-                        avg_est_ite = np.average(bin_data["estimated_ITE"], weights=bin_weights)
+                        avg_est_ite = np.average(
+                            bin_data["estimated_ITE"], weights=bin_weights
+                        )
                         bin_stats.append(
                             {
                                 "ITE_bin": bin_idx,

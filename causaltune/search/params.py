@@ -320,7 +320,7 @@ class SimpleParamService:
                     "min_impurity_decrease": tune.uniform(0, 10),
                     "max_samples": tune.uniform(1e-6, 0.5),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
-                    "honest": tune.choice([0, 1]),
+                    "honest": tune.choice([False, True]),
                     "subforest_size": tune.randint(2, 10),
                 },
                 defaults={
@@ -346,7 +346,7 @@ class SimpleParamService:
                     "mc_iters": None,
                 },
                 search_space={
-                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "fit_cate_intercept": tune.choice([False, True]),
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
                     # "mc_iters": tune.randint(0, 10),
                 },
@@ -364,7 +364,7 @@ class SimpleParamService:
                     "mc_iters": None,
                 },
                 search_space={
-                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "fit_cate_intercept": tune.choice([False, True]),
                     "n_alphas": tune.lograndint(1, 1000),
                     "n_alphas_cov": tune.lograndint(1, 100),
                     "min_propensity": tune.loguniform(1e-6, 1e-1),
@@ -395,7 +395,7 @@ class SimpleParamService:
                     "mc_iters": None,
                 },
                 search_space={
-                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "fit_cate_intercept": tune.choice([False, True]),
                     # "mc_iters": tune.randint(0, 10),
                     "mc_agg": tune.choice(["mean", "median"]),
                 },
@@ -416,7 +416,7 @@ class SimpleParamService:
                     "mc_iters": None,
                 },
                 search_space={
-                    "fit_cate_intercept": tune.choice([0, 1]),
+                    "fit_cate_intercept": tune.choice([False, True]),
                     # "mc_iters": tune.randint(0, 10),
                     "n_alphas": tune.lograndint(1, 1000),
                     "n_alphas_cov": tune.lograndint(1, 100),
@@ -449,7 +449,7 @@ class SimpleParamService:
                 },
                 search_space={
                     # "mc_iters": tune.randint(0, 10),
-                    "drate": tune.choice([0, 1]),
+                    "drate": tune.choice([False, True]),
                     "n_estimators": tune.randint(2, 500),
                     "criterion": tune.choice(["mse", "het"]),
                     # "max_depth": tune.randint(2, 1000),
@@ -461,9 +461,9 @@ class SimpleParamService:
                     "min_impurity_decrease": tune.uniform(0, 10),
                     "max_samples": tune.uniform(1e-6, 0.5),
                     "min_balancedness_tol": tune.uniform(0, 0.5),
-                    "honest": tune.choice([0, 1]),
-                    # "inference": tune.choice([0, 1]),
-                    "fit_intercept": tune.choice([0, 1]),
+                    "honest": tune.choice([False, True]),
+                    # "inference": tune.choice([False, True]),
+                    "fit_intercept": tune.choice([False, True]),
                     # Difficult as needs to be a factor of 'n_estimators'
                     "subforest_size": tune.randint(2, 10),
                 },
@@ -480,7 +480,7 @@ class SimpleParamService:
                     "max_samples": 0.45,
                     "min_balancedness_tol": 0.45,
                     "honest": True,
-                    # "inference": tune.choice([0, 1]),
+                    # "inference": tune.choice([False, True]),
                     "fit_intercept": True,
                     "subforest_size": 4,
                 },
@@ -520,7 +520,7 @@ class SimpleParamService:
                     "min_leaf_size": tune.randint(1, 50),
                     "max_depth": tune.randint(2, 1000),
                     "subsample_ratio": tune.uniform(0, 1),
-                    # "bootstrap": tune.choice([0, 1]),
+                    # "bootstrap": tune.choice([False, True]),
                     "lambda_reg": tune.uniform(0, 1),
                 },
                 defaults={
@@ -553,7 +553,7 @@ class SimpleParamService:
                     "min_leaf_size": tune.randint(1, 50),
                     "max_depth": tune.randint(2, 1000),
                     "subsample_ratio": tune.uniform(0, 1),
-                    # "bootstrap": tune.choice([0, 1]),
+                    # "bootstrap": tune.choice([False, True]),
                     "lambda_reg": tune.uniform(0, 1),
                 },
                 defaults={
@@ -561,7 +561,7 @@ class SimpleParamService:
                     "min_leaf_size": 10,
                     "max_depth": 10,
                     "subsample_ratio": 0.7,
-                    # "bootstrap": tune.choice([0, 1]),
+                    # "bootstrap": tune.choice([False, True]),
                     "lambda_reg": 0.01,
                 },
                 experimental=True,  # OrthoForest estimators are notoriously slow
@@ -572,7 +572,7 @@ class SimpleParamService:
                 outcome_model_name="model_y_xw",
                 propensity_model_name="model_t_xw",
                 search_space={
-                    "projection": tune.choice([0, 1]),
+                    "projection": tune.choice([False, True]),
                 },
                 defaults={"projection": True},
             ),
@@ -600,8 +600,8 @@ class SimpleParamService:
                 outcome_model_name="model_y_xw",
                 propensity_model_name="model_t_xw",
                 search_space={
-                    "projection": tune.choice([0, 1]),
-                    "opt_reweighted": tune.choice([0, 1]),
+                    "projection": tune.choice([False, True]),
+                    "opt_reweighted": tune.choice([False, True]),
                     "cov_clip": tune.quniform(0.08, 0.2, 0.01),
                 },
                 defaults={
@@ -614,7 +614,7 @@ class SimpleParamService:
                 outcome_model_name="model_y_xw",
                 search_space={
                     "cov_clip": tune.quniform(0.08, 0.2, 0.01),
-                    "opt_reweighted": tune.choice([0, 1]),
+                    "opt_reweighted": tune.choice([False, True]),
                 },
                 defaults={
                     "cov_clip": 0.1,

@@ -111,6 +111,13 @@ def model_from_cfg(cfg: dict):
                 warnings.warn(f"Extra args {args} {kwargs} are being ignored")
             return self.wrapped_class.fit(self, X, y)
 
+        @property
+        def predict_proba(self):
+            # These wrappers are always regression (outcome) models. econml 0.16
+            # treats any model exposing predict_proba as a classifier and rejects
+            # it as a regression nuisance when discrete_outcome=False, so hide it.
+            raise AttributeError("predict_proba")
+
     out = FlamlEstimatorWrapper(task=task_factory("regression"), **cfg)
     return out
 
@@ -124,7 +131,6 @@ def config2score(cfg: dict, X, y):
 
 
 def make_fake_data():
-
     # Set random seed for reproducibility
     np.random.seed(42)
 
@@ -150,7 +156,6 @@ def make_fake_data():
 
 
 if __name__ == "__main__":
-
     # Create fake data
     X, y = make_fake_data()
     cfg, init_params, low_cost_init_params = joint_config(data_size=X.shape)
