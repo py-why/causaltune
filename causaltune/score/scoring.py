@@ -185,10 +185,7 @@ class Scorer:
 
         propensity_model = self.psw_estimator.estimator.propensity_model
         p = propensity_model.predict_proba(
-            df[
-                self.causal_model.get_effect_modifiers()
-                + self.causal_model.get_common_causes()
-            ]
+            df[self.psw_estimator.estimator.propensity_modifiers]
         )
         treatment = df[self.psw_estimator._treatment_name].values
         ex_ante_p = p[np.arange(p.shape[0]), treatment]
@@ -393,10 +390,7 @@ class Scorer:
                 # Calculate and apply propensity weights
                 propensitymodel = self.psw_estimator.estimator.propensity_model
                 YX_1_all_psw = propensitymodel.predict_proba(
-                    Y0X_1[
-                        self.causal_model.get_effect_modifiers()
-                        + self.causal_model.get_common_causes()
-                    ]
+                    Y0X_1[self.psw_estimator.estimator.propensity_modifiers]
                 )
                 treatment_series = Y0X_1[treatment_name]
                 YX_1_psw = np.zeros(YX_1_all_psw.shape[0])
@@ -406,10 +400,7 @@ class Scorer:
                     ]
 
                 YX_0_psw = propensitymodel.predict_proba(
-                    Y0X_0[
-                        self.causal_model.get_effect_modifiers()
-                        + self.causal_model.get_common_causes()
-                    ]
+                    Y0X_0[self.psw_estimator.estimator.propensity_modifiers]
                 )[:, 0]
 
                 # Trim propensity scores
@@ -513,10 +504,7 @@ class Scorer:
 
         propensitymodel = self.psw_estimator.estimator.propensity_model
         YX_1_all_psw = propensitymodel.predict_proba(
-            Y0X_1[
-                self.causal_model.get_effect_modifiers()
-                + self.causal_model.get_common_causes()
-            ]
+            Y0X_1[self.psw_estimator.estimator.propensity_modifiers]
         )
         treatment_series = Y0X_1[treatment_name]
 
@@ -526,10 +514,7 @@ class Scorer:
 
         propensitymodel = self.psw_estimator.estimator.propensity_model
         YX_0_psw = propensitymodel.predict_proba(
-            Y0X_0[
-                self.causal_model.get_effect_modifiers()
-                + self.causal_model.get_common_causes()
-            ]
+            Y0X_0[self.psw_estimator.estimator.propensity_modifiers]
         )[:, 0]
 
         select_cols = estimate.estimator._effect_modifier_names + ["yhat"]
@@ -617,10 +602,7 @@ class Scorer:
             raise ValueError("Propensity model fitting failed. Please check the setup.")
 
         propensity_scores = self.psw_estimator.estimator.propensity_model.predict_proba(
-            df[
-                self.causal_model.get_effect_modifiers()
-                + self.causal_model.get_common_causes()
-            ]
+            df[self.psw_estimator.estimator.propensity_modifiers]
         )
         if propensity_scores.ndim == 2:
             propensity_scores = propensity_scores[:, 1]
@@ -1161,10 +1143,7 @@ class Scorer:
         if hasattr(self.psw_estimator.estimator, "propensity_model"):
             propensity_model = self.psw_estimator.estimator.propensity_model
             working_df["propensity"] = propensity_model.predict_proba(
-                df[
-                    self.causal_model.get_effect_modifiers()
-                    + self.causal_model.get_common_causes()
-                ]
+                df[self.psw_estimator.estimator.propensity_modifiers]
             )[:, 1]
         else:
             raise ValueError("Propensity model is not available.")
@@ -1236,10 +1215,7 @@ class Scorer:
                 # .reset_index(drop=True)
                 propensitymodel = self.psw_estimator.estimator.propensity_model
                 values["p"] = propensitymodel.predict_proba(
-                    df[
-                        self.causal_model.get_effect_modifiers()
-                        + self.causal_model.get_common_causes()
-                    ]
+                    df[self.psw_estimator.estimator.propensity_modifiers]
                 )[:, 1]
                 values["policy"] = cate_estimate > 0
                 values["norm_policy"] = cate_estimate > simple_ate
