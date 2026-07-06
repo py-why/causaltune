@@ -31,7 +31,7 @@ class DoWhyWrapper(CausalEstimator):
         test_significance=False,
         evaluate_effect_strength=False,
         confidence_intervals=False,
-        **kwargs
+        **kwargs,
     ):
         self.estimator_class = inner_class
         self._observed_common_causes_names = (
@@ -56,42 +56,51 @@ class DoWhyWrapper(CausalEstimator):
     def fit(
         self,
         data: pd.DataFrame,
-        treatment_name: str,
-        outcome_name: str,
-        effect_modifier_names: List[str],
-        control_value=0,
+        effect_modifier_names: List[str] = None,
+        **kwargs,
     ):
+        # dowhy 0.14 calls estimator.fit(data, effect_modifier_names=..., **fit_params)
+        # and no longer passes treatment/outcome names -- they come from the estimand.
         self._data = data
-        self._treatment_name = remove_list(treatment_name)
-        self._outcome_name = remove_list(outcome_name)
-        self._effect_modifier_names = effect_modifier_names
+        self._treatment_name = remove_list(self._target_estimand.treatment_variable)
+        self._outcome_name = remove_list(self._target_estimand.outcome_variable)
+        self._effect_modifier_names = (
+            list(effect_modifier_names) if effect_modifier_names is not None else []
+        )
+        control_value = self.method_params.get("control_value", 0)
 
         self.estimator = self.estimator_class(
             treatment_name=self._treatment_name,
             outcome_name=self._outcome_name,
             # TODO: feed through the propensity modifiers where available
-            propensity_modifiers=effect_modifier_names
+            propensity_modifiers=self._effect_modifier_names
             + self._observed_common_causes_names,
-            outcome_modifiers=effect_modifier_names
+            outcome_modifiers=self._effect_modifier_names
             + self._observed_common_causes_names,
-            effect_modifiers=effect_modifier_names,
+            effect_modifiers=self._effect_modifier_names,
             control_value=control_value,
             **(self.method_params.get("init_params", {})),
         )
 
-        self.estimator.fit(data, **(self.method_params.get("fit_params", {})))
+        fit_params = kwargs if kwargs else self.method_params.get("fit_params", {})
+        self.estimator.fit(data, **fit_params)
+        return self
 
     def estimate_effect(
         self,
+        data: pd.DataFrame = None,
         treatment_value=1,
         control_value=0,
-        target_units="ATE",
+        target_units="ate",
         confidence_intervals=False,
+        **kwargs,
     ):
         if isinstance(target_units, pd.DataFrame):
-            data = target_units
+            df = target_units
+        elif data is not None:
+            df = data
         else:
-            data = self._data
+            df = self._data
 
         if confidence_intervals:
             raise NotImplementedError(
@@ -106,14 +115,17 @@ class DoWhyWrapper(CausalEstimator):
         self._control_value = control_value
         self._treatment_value = treatment_value
 
-        est = self.estimator.predict(data)
+        est = self.estimator.predict(df)
 
         estimate = CausalEstimate(
+            data=df,
+            treatment_name=self._treatment_name,
+            outcome_name=self._outcome_name,
             estimate=np.mean(est, axis=0),
-            control_value=self._control_value,
-            treatment_value=self._treatment_value,
             target_estimand=self._target_estimand,
             realized_estimand_expr=self.symbolic_estimator,
+            control_value=self._control_value,
+            treatment_value=self._treatment_value,
             cate_estimates=est,
             effect_intervals=self.effect_intervals,
         )
@@ -129,7 +141,7 @@ class DoWhyWrapper(CausalEstimator):
         return self.estimator.predict(X)
 
     def const_marginal_effect(self, X):
-        return self.effect(self, X)
+        return self.effect(X)
 
     def shap_values(self, df: pd.DataFrame):
         return self.estimator.shap_values(df[self._effect_modifier_names])

@@ -106,7 +106,7 @@ def calculate_probabilities_per_row(means, stds, *args, **kwargs):
             # Numerical integration over all x
             x_vals = np.linspace(-10, 10, 1000)
             integrand_vals = np.array([integrand(x) for x in x_vals])
-            row_probs[i] = np.trapz(integrand_vals, x=x_vals)
+            row_probs[i] = np.trapezoid(integrand_vals, x=x_vals)
 
         probabilities[row_idx, :] = row_probs / np.sum(
             row_probs

@@ -35,7 +35,10 @@ def shap_with_automl(model, nice_df: pd.DataFrame):
         explainer = shap.TreeExplainer(model)
         return explainer.shap_values(nice_df)
     except Exception:
-        # fall back to the slow algorithm, should work for anything
-        # for some reason the generic shap.Explainer doesn't seem to do this
-        explainer = shap.KernelExplainer(model.predict, nice_df)
+        # fall back to the slow algorithm, should work for anything.
+        # Wrap predict in a lambda so shap's convert_to_model does not inspect
+        # ``model.predict.__self__`` and try to null out the model's read-only
+        # ``feature_names_in_`` property (FLAML models expose it read-only, which
+        # shap >= 0.44 otherwise attempts to set, raising AttributeError).
+        explainer = shap.KernelExplainer(lambda X: model.predict(X), nice_df)
         return explainer.shap_values(nice_df)
