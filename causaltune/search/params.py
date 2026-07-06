@@ -605,8 +605,8 @@ class SimpleParamService:
                     "cov_clip": tune.quniform(0.08, 0.2, 0.01),
                 },
                 defaults={
-                    "projection": 0,
-                    "opt_reweighted": 0,
+                    "projection": False,
+                    "opt_reweighted": False,
                     "cov_clip": 0.1,
                 },
             ),
@@ -618,7 +618,7 @@ class SimpleParamService:
                 },
                 defaults={
                     "cov_clip": 0.1,
-                    "opt_reweighted": 1,
+                    "opt_reweighted": True,
                 },
             ),
         }

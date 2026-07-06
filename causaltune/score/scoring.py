@@ -1170,7 +1170,7 @@ class Scorer:
             raise ValueError("Propensity model is not available.")
 
         # Calculate the BITE score
-        bite_score = bite(working_df, treatment_name, outcome_name)
+        bite_score = bite(working_df, treatment_name, outcome_name, N_values=N_values)
         return bite_score
 
     def make_scores(
