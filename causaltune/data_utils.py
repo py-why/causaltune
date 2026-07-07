@@ -4,7 +4,8 @@ from typing import List, Any, Union, Optional
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import RobustScaler
-from numpy.distutils.misc_util import is_sequence
+
+from causaltune.utils import is_sequence
 
 
 def featurize(
