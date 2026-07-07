@@ -1,5 +1,6 @@
 htmlcov/
 venv/
+.venv/
 env
 notebooks/scratch/
 
@@ -120,3 +121,7 @@ docs/_build/
 docs/_any
 docs/_cache/
 docs/notebooks
+# Build artifacts
+build/
+dist/
+*.egg-info/

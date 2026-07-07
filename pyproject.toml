@@ -1,5 +1,59 @@
+[project]
+name = "causaltune"
+version = "0.2.0"
+description = "AutoML for Causal Inference."
+authors = [{ name = "Wise" }]
+license = "Apache-2.0"
+readme = "README.md"
+keywords = ["causaltune"]
+requires-python = ">=3.10,<3.13"
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    # Tightly-coupled / version-sensitive: pinned exactly.
+    "dowhy==0.14",
+    "econml==0.16.0",
+    "FLAML==2.6.0",
+    "xgboost==2.1.4",
+    "numpy==2.2.6",
+    # Loosely-coupled: floors (with caps where an upstream ceiling is real).
+    "pandas>=2,<3",
+    "scikit-learn>=1.4,<1.7",
+    "category-encoders>=2.6.3",
+    "pytest",
+    "matplotlib",
+    "dcor",
+    "holidays",
+    "wise-pizza",
+    "seaborn",
+]
+
+[project.optional-dependencies]
+test = [
+    "autoflake",
+    "black==23.3.0",
+    "flake8",
+    "isort",
+    "pytest-cov",
+    "nbmake",
+]
+ray = ["ray[tune]>=2.9"]
+
+[project.urls]
+Homepage = "https://github.com/py-why/causaltune"
+Repository = "https://github.com/py-why/causaltune"
+
+[tool.poetry]
+packages = [{ include = "causaltune" }]
+include = ["causaltune/thirdparty/causalml/LICENSE"]
+
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers -vv --nbmake --nbmake-timeout=6000"
