@@ -1,6 +1,6 @@
 import copy
 import warnings
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 from collections import defaultdict
 import time
 
@@ -8,7 +8,7 @@ import traceback
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import _base
-from flaml import tune
+from hiertunehub import create_tuner
 
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
@@ -176,6 +176,7 @@ class CausalTune:
         self._settings["tuner"]["resources_per_trial"] = (
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
+        self._settings["tuner"]["algo"] = None
         self._settings["try_init_configs"] = try_init_configs
         self._settings[
             "include_experimental_estimators"
@@ -207,7 +208,7 @@ class CausalTune:
         self._settings["propensity_model"] = propensity_model
         self._settings["outcome_model"] = outcome_model
 
-        self.results = None
+        self.tuner = None
         self._best_estimators = defaultdict(lambda: (float("-inf"), None))
 
         self.original_estimator_list = estimator_list
@@ -216,9 +217,6 @@ class CausalTune:
         self.identified_estimand = None
         self.problem = None
         self.use_ray = use_ray
-        # properties that are used to resume fits (warm start)
-        self.resume_scores = []
-        self.resume_cfg = []
 
     def get_params(self, deep=False):
         return self._settings.copy()
@@ -306,6 +304,8 @@ class CausalTune:
         encoder_type: Optional[str] = None,
         encoder_outcome: Optional[str] = None,
         use_ray: Optional[bool] = None,
+        framework: Optional[str] = "optuna",
+        algo: Any = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -325,6 +325,13 @@ class CausalTune:
             preprocess (bool): preprocess CausalityDataset if needed.
             encoder_type (Optional[str]): Categorical Encoder for preprocessing
             encoder_outcome (Optional[str]): Categorical Encoder target for preprocessing: TargetEncoder, WOE.
+            framework (Optional[str]): HPO backend to use, one of "optuna"
+                (default), "hyperopt" or "flaml". Only "flaml" supports
+                try_init_configs warm-start and resume; the others warn/raise.
+            algo (Any): search algorithm for the chosen backend. flaml -> a
+                FLAML search_alg; hyperopt -> a suggest function (defaults to
+                hyperopt.tpe.suggest); optuna -> an optuna sampler (defaults to
+                optuna's TPESampler). None uses each backend's default.
 
         Returns:
             None
@@ -494,62 +501,88 @@ class CausalTune:
         search_space = self.cfg.search_space(
             self.estimator_list, data_size=data.data.shape
         )
+        # init configs (warm-start points) are only wired for the FLAML backend;
+        # for hyperopt/optuna they are a best-effort no-op (warn once).
+        if self._settings["try_init_configs"] and framework != "flaml":
+            warnings.warn(
+                "try_init_configs (init config warm-start) is only applied with "
+                f"framework='flaml'; ignored for framework='{framework}'.",
+                UserWarning,
+            )
         init_cfg = (
             self.cfg.default_configs(self.estimator_list, data_size=data.data.shape)
-            if self._settings["try_init_configs"]
+            if self._settings["try_init_configs"] and framework == "flaml"
             else []
         )
 
-        if resume and self.results:
-            # pull out configs and resume_scores from previous trials:
-            for _, result in self.results.results.items():
-                self.resume_scores.append(result[self.metric])
-                self.resume_cfg.append(result["config"])
-            # append init_cfgs that have not yet been evaluated
-            for cfg in init_cfg:
-                self.resume_cfg.append(cfg) if cfg not in self.resume_cfg else None
-        try:
-            self.results = tune.run(
-                self._tune_with_config,
-                search_space,
-                metric=self.metric,
-                # use_ray=self.use_ray,
-                cost_attr="evaluation_cost",
-                points_to_evaluate=(
-                    init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
-                ),
-                evaluated_rewards=(
-                    [] if len(self.resume_scores) == 0 else self.resume_scores
-                ),
-                mode=("min" if self.metric in metrics_to_minimize() else "max"),
-                # resources_per_trial= {"cpu": 1} if self.use_ray else None,
-                low_cost_partial_config={},
-                **self._settings["tuner"],
+        if resume and framework != "flaml":
+            raise NotImplementedError(
+                "resume is currently only supported with framework='flaml', "
+                f"not framework='{framework}'."
             )
 
-            if self.results.get_best_trial() is None:
-                raise Exception(
-                    "Optimization failed! Did you set large enough time_budget and components_budget?"
+        self._settings["tuner"]["algo"] = algo
+        mode = "min" if self.metric in metrics_to_minimize() else "max"
+        framework_params = self.cfg.parse_tuner_params(
+            self._settings["tuner"], framework
+        )
+
+        if framework == "flaml":
+            # Restore full FLAML parity: cost-aware search plus warm-start /
+            # resume seeds. Capture resume points/rewards from the PREVIOUS tuner
+            # before it is overwritten below.
+            if resume and self.tuner is not None:
+                points_to_evaluate, evaluated_rewards = self._resume_points_and_rewards(
+                    self.tuner.results, init_cfg
                 )
-        except Exception:
-            # we must have an older FLAML version that doesn't support the cost_attr parameter
-            self.results = tune.run(
-                self._tune_with_config,
-                search_space,
-                metric=self.metric,
-                points_to_evaluate=(
-                    init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg
-                ),
-                evaluated_rewards=(
-                    [] if len(self.resume_scores) == 0 else self.resume_scores
-                ),
-                mode=("min" if self.metric in metrics_to_minimize() else "max"),
+            else:
+                points_to_evaluate, evaluated_rewards = init_cfg, []
+            framework_params.update(
+                cost_attr="evaluation_cost",
                 low_cost_partial_config={},
-                **self._settings["tuner"],
+                points_to_evaluate=points_to_evaluate,
+                evaluated_rewards=evaluated_rewards,
             )
-            # print("Optimization failed!\n", traceback.format_exc())
-            # raise e
+
+        self.tuner = create_tuner(
+            self._tune_with_config,
+            search_space,
+            metric=self.metric,
+            mode=mode,
+            framework=framework,
+            framework_params=framework_params,
+        )
+        self.tuner.run()
+
         self.update_summary_scores()
+
+    def _resume_points_and_rewards(self, prev_results, init_cfg):
+        """Rebuild FLAML warm-start seeds from a previous tuner's results.
+
+        Mirrors the original resume semantics: for each prior trial that carries
+        both the metric and its config, seed ``(config -> reward)``; then append
+        any init configs not already present (without a reward, so FLAML
+        evaluates them).
+
+        Args:
+            prev_results (list[dict]): ``tuner.results`` from the previous fit.
+            init_cfg (list[dict]): init configs to append if not yet evaluated.
+
+        Returns:
+            tuple[list[dict], list]: ``(points_to_evaluate, evaluated_rewards)``
+            with rewards aligned to the leading resumed configs.
+        """
+        resume_cfg = []
+        resume_scores = []
+        for result in prev_results:
+            if self.metric not in result or "config" not in result:
+                continue
+            resume_scores.append(result[self.metric])
+            resume_cfg.append(result["config"])
+        for cfg in init_cfg:
+            if cfg not in resume_cfg:
+                resume_cfg.append(cfg)
+        return resume_cfg, resume_scores
 
     def update_summary_scores(self):
         """Stores scores for metric of interest for each estimator
@@ -557,7 +590,7 @@ class CausalTune:
         Returns:
             None
         """
-        self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
+        self.scores = Scorer.best_score_by_estimator(self.tuner.results, self.metric)
         # now inject the separately saved model objects
         for est_name in self.scores:
             # Todo: Check approximate scores for OrthoIV (possibly other IV estimators)
@@ -710,8 +743,14 @@ class CausalTune:
             }
         except Exception as e:
             print("Evaluation failed!\n", config, traceback.format_exc())
+            # Use the *worst* value for the metric direction as the failure
+            # sentinel, so a failed trial is never picked as best. For minimized
+            # metrics (e.g. energy_distance) that is +inf; for maximized metrics
+            # it is -inf. (A flat -inf would look optimal to a minimizing backend
+            # such as the default optuna, poisoning best_estimator selection.)
+            worst = np.inf if self.metric in metrics_to_minimize() else -np.inf
             return {
-                self.metric: -np.inf,
+                self.metric: worst,
                 "estimator_name": self.estimator_name,
                 "exception": e,
                 "traceback": traceback.format_exc(),
@@ -750,7 +789,7 @@ class CausalTune:
         Returns:
             None
         """
-        return self.results.best_result["estimator_name"]
+        return self.tuner.best_result["estimator_name"]
 
     @property
     def model(self):
@@ -759,7 +798,10 @@ class CausalTune:
         Returns:
             CausalEstimator
         """
-        return self.results.best_result["estimator"].estimator
+        # The objective pops the fitted estimator out of the result dict in the
+        # non-store_all path, so resolve it from the scores table (populated by
+        # update_summary_scores) rather than from tuner.best_result.
+        return self.scores[self.best_estimator]["estimator"].estimator
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
@@ -781,7 +823,7 @@ class CausalTune:
         Returns:
             (dict): the best configuration
         """
-        return self.results.best_config
+        return self.tuner.best_params
 
     @property
     def best_config_per_estimator(self):
@@ -800,7 +842,7 @@ class CausalTune:
         """
         Returns:
             (float):  the best score found."""
-        return self.results.best_result[self.metric]
+        return self.tuner.best_result[self.metric]
 
     def effect(self, df, *args, **kwargs):
         """Heterogeneous Treatment Effects for data df

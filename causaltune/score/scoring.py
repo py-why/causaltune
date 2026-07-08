@@ -1307,13 +1307,12 @@ class Scorer:
         return out
 
     @staticmethod
-    def best_score_by_estimator(
-        scores: Dict[str, dict], metric: str
-    ) -> Dict[str, dict]:
+    def best_score_by_estimator(scores: List[dict], metric: str) -> Dict[str, dict]:
         """Obtain best score for each estimator.
 
         Args:
-            scores (Dict[str, dict]): CausalTune.scores dictionary
+            scores (List[dict]): list of per-trial result dicts (as produced by
+                the tuner), each carrying an ``estimator_name`` field
             metric (str): metric of interest
 
         Returns:
@@ -1321,29 +1320,20 @@ class Scorer:
 
         """
 
-        for k, v in scores.items():
+        for v in scores:
             if "estimator_name" not in v:
                 raise ValueError(
-                    f"Malformed scores dict, 'estimator_name' field missing "
-                    f"in{k}, {v}"
+                    f"Malformed scores entry, 'estimator_name' field missing " f"in {v}"
                 )
 
         estimator_names = sorted(
-            list(
-                set(
-                    [
-                        v["estimator_name"]
-                        for v in scores.values()
-                        if "estimator_name" in v
-                    ]
-                )
-            )
+            list(set([v["estimator_name"] for v in scores if "estimator_name" in v]))
         )
         best = {}
         for name in estimator_names:
             est_scores = [
                 v
-                for v in scores.values()
+                for v in scores
                 if "estimator_name" in v and v["estimator_name"] == name
             ]
             best[name] = (
