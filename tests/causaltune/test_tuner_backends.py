@@ -445,6 +445,22 @@ def test_default_try_init_configs_warns_on_non_flaml(framework, data):
     assert ct.tuner is not None
 
 
+def test_hyperopt_parameterless_search_raises_clear_error(data):
+    pytest.importorskip("hyperopt")
+    # Dummy is parameterless and outcome_model defaults to "nested" (not auto),
+    # so the hyperopt search space has no tunable params. Guard with a clear
+    # ValueError instead of a cryptic hiertunehub NameError.
+    ct = CausalTune(
+        metric="energy_distance",
+        estimator_list=["Dummy"],
+        num_samples=2,
+        components_time_budget=3,
+        use_ray=False,
+    )
+    with pytest.raises(ValueError, match="hyperopt"):
+        ct.fit(data, framework="hyperopt")
+
+
 # --------------------------------------------------------------------------- #
 # Packaging decision
 # --------------------------------------------------------------------------- #

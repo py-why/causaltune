@@ -151,7 +151,7 @@ Mac/ OS users: For some machines, it can happen that the package LightGBM which 
 
 2. Set Up a Conda Environment using an appropriate Python Version
 	- Ensure Anaconda or Miniconda is installed.
-	- Create a new Conda environment: `conda create -n causaltune-env python=3.9.x`
+	- Create a new Conda environment: `conda create -n causaltune-env python=3.11.x`
 	- Activate the environment: `conda activate causaltune-env`.
 
 3. Install the dependency lightgbm seperatly before attempting to install other dependencies

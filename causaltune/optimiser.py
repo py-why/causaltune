@@ -521,6 +521,16 @@ class CausalTune:
                 f"not framework='{framework}'."
             )
 
+        if framework == "hyperopt" and not self._search_space_has_tunable_params():
+            raise ValueError(
+                "framework='hyperopt' needs at least one tunable hyperparameter "
+                "in the search space, but all selected estimators are "
+                "parameterless and outcome_model is not 'auto'. (hiertunehub "
+                "0.2.1's hyperopt conversion raises on a fully parameterless "
+                "search.) Use framework='optuna' or 'flaml', include a "
+                "parameterized estimator, or set outcome_model='auto'."
+            )
+
         self._settings["tuner"]["algo"] = algo
         mode = "min" if self.metric in metrics_to_minimize() else "max"
         framework_params = self.cfg.parse_tuner_params(
@@ -583,6 +593,23 @@ class CausalTune:
             if cfg not in resume_cfg:
                 resume_cfg.append(cfg)
         return resume_cfg, resume_scores
+
+    def _search_space_has_tunable_params(self) -> bool:
+        """Whether the current search space contains any tunable hyperparameter.
+
+        Sampling outcome estimators (outcome_model='auto') always adds tunable
+        component-model params; otherwise it depends on the estimators' own
+        search spaces. Used to guard the hyperopt backend, whose hiertunehub
+        converter raises on a fully parameterless search space.
+        """
+        if self.cfg.sample_outcome_estimators:
+            return True
+        configs = self.cfg._configs()
+        return any(
+            bool(configs[est].search_space)
+            for est in self.estimator_list
+            if est in configs
+        )
 
     def update_summary_scores(self):
         """Stores scores for metric of interest for each estimator
