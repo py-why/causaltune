@@ -45,6 +45,14 @@ The CausalTune package can be used like a scikit-style estimator:
     print(f"Best estimator: {ct.best_estimator}")
 
 
+By default ``fit()`` optimises with the Optuna backend. Pass
+``framework="hyperopt"`` or ``framework="flaml"`` to switch, and ``algo=`` to
+select a specific sampler / search algorithm. Warm starting via
+``try_init_configs`` and ``resume=True`` are currently supported only with
+``framework="flaml"``. Hyperopt requires the optional extra
+(``pip install causaltune[hyperopt]``).
+
+
 For Developers
 ----------------
 
@@ -70,6 +78,7 @@ CausalTune requires the following packages:
 * econml
 * dowhy
 * flaml
+* optuna
 * scikit-learn
 * matplotlib
 * dcor
