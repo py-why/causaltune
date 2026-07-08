@@ -8,6 +8,11 @@ on:
 
   workflow_dispatch:
 
+# Cancel superseded runs (e.g. a force-push) for the same workflow + ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ${{ matrix.os }}

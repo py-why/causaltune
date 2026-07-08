@@ -1,7 +1,19 @@
 htmlcov/
 venv/
+.venv/
 env
 notebooks/scratch/
+
+# Simulation run results / generated artifacts (large, never commit)
+notebooks/RunExperiments/EXPERIMENT_RESULTS_*/
+notebooks/RunExperiments/RunDatasets/
+notebooks/RunExperiments/runners/plots/
+notebooks/RunExperiments/runners/tex/
+notebooks/RunExperiments/runners/causaltune
+
+# Accidentally-dropped credentials — never commit
+*ray-gcp-key
+*ray-gcp-key.pub
 .ropeproject/
 .DS_Store
 .vscode
@@ -109,3 +121,7 @@ docs/_build/
 docs/_any
 docs/_cache/
 docs/notebooks
+# Build artifacts
+build/
+dist/
+*.egg-info/

@@ -115,7 +115,9 @@ def run_experiment(
     estimators: List[str],
     dataset_path: str,
     use_ray: bool,
+    identifier: str,
     propensity_automl_estimators: Optional[List[str]] = None,
+    components_time_budget: int = 120,
 ):
     # Process datasets
     data_sets = {}
@@ -141,7 +143,7 @@ def run_experiment(
     already_running = False
     if use_ray:
         try:
-            runner = ray.get_actor(f"TaskRunner {run_kind}")
+            runner = ray.get_actor(f"TaskRunner {identifier} {run_kind}")
             print("\n" * 4)
             print(
                 "!!! Found an existing detached TaskRunner. Will assume the tasks have already been submitted."
@@ -156,7 +158,9 @@ def run_experiment(
             print("Ray: no detached TaskRunner found, creating...")
             # This thing will be alive even if the host program exits
             # Must be killed explicitly: ray.kill(ray.get_actor(f"TaskRunner {run_kind}"))
-            runner = TaskRunner.options(name=f"TaskRunner {run_kind}", lifetime="detached").remote()
+            runner = TaskRunner.options(
+                name=f"TaskRunner {identifier} {run_kind}", lifetime="detached"
+            ).remote()
 
     out = []
     if not already_running:
@@ -190,7 +194,7 @@ def run_experiment(
                             metric,
                             args.test_size,
                             args.num_samples,
-                            args.components_time_budget,
+                            components_time_budget,
                             out_fn,
                             estimators,
                             propensity_automl_estimators,
@@ -203,7 +207,7 @@ def run_experiment(
                         metric,
                         args.test_size,
                         args.num_samples,
-                        args.components_time_budget,
+                        components_time_budget,
                         out_fn,
                         estimators,
                         propensity_automl_estimators,
@@ -227,11 +231,8 @@ def run_experiment(
             pickle.dump(results, f)
 
     if use_ray:
-        destroy = input("Ray: seems like the results fetched OK. Destroy TaskRunner? ")
-        if destroy.lower().startswith("y"):
-            print("Destroying TaskRunner... ", end="")
-            ray.kill(runner)
-            print("success!")
+        ray.kill(runner)
+        print("success!")
 
     return out_dir
 
@@ -243,37 +244,41 @@ def run_batch(
     estimators: List[str],
     dataset_path: str,
     use_ray: bool = False,
+    num_trials: int = 100,
     propensity_automl_estimators: Optional[List[str]] = None,
+    components_time_budget: int = 120,
 ):
     args = parse_arguments()
     args.identifier = identifier
     args.metrics = metrics
     # run_experiment assumes we don't mix large and small datasets in the same call
     args.datasets = [f"Large Linear_{kind}", f"Large NonLinear_{kind}"]
-    args.num_samples = 100
+    args.num_samples = num_trials
     args.timestamp_in_dirname = False
     args.outcome_model = "auto"  # or use "nested" for the old-style nested model
-    args.components_time_budget = 120
 
     if use_ray:
         import ray
 
         # Assuming we port-mapped already by running ray dashboard
-        ray.init(
-            "ray://localhost:10001",
-            runtime_env={
-                "working_dir": ".",
-                "pip": ["causaltune", "catboost", "ray[tune]", "flaml[blendsearch]"],
-            },
-            namespace=RAY_NAMESPACE,
-        )
+        if not ray.is_initialized():
+            ray.init(
+                "ray://localhost:10001",
+                runtime_env={
+                    "working_dir": ".",
+                    "pip": ["causaltune", "catboost", "ray[tune]", "flaml[blendsearch]"],
+                },
+                namespace=RAY_NAMESPACE,
+            )
 
     out_dir = run_experiment(
         args,
         estimators=estimators,
+        identifier=identifier,
         dataset_path=dataset_path,
         use_ray=use_ray,
         propensity_automl_estimators=propensity_automl_estimators,
+        components_time_budget=components_time_budget,
     )
     return out_dir
 
