@@ -449,7 +449,9 @@ def test_default_try_init_configs_warns_on_non_flaml(framework, data):
 # Packaging decision
 # --------------------------------------------------------------------------- #
 def test_packaging_dependencies():
-    import tomllib
+    # tomllib is stdlib only from 3.11; the metadata it checks is
+    # Python-independent, so just skip on 3.10 rather than pulling in tomli.
+    tomllib = pytest.importorskip("tomllib")
 
     root = pathlib.Path(__file__).resolve().parents[2]
     pyproject = tomllib.loads((root / "pyproject.toml").read_text())
