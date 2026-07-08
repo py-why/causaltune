@@ -20,10 +20,14 @@ dependencies = [
     "FLAML==2.6.0",
     "xgboost==2.1.4",
     "numpy==2.2.6",
+    # Unified HPO-backend interface (young package): pinned exactly.
+    "hiertunehub==0.2.1",
     # Loosely-coupled: floors (with caps where an upstream ceiling is real).
     "pandas>=2,<3",
     "scikit-learn>=1.4,<1.7",
     "category-encoders>=2.6.3",
+    # Default HPO backend (numpy-2 clean from 4.0): hard dep.
+    "optuna>=4.0",
     "pytest",
     "matplotlib",
     "dcor",
@@ -42,6 +46,9 @@ test = [
     "nbmake",
 ]
 ray = ["ray[tune]>=2.9"]
+# Optional HPO backend. hyperopt 0.2.7 imports the deprecated pkg_resources,
+# removed in setuptools 81, so the setuptools ceiling ships with this extra.
+hyperopt = ["hyperopt>=0.2.7", "setuptools<81"]
 
 [project.urls]
 Homepage = "https://github.com/py-why/causaltune"
