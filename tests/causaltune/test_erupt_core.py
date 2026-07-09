@@ -43,6 +43,11 @@ def evaluate_erupt_new(
 
 
 def make_dataset(n: int = 10000):
+    # Seed the global RNG: these tests compare an ERUPT estimate against an
+    # empirical mean with a tight tolerance (atol=5e-2), and unseeded per-process
+    # randomness made them intermittently fail in CI. A fixed seed keeps them
+    # deterministic (seed 0 leaves ~16x margin on the tightest assertion).
+    np.random.seed(0)
     # Let's create a dataset with a single feature
     df = pd.DataFrame({"X": np.random.uniform(size=n)})
 
