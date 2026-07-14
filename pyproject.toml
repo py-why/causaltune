@@ -1,6 +1,6 @@
 [project]
 name = "causaltune"
-version = "0.2.0"
+version = "0.3.0"
 description = "AutoML for Causal Inference."
 authors = [{ name = "Wise" }]
 license = "Apache-2.0"
@@ -20,8 +20,13 @@ dependencies = [
     "FLAML==2.6.0",
     "xgboost==2.1.4",
     "numpy==2.2.6",
-    # Unified HPO-backend interface (young package): pinned exactly.
-    "hiertunehub==0.2.1",
+    # Unified HPO-backend interface. Temporarily pinned at the ZmeiGorynych fork,
+    # which adds the cross-backend warm-start/resume hooks (optuna enqueue +
+    # hyperopt seeded docs) this package relies on, until they land upstream in
+    # ItsYikunJiang/HierTuneHub and a normal versioned release is cut.
+    # NOTE: a PEP 508 direct-URL dep cannot be uploaded to PyPI, so a causaltune
+    # PyPI release is blocked until the upstream release replaces this pin.
+    "hiertunehub @ git+https://github.com/ZmeiGorynych/HierTuneHub.git@d449eaaf216bc31dd28cae38c34b868340ef3f25",
     # Loosely-coupled: floors (with caps where an upstream ceiling is real).
     "pandas>=2,<3",
     "scikit-learn>=1.4,<1.7",

@@ -194,12 +194,23 @@ print(f"Best estimator: {ct.best_estimator}")
 
 ```
 
-By default `fit()` optimises with the Optuna backend. Pass `framework="hyperopt"`
-or `framework="flaml"` to switch, and `algo=` to pick a specific sampler /
-search algorithm for that backend (e.g. an Optuna sampler, a Hyperopt suggest
-function, or a FLAML search algorithm). Warm starting via `try_init_configs` and
-resuming a previous fit with `resume=True` are currently supported only with
-`framework="flaml"`.
+By default `fit()` optimises with the Optuna backend (default sampler: TPE).
+Pass `framework="hyperopt"` or `framework="flaml"` to switch, and `algo=` to pick
+a specific sampler / search algorithm for that backend (e.g. an Optuna sampler, a
+Hyperopt suggest function, or a FLAML search algorithm). `framework`, `algo` and
+`framework_params` can also be set on the `CausalTune` constructor, with the
+`fit()` argument taking precedence.
+
+The backends aim for the same option surface. Warm starting (`try_init_configs`)
+and resuming (`resume=True`) now work on **all three** backends — on Optuna and
+Hyperopt these route through the pluggable tuner's warm-start / `resume_from_results`
+hooks. Resume continues the same in-memory instance and adds a further
+`num_samples` trials (time-bounded resume with `num_samples=-1` + a `time_budget`
+is recommended). `verbose` is honoured everywhere. FLAML-only: cost-aware search
+(`cost_attr` / `low_cost_partial_config`). Optuna's `n_jobs` is exposed but
+clamped to 1 (the objective is not thread-safe); use `use_ray` for real
+parallelism. The advanced `framework_params` dict is merged into the backend call
+(you win on conflicts; managed keys warn, reserved keys raise).
 
 Now if ***outcome_model="auto"*** in the CausalTune constructor, we search over a simultaneous search space for the EconML estimators and for FLAML wrappers for common regressors. The old behavior is now achieved by ***outcome_model="nested"*** (Refitting AutoML for each estimator).
 

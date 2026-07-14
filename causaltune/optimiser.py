@@ -7,6 +7,7 @@ import time
 import traceback
 import pandas as pd
 import numpy as np
+import optuna
 from sklearn.linear_model import _base
 from hiertunehub import create_tuner
 
@@ -30,6 +31,38 @@ from causaltune.models.monkey_patches import (
 from causaltune.data_utils import CausalityDataset
 from causaltune.dataset_processor import CausalityDatasetProcessor
 from causaltune.models.passthrough import feature_filter
+
+
+# framework_params passthrough (fit()/constructor) key classes:
+# - MANAGED: collide with CausalTune's budget/parity logic -> warn, but honour.
+# - RESERVED: hiertunehub passes these to the backend explicitly (positionally
+#   or as fixed kwargs), so a user value would raise a duplicate-kwarg TypeError
+#   deep in hiertunehub -> reject up front with a clear error.
+_MANAGED_FRAMEWORK_PARAMS = {
+    "num_samples",
+    "n_trials",
+    "max_evals",
+    "time_budget_s",
+    "timeout",
+    "search_alg",
+    "sampler",
+    "algo",
+    "points_to_evaluate",
+    "evaluated_rewards",
+    "resources_per_trial",
+    "n_jobs",
+    "verbose",
+    "cost_attr",
+    "low_cost_partial_config",
+}
+_RESERVED_FRAMEWORK_PARAMS = {
+    "config",
+    "mode",
+    "metric",
+    "trials",
+    "objective",
+    "search_space",
+}
 
 
 # Patched from sklearn.linear_model._base to adjust rtol and atol values
@@ -106,6 +139,9 @@ class CausalTune:
         resources_per_trial=None,
         include_experimental_estimators=False,
         store_all_estimators: Optional[bool] = False,
+        framework: str = "optuna",
+        algo: Any = None,
+        framework_params: Optional[dict] = None,
     ):
         """Constructor.
 
@@ -160,6 +196,15 @@ class CausalTune:
                 is experimental can be seen in SimpleParamsService in scoring.py
             store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False
             store_all_estimators (Optional[bool]). store estimator objects for interim trials. Defaults to False
+            framework (str): default HPO backend, one of "optuna" (default),
+                "hyperopt" or "flaml". Overridable per fit(). With algo=None,
+                optuna uses its default TPE sampler.
+            algo (Any): default search algorithm for the backend (flaml
+                search_alg / hyperopt suggest fn / optuna sampler). None uses the
+                backend default. Overridable per fit().
+            framework_params (Optional[dict]): default advanced backend-native
+                params merged into the tuner call. Overridable per fit(). See
+                fit() for the managed/reserved-key rules.
 
             Returns:
                 None
@@ -203,6 +248,10 @@ class CausalTune:
         self._settings["train_size"] = train_size
         self._settings["test_size"] = test_size
         self._settings["store_all"] = store_all_estimators
+        # HPO-backend defaults; fit() args override these when passed.
+        self._settings["framework"] = framework
+        self._settings["algo"] = algo
+        self._settings["framework_params"] = framework_params
         self._settings["metric"] = metric
         self._settings["metrics_to_report"] = metrics_to_report
         self._settings["propensity_model"] = propensity_model
@@ -304,8 +353,9 @@ class CausalTune:
         encoder_type: Optional[str] = None,
         encoder_outcome: Optional[str] = None,
         use_ray: Optional[bool] = None,
-        framework: Optional[str] = "optuna",
+        framework: Optional[str] = None,
         algo: Any = None,
+        framework_params: Optional[dict] = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -326,18 +376,43 @@ class CausalTune:
             encoder_type (Optional[str]): Categorical Encoder for preprocessing
             encoder_outcome (Optional[str]): Categorical Encoder target for preprocessing: TargetEncoder, WOE.
             framework (Optional[str]): HPO backend to use, one of "optuna"
-                (default), "hyperopt" or "flaml". Only "flaml" supports
-                try_init_configs warm-start and resume; the others warn/raise.
+                (default), "hyperopt" or "flaml". Warm-start (try_init_configs)
+                and resume are supported on all three; cost-aware search
+                (cost_attr/low_cost_partial_config) remains flaml-only. None
+                falls back to the value passed to the constructor.
             algo (Any): search algorithm for the chosen backend. flaml -> a
                 FLAML search_alg; hyperopt -> a suggest function (defaults to
                 hyperopt.tpe.suggest); optuna -> an optuna sampler (defaults to
-                optuna's TPESampler). None uses each backend's default.
+                optuna's TPESampler). None falls back to the constructor value
+                (then each backend's default).
+            framework_params (Optional[dict]): advanced escape hatch of extra
+                backend-native params merged into the tuner call (user wins).
+                Overriding a CausalTune-managed key warns; a reserved key
+                (config/mode/metric/trials/objective/search_space) raises. None
+                falls back to the constructor value.
 
         Returns:
             None
         """
         if use_ray is not None:
             self.use_ray = use_ray
+
+        # Resolve backend settings: an explicit fit() arg overrides the value
+        # supplied to the constructor (mirroring estimator_list).
+        framework = framework if framework is not None else self._settings["framework"]
+        algo = algo if algo is not None else self._settings["algo"]
+        user_framework_params = (
+            framework_params
+            if framework_params is not None
+            else self._settings["framework_params"]
+        )
+        if user_framework_params:
+            reserved = _RESERVED_FRAMEWORK_PARAMS & set(user_framework_params)
+            if reserved:
+                raise ValueError(
+                    f"framework_params may not set reserved key(s) {sorted(reserved)}; "
+                    "these are supplied to the backend by CausalTune/hiertunehub."
+                )
 
         if outcome is None and isinstance(data, CausalityDataset):
             outcome = data.outcomes[0]
@@ -418,8 +493,17 @@ class CausalTune:
             self._settings["metrics_to_report"], self.metric
         )
 
-        if self.metric in ["energy_distance", "psw_energy_distance"]:
-            self._best_estimators = defaultdict(lambda: (float("inf"), None))
+        # Reset the per-estimator best cache for a fresh fit, with the correct
+        # default sign for the metric direction. On a genuine resume we KEEP the
+        # previous fit's fitted-estimator objects: resume does not re-run past
+        # trials, yet model/effect resolve the fitted model from this cache, so a
+        # past-best would otherwise be lost. (resume with no prior tuner falls
+        # through to a fresh reset.)
+        if not (resume and self.tuner is not None):
+            worst = (
+                float("inf") if self.metric in metrics_to_minimize() else float("-inf")
+            )
+            self._best_estimators = defaultdict(lambda: (worst, None))
 
         # TODO: allow specifying an exclusion list, too
         used_estimator_list = (
@@ -501,34 +585,23 @@ class CausalTune:
         search_space = self.cfg.search_space(
             self.estimator_list, data_size=data.data.shape
         )
-        # init configs (warm-start points) are only wired for the FLAML backend;
-        # for hyperopt/optuna they are a best-effort no-op (warn once).
-        if self._settings["try_init_configs"] and framework != "flaml":
-            warnings.warn(
-                "try_init_configs (init config warm-start) is only applied with "
-                f"framework='flaml'; ignored for framework='{framework}'.",
-                UserWarning,
-            )
+        # Warm-start init configs (promising configs to try first). Computed for
+        # ALL backends now: flaml consumes them via points_to_evaluate below;
+        # optuna/hyperopt via points_to_evaluate on fresh runs (see below).
         init_cfg = (
             self.cfg.default_configs(self.estimator_list, data_size=data.data.shape)
-            if self._settings["try_init_configs"] and framework == "flaml"
+            if self._settings["try_init_configs"]
             else []
         )
-
-        if resume and framework != "flaml":
-            raise NotImplementedError(
-                "resume is currently only supported with framework='flaml', "
-                f"not framework='{framework}'."
-            )
 
         if framework == "hyperopt" and not self._search_space_has_tunable_params():
             raise ValueError(
                 "framework='hyperopt' needs at least one tunable hyperparameter "
                 "in the search space, but all selected estimators are "
-                "parameterless and outcome_model is not 'auto'. (hiertunehub "
-                "0.2.1's hyperopt conversion raises on a fully parameterless "
-                "search.) Use framework='optuna' or 'flaml', include a "
-                "parameterized estimator, or set outcome_model='auto'."
+                "parameterless and outcome_model is not 'auto'. (hiertunehub's "
+                "hyperopt conversion raises on a fully parameterless search.) Use "
+                "framework='optuna' or 'flaml', include a parameterized "
+                "estimator, or set outcome_model='auto'."
             )
 
         self._settings["tuner"]["algo"] = algo
@@ -537,10 +610,21 @@ class CausalTune:
             self._settings["tuner"], framework
         )
 
+        # A genuine resume continues the previous in-memory tuner. (flaml has its
+        # own resume path below; optuna/hyperopt route through resume_from_results.)
+        resuming = (
+            resume and framework in ("optuna", "hyperopt") and self.tuner is not None
+        )
+        if resume and framework in ("optuna", "hyperopt") and self.tuner is None:
+            warnings.warn(
+                "resume=True but no previous fit to resume from; running fresh.",
+                UserWarning,
+            )
+
         if framework == "flaml":
-            # Restore full FLAML parity: cost-aware search plus warm-start /
-            # resume seeds. Capture resume points/rewards from the PREVIOUS tuner
-            # before it is overwritten below.
+            # Full FLAML parity: cost-aware search plus warm-start / resume seeds.
+            # Capture resume points/rewards from the PREVIOUS tuner before it is
+            # overwritten below.
             if resume and self.tuner is not None:
                 points_to_evaluate, evaluated_rewards = self._resume_points_and_rewards(
                     self.tuner.results, init_cfg
@@ -553,6 +637,50 @@ class CausalTune:
                 points_to_evaluate=points_to_evaluate,
                 evaluated_rewards=evaluated_rewards,
             )
+        elif init_cfg and not resuming:
+            # optuna / hyperopt warm-start: seed the promising configs to try
+            # first. Skipped on resume, where the rehydrated past trials seed the
+            # search instead.
+            framework_params["points_to_evaluate"] = init_cfg
+
+        # Resume for optuna/hyperopt: rebuild the seed list from the PREVIOUS
+        # tuner's trials (copied so hiertunehub can't mutate the stored trials --
+        # params deep, result shallow to avoid deep-copying fitted estimators),
+        # and normalise the count budget to "N additional new trials".
+        prev_tuner = self.tuner
+        past_results = None
+        if resuming:
+            past_results = [
+                {"params": copy.deepcopy(t.params), "result": dict(t.result)}
+                for t in prev_tuner.trials
+            ]
+            framework_params = self._adjust_resume_budget(
+                framework_params, framework, len(past_results)
+            )
+
+        # Advanced escape hatch: merge user backend params last (user wins),
+        # warning on collisions with CausalTune-managed keys.
+        if user_framework_params:
+            clash = _MANAGED_FRAMEWORK_PARAMS & set(user_framework_params)
+            if clash:
+                warnings.warn(
+                    "framework_params overrides CausalTune-managed key(s) "
+                    f"{sorted(clash)}; this can change the search budget or parity "
+                    "behaviour.",
+                    UserWarning,
+                )
+            framework_params.update(user_framework_params)
+
+        if framework == "optuna":
+            if framework_params.get("n_jobs", 1) not in (None, 1):
+                warnings.warn(
+                    "optuna n_jobs>1 runs trials in threads, but CausalTune's "
+                    "objective mutates shared instance state and is not "
+                    "thread-safe; results may be corrupted. Use use_ray for safe "
+                    "parallelism.",
+                    UserWarning,
+                )
+            self._set_optuna_verbosity(self._settings["tuner"]["verbose"])
 
         self.tuner = create_tuner(
             self._tune_with_config,
@@ -562,7 +690,10 @@ class CausalTune:
             framework=framework,
             framework_params=framework_params,
         )
-        self.tuner.run()
+        if resuming:
+            self.tuner.resume_from_results(past_results)
+        else:
+            self.tuner.run()
 
         self.update_summary_scores()
 
@@ -593,6 +724,51 @@ class CausalTune:
             if cfg not in resume_cfg:
                 resume_cfg.append(cfg)
         return resume_cfg, resume_scores
+
+    @staticmethod
+    def _adjust_resume_budget(
+        framework_params: dict, framework: str, n_past: int
+    ) -> dict:
+        """Normalise a resume's count budget to "n_past + N" so the resumed run
+        adds the same N *new* trials as a fresh run would.
+
+        hiertunehub's optuna ``resume_from_results`` subtracts ``n_past`` from
+        ``n_trials`` internally, and hyperopt's ``max_evals`` counts the
+        rehydrated past trials toward the total. Adding ``n_past`` here makes both
+        yield N new trials. Time-bounded runs (count budget is ``None``) are
+        governed by the timeout and need no adjustment.
+
+        Args:
+            framework_params (dict): the computed backend params.
+            framework (str): "optuna" or "hyperopt".
+            n_past (int): number of past trials being rehydrated.
+
+        Returns:
+            dict: a copy of ``framework_params`` with the count budget adjusted.
+        """
+        fp = dict(framework_params)
+        if framework == "optuna" and fp.get("n_trials") is not None:
+            fp["n_trials"] += n_past
+        elif framework == "hyperopt" and fp.get("max_evals") is not None:
+            fp["max_evals"] += n_past
+        return fp
+
+    @staticmethod
+    def _set_optuna_verbosity(verbose) -> None:
+        """Map CausalTune's ``verbose`` (0..3) to optuna's logging level.
+
+        optuna's ``study.optimize`` takes no ``verbose`` kwarg, so verbosity is
+        controlled globally via ``optuna.logging`` (best-effort; prior level is
+        not restored). 0 -> WARNING (silences per-trial logs), 1 -> INFO,
+        >=2 -> DEBUG.
+        """
+        if not verbose:
+            level = optuna.logging.WARNING
+        elif verbose == 1:
+            level = optuna.logging.INFO
+        else:
+            level = optuna.logging.DEBUG
+        optuna.logging.set_verbosity(level)
 
     def _search_space_has_tunable_params(self) -> bool:
         """Whether the current search space contains any tunable hyperparameter.

@@ -90,9 +90,11 @@ def test_parse_tuner_params_optuna():
 
 
 def test_parse_tuner_params_optuna_keys_exact():
-    # optuna must not receive FLAML-only kwargs (search_alg/resources_per_trial/verbose)
+    # optuna must not receive FLAML-only kwargs (search_alg/resources_per_trial/verbose).
+    # It DOES receive n_jobs (resources_per_trial mapped + clamped to 1), but never
+    # the raw resources_per_trial dict or verbose (verbose is causaltune-side).
     out = SimpleParamService.parse_tuner_params(_base_tuner_settings(), "optuna")
-    assert set(out) == {"n_trials", "timeout", "sampler"}
+    assert set(out) == {"n_trials", "timeout", "sampler", "n_jobs"}
 
 
 def test_parse_tuner_params_optuna_num_samples_minus_one_is_none():
@@ -425,24 +427,9 @@ def test_resume_rebuild_skips_malformed_and_aligns_rewards():
 # --------------------------------------------------------------------------- #
 # Best-effort behaviour on non-flaml backends
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("framework", ["optuna", "hyperopt"])
-def test_resume_raises_notimplemented_on_non_flaml(framework, data):
-    if framework == "hyperopt":
-        pytest.importorskip("hyperopt")
-    ct = _make_ct()
-    with pytest.raises(NotImplementedError):
-        ct.fit(data, framework=framework, resume=True)
-
-
-@pytest.mark.parametrize("framework", ["optuna", "hyperopt"])
-def test_default_try_init_configs_warns_on_non_flaml(framework, data):
-    if framework == "hyperopt":
-        pytest.importorskip("hyperopt")
-    # _make_ct() leaves try_init_configs at its constructor default (True)
-    ct = _make_ct()
-    with pytest.warns(UserWarning, match="init config"):
-        ct.fit(data, framework=framework)
-    assert ct.tuner is not None
+# NOTE: resume on optuna/hyperopt (previously NotImplementedError) and warm-start
+# on optuna/hyperopt (previously a "only flaml" warning) are now supported -- see
+# the parity coverage in test_backend_parity.py.
 
 
 def test_hyperopt_parameterless_search_raises_clear_error(data):
@@ -473,7 +460,14 @@ def test_packaging_dependencies():
     pyproject = tomllib.loads((root / "pyproject.toml").read_text())
 
     deps = " ".join(pyproject["project"]["dependencies"])
-    assert "hiertunehub" in deps
+    # hiertunehub is temporarily pinned at the ZmeiGorynych fork (git URL) which
+    # carries the cross-backend warm-start/resume hooks, until they land upstream.
+    assert "hiertunehub" in deps.lower()
+    hiertune_req = next(d for d in pyproject["project"]["dependencies"]
+                        if "hiertunehub" in d.lower())
+    assert "ZmeiGorynych/HierTuneHub" in hiertune_req and "git+" in hiertune_req, (
+        "hiertunehub must point at the fork until the parity hooks are upstream"
+    )
     assert "optuna" in deps  # default backend -> hard dep
 
     extras = pyproject["project"].get("optional-dependencies", {})

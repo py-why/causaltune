@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from flaml import tune
 from copy import deepcopy
@@ -165,6 +166,28 @@ class SimpleParamService:
         return SearchSpace.from_flaml(out, name="estimator_name")
 
     @staticmethod
+    def _optuna_n_jobs(resources_per_trial) -> int:
+        """Map ``resources_per_trial`` to an optuna ``n_jobs``, clamped to 1.
+
+        FLAML's ``resources_per_trial={"cpu": c}`` loosely implies ``round(1/c)``
+        concurrent trials. optuna's ``n_jobs`` gives thread-based parallelism, but
+        CausalTune's objective mutates shared instance state (``estimator_name``,
+        ``_best_estimators``) and is therefore not thread-safe. So the mapped
+        value is deliberately clamped to 1; users who accept the risk can opt into
+        real parallelism via ``fit(framework_params={"n_jobs": ...})`` (which
+        emits a warning) or use Ray.
+
+        Returns:
+            int: always 1 (the clamped, thread-safe default).
+        """
+        mapped = 1
+        if isinstance(resources_per_trial, dict):
+            cpu = resources_per_trial.get("cpu")
+            if cpu and 0 < cpu <= 1:
+                mapped = min(int(round(1.0 / cpu)), os.cpu_count() or 1)
+        return min(mapped, 1)
+
+    @staticmethod
     def parse_tuner_params(params: dict, framework: str) -> dict:
         """Translate CausalTune's tuner settings into the per-framework kwargs
         expected by hiertunehub's ``create_tuner``.
@@ -226,6 +249,9 @@ class SimpleParamService:
                 "n_trials": n_trials,
                 "timeout": time_budget_s,
                 "sampler": algo,
+                "n_jobs": SimpleParamService._optuna_n_jobs(
+                    params.get("resources_per_trial")
+                ),
             }
         else:
             raise ValueError(f"Framework {framework} not supported")
