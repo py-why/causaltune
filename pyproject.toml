@@ -49,6 +49,7 @@ test = [
     "isort",
     "pytest-cov",
     "nbmake",
+    "pre-commit",
 ]
 ray = ["ray[tune]>=2.9"]
 # Optional HPO backend. hyperopt 0.2.7 imports the deprecated pkg_resources,

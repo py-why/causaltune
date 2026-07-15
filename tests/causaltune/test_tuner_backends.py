@@ -463,11 +463,12 @@ def test_packaging_dependencies():
     # hiertunehub is temporarily pinned at the ZmeiGorynych fork (git URL) which
     # carries the cross-backend warm-start/resume hooks, until they land upstream.
     assert "hiertunehub" in deps.lower()
-    hiertune_req = next(d for d in pyproject["project"]["dependencies"]
-                        if "hiertunehub" in d.lower())
-    assert "ZmeiGorynych/HierTuneHub" in hiertune_req and "git+" in hiertune_req, (
-        "hiertunehub must point at the fork until the parity hooks are upstream"
+    hiertune_req = next(
+        d for d in pyproject["project"]["dependencies"] if "hiertunehub" in d.lower()
     )
+    assert (
+        "ZmeiGorynych/HierTuneHub" in hiertune_req and "git+" in hiertune_req
+    ), "hiertunehub must point at the fork until the parity hooks are upstream"
     assert "optuna" in deps  # default backend -> hard dep
 
     extras = pyproject["project"].get("optional-dependencies", {})

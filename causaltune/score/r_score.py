@@ -133,7 +133,7 @@ class RScorer:
         cv=2,
         mc_iters=None,
         mc_agg="mean",
-        random_state=None
+        random_state=None,
     ):
         self.model_y = clone(model_y, safe=False)
         self.model_t = clone(model_t, safe=False)

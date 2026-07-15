@@ -239,7 +239,7 @@ def auuc_score(
     treatment_effect_col="tau",
     normalize=True,
     *args,
-    **kwarg
+    **kwarg,
 ):
     """Calculate the AUUC (Area Under the Uplift Curve) score.
 
@@ -268,7 +268,7 @@ def qini_score(
     treatment_effect_col="tau",
     normalize=False,
     *args,
-    **kwarg
+    **kwarg,
 ):
     """Calculate the Qini score: the area between the Qini curves of a model and random.
 

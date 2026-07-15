@@ -206,9 +206,9 @@ def test_resume_finite_budget_is_additional(data, framework):
 
     ct.fit(data, framework=framework, resume=True)
     after = len(ct.tuner.results)
-    assert after - before == n, (
-        f"expected {n} additional trials on resume, got {after - before}"
-    )
+    assert (
+        after - before == n
+    ), f"expected {n} additional trials on resume, got {after - before}"
 
 
 @pytest.mark.parametrize("framework", ["optuna", "hyperopt"])
@@ -222,9 +222,9 @@ def test_resume_without_prior_warns_and_runs_fresh(data, framework):
         ct.fit(data, framework=framework, resume=True)
     assert ct.tuner is not None
     assert len(ct.scores) > 0
-    assert "__sentinel__" not in ct._best_estimators, (
-        "resume with no prior tuner must reset _best_estimators (fresh run)"
-    )
+    assert (
+        "__sentinel__" not in ct._best_estimators
+    ), "resume with no prior tuner must reset _best_estimators (fresh run)"
 
 
 @pytest.mark.parametrize("framework", ["optuna", "hyperopt"])
@@ -238,8 +238,9 @@ def test_resume_does_not_mutate_previous_tuner_trials(data, framework):
     prev_tuner = ct.tuner
     import copy as _copy
 
-    snapshot = _copy.deepcopy([{"params": t.params, "result": dict(t.result)}
-                               for t in prev_tuner.trials])
+    snapshot = _copy.deepcopy(
+        [{"params": t.params, "result": dict(t.result)} for t in prev_tuner.trials]
+    )
 
     ct.fit(data, framework=framework, resume=True)
 
@@ -267,13 +268,15 @@ def test_best_estimators_preserved_on_resume_but_reset_on_fresh(data, metric):
     ct._best_estimators["__sentinel__"] = (0.123, object())
 
     ct.fit(data, framework="optuna", resume=True)
-    assert "__sentinel__" in ct._best_estimators, "resume must preserve _best_estimators"
+    assert (
+        "__sentinel__" in ct._best_estimators
+    ), "resume must preserve _best_estimators"
 
     ct._best_estimators["__sentinel__"] = (0.123, object())
     ct.fit(data, framework="optuna")  # fresh
-    assert "__sentinel__" not in ct._best_estimators, (
-        f"fresh fit must reset _best_estimators (metric={metric})"
-    )
+    assert (
+        "__sentinel__" not in ct._best_estimators
+    ), f"fresh fit must reset _best_estimators (metric={metric})"
 
 
 # --------------------------------------------------------------------------- #

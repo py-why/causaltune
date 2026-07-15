@@ -1,0 +1,29 @@
+# Pre-commit hooks mirroring the CI "Format" (black) and "Linter" (flake8) jobs,
+# so a commit can't land code that would fail those checks.
+#
+# One-time setup (inside the project venv):
+#     pip install pre-commit      # already pulled in by the [test] extra
+#     pre-commit install
+#
+# Thereafter, on every commit:
+#   * black auto-formats the staged causaltune/ and tests/ files (same flags as
+#     `make checkformat`); if it reformats anything the commit aborts so you can
+#     re-stage the fixes and commit again.
+#   * flake8 lints with the same options as `make lint` and blocks on errors.
+#
+# Run against the whole tree at any time with:  pre-commit run --all-files
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.3.0  # keep in sync with the pinned black in the [test] extra / CI
+    hooks:
+      - id: black
+        args: ["--skip-string-normalization"]
+        files: ^(causaltune|tests)/  # CI runs black on causaltune/ and tests/ only
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        args: ["--max-line-length=120"]
+        # ignore list + excludes are read from the repo's .flake8
+        exclude: ^(docs|notebooks|build|dist)/
