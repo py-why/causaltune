@@ -460,15 +460,14 @@ def test_packaging_dependencies():
     pyproject = tomllib.loads((root / "pyproject.toml").read_text())
 
     deps = " ".join(pyproject["project"]["dependencies"])
-    # hiertunehub is temporarily pinned at the ZmeiGorynych fork (git URL) which
-    # carries the cross-backend warm-start/resume hooks, until they land upstream.
     assert "hiertunehub" in deps.lower()
     hiertune_req = next(
         d for d in pyproject["project"]["dependencies"] if "hiertunehub" in d.lower()
     )
-    assert (
-        "ZmeiGorynych/HierTuneHub" in hiertune_req and "git+" in hiertune_req
-    ), "hiertunehub must point at the fork until the parity hooks are upstream"
+    # 0.2.2 is the first PyPI release carrying the cross-backend warm-start /
+    # resume hooks; it must be a normal versioned pin, not a git URL.
+    assert "0.2.2" in hiertune_req, "hiertunehub must be pinned to >= 0.2.2"
+    assert "git+" not in hiertune_req, "hiertunehub should be a PyPI pin, not a git URL"
     assert "optuna" in deps  # default backend -> hard dep
 
     extras = pyproject["project"].get("optional-dependencies", {})

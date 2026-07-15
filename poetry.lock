@@ -420,6 +420,19 @@ files = [
 pycparser = {version = "*", markers = "implementation_name != \"PyPy\""}
 
 [[package]]
+name = "cfgv"
+version = "3.5.0"
+description = "Validate configuration and produce human readable error messages."
+optional = true
+python-versions = ">=3.10"
+groups = ["main"]
+markers = "extra == \"test\""
+files = [
+    {file = "cfgv-3.5.0-py2.py3-none-any.whl", hash = "sha256:a8dc6b26ad22ff227d2634a65cb388215ce6cc96bbcc5cfde7641ae87e8dacc0"},
+    {file = "cfgv-3.5.0.tar.gz", hash = "sha256:d5b1034354820651caa73ede66a6294d6e95c1b00acc5e9b098e917404669132"},
+]
+
+[[package]]
 name = "charset-normalizer"
 version = "3.4.8"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
@@ -1208,6 +1221,19 @@ files = [
 ]
 
 [[package]]
+name = "distlib"
+version = "0.4.3"
+description = "Distribution utilities"
+optional = true
+python-versions = "*"
+groups = ["main"]
+markers = "extra == \"test\""
+files = [
+    {file = "distlib-0.4.3-py2.py3-none-any.whl", hash = "sha256:4b0ce306c966eb73bc3a7b6abad017c556dadd92c44701562cd528ac7fde4d5b"},
+    {file = "distlib-0.4.3.tar.gz", hash = "sha256:f152097224a0ae24be5a0f6bae1b9359af82133bce63f98a95f86cae1aede9ed"},
+]
+
+[[package]]
 name = "dowhy"
 version = "0.14"
 description = "DoWhy is a Python library for causal inference that supports explicit modeling and testing of causal assumptions"
@@ -1342,7 +1368,7 @@ description = "A platform independent file lock."
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"ray\""
+markers = "extra == \"test\" or extra == \"ray\""
 files = [
     {file = "filelock-3.29.6-py3-none-any.whl", hash = "sha256:14d5f5597d2e0c4dbd774cfb6d8132da1db44da83732aab679d54f7dcf97ab65"},
     {file = "filelock-3.29.6.tar.gz", hash = "sha256:895c532ef3f4ef04972b9446a8c4e2931a5c399ff3c4be4c9369f2639b80f793"},
@@ -1686,14 +1712,14 @@ files = [
 
 [[package]]
 name = "hiertunehub"
-version = "0.2.1"
+version = "0.2.2"
 description = "A Python package to provide unified interface for hierarchical hyperparameter optimization"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "hiertunehub-0.2.1-py3-none-any.whl", hash = "sha256:d35966d62d8e016f2e79a971487ea4812c626d19b7b4325ad3a56c6c4e57c910"},
-    {file = "hiertunehub-0.2.1.tar.gz", hash = "sha256:a4a961709b4682ca66107eaab9c8d1517855cb4459d318feae091ed7dba6cae7"},
+    {file = "hiertunehub-0.2.2-py3-none-any.whl", hash = "sha256:045bd7fe2801fba015490314fea21868cd6dde7a3574455d3641899bc1ff79cc"},
+    {file = "hiertunehub-0.2.2.tar.gz", hash = "sha256:f5da7f5836acc4cd265f06c77b9afee414f6954f76207ee00a64fbd206f46484"},
 ]
 
 [package.dependencies]
@@ -1885,6 +1911,22 @@ atpe = ["lightgbm", "scikit-learn"]
 dev = ["black", "nose", "pre-commit", "pytest"]
 mongotrials = ["pymongo"]
 sparktrials = ["pyspark"]
+
+[[package]]
+name = "identify"
+version = "2.6.19"
+description = "File identification library for Python"
+optional = true
+python-versions = ">=3.10"
+groups = ["main"]
+markers = "extra == \"test\""
+files = [
+    {file = "identify-2.6.19-py2.py3-none-any.whl", hash = "sha256:20e6a87f786f768c092a721ad107fc9df0eb89347be9396cadf3f4abbd1fb78a"},
+    {file = "identify-2.6.19.tar.gz", hash = "sha256:6be5020c38fcb07da56c53733538a3081ea5aa70d36a156f83044bfbf9173842"},
+]
+
+[package.extras]
+license = ["ukkonen"]
 
 [[package]]
 name = "idna"
@@ -2992,6 +3034,19 @@ test = ["pytest (>=7.2)", "pytest-cov (>=4.0)", "pytest-xdist (>=3.0)"]
 test-extras = ["pytest-mpl", "pytest-randomly"]
 
 [[package]]
+name = "nodeenv"
+version = "1.10.0"
+description = "Node.js virtual environment builder"
+optional = true
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
+groups = ["main"]
+markers = "extra == \"test\""
+files = [
+    {file = "nodeenv-1.10.0-py2.py3-none-any.whl", hash = "sha256:5bb13e3eed2923615535339b3c620e76779af4cb4c6a90deccc9e36b274d3827"},
+    {file = "nodeenv-1.10.0.tar.gz", hash = "sha256:996c191ad80897d076bdfba80a41994c2b47c68e224c542b48feba42ba00f8bb"},
+]
+
+[[package]]
 name = "numba"
 version = "0.66.0"
 description = "compiling Python code using LLVM"
@@ -3633,6 +3688,26 @@ dev = ["pre-commit", "tox"]
 testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
+name = "pre-commit"
+version = "4.6.0"
+description = "A framework for managing and maintaining multi-language pre-commit hooks."
+optional = true
+python-versions = ">=3.10"
+groups = ["main"]
+markers = "extra == \"test\""
+files = [
+    {file = "pre_commit-4.6.0-py2.py3-none-any.whl", hash = "sha256:e2cf246f7299edcabcf15f9b0571fdce06058527f0a06535068a86d38089f29b"},
+    {file = "pre_commit-4.6.0.tar.gz", hash = "sha256:718d2208cef53fdc38206e40524a6d4d9576d103eb16f0fec11c875e7716e9d9"},
+]
+
+[package.dependencies]
+cfgv = ">=2.0.0"
+identify = ">=1.0.0"
+nodeenv = ">=0.11.1"
+pyyaml = ">=5.1"
+virtualenv = ">=20.10.0"
+
+[[package]]
 name = "prompt-toolkit"
 version = "3.0.52"
 description = "Library for building powerful interactive command lines in Python"
@@ -4129,6 +4204,27 @@ files = [
 
 [package.dependencies]
 six = ">=1.5"
+
+[[package]]
+name = "python-discovery"
+version = "1.4.4"
+description = "Python interpreter discovery"
+optional = true
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "extra == \"test\""
+files = [
+    {file = "python_discovery-1.4.4-py3-none-any.whl", hash = "sha256:abebe9120b43453b68c908acfb1e72a19d1a959ed2cb620ad38fc57d08056dbe"},
+    {file = "python_discovery-1.4.4.tar.gz", hash = "sha256:5cad33982d412c1f3ffb8f9ca4ea292c9680bca3942451d30b69c37fce53a4a3"},
+]
+
+[package.dependencies]
+filelock = ">=3.15.4"
+platformdirs = ">=4.3.6,<5"
+
+[package.extras]
+docs = ["furo (>=2025.12.19)", "sphinx (>=9.1)", "sphinx-autodoc-typehints (>=3.6.3)", "sphinxcontrib-mermaid (>=2)", "sphinxcontrib-towncrier (>=0.4)", "towncrier (>=25.8)"]
+testing = ["covdefaults (>=2.3)", "coverage (>=7.5.4)", "pytest (>=8.3.5)", "pytest-mock (>=3.14)", "setuptools (>=75.1)"]
 
 [[package]]
 name = "python-multipart"
@@ -5781,6 +5877,26 @@ typing-extensions = {version = ">=4.0", markers = "python_version < \"3.11\""}
 standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.8.0)", "python-dotenv (>=0.13)", "pyyaml (>=5.1)", "uvloop (>=0.15.1) ; sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation != \"PyPy\"", "watchfiles (>=0.20)", "websockets (>=13.0)"]
 
 [[package]]
+name = "virtualenv"
+version = "21.6.1"
+description = "Virtual Python Environment builder"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"test\""
+files = [
+    {file = "virtualenv-21.6.1-py3-none-any.whl", hash = "sha256:afe991df855715a2b2f60edfcc0107ef95a79fdfd8cb4cdaa71603d1c12e463b"},
+    {file = "virtualenv-21.6.1.tar.gz", hash = "sha256:15f978b7cd329f24855ff4a0c4b4899cc7678589f49adbdcbbb4d3232e641128"},
+]
+
+[package.dependencies]
+distlib = ">=0.3.7,<1"
+filelock = {version = ">=3.24.2,<4", markers = "python_version >= \"3.10\""}
+platformdirs = ">=3.9.1,<5"
+python-discovery = ">=1.4.2"
+typing-extensions = {version = ">=4.13.2", markers = "python_version < \"3.11\""}
+
+[[package]]
 name = "watchdog"
 version = "6.0.0"
 description = "Filesystem events monitoring"
@@ -5969,9 +6085,9 @@ scikit-learn = ["scikit-learn"]
 [extras]
 hyperopt = ["hyperopt", "setuptools"]
 ray = ["ray"]
-test = ["autoflake", "black", "flake8", "isort", "nbmake", "pytest-cov"]
+test = ["autoflake", "black", "flake8", "isort", "nbmake", "pre-commit", "pytest-cov"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "27c9075fcbc251200b6b848f43959e33d8f6ce10c9e29648716f778706f7666d"
+content-hash = "d166a45949b9536ba76e7d2daca36473a1ea9058589b2641e5efa60b59f9d717"
