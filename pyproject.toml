@@ -44,7 +44,7 @@ test = [
     "black==23.3.0",
     "flake8",
     "isort",
-    "pytest-cov",
+    "pytest-xdist",
     "nbmake",
     "pre-commit",
 ]

@@ -173,7 +173,7 @@ def test_warmstart_more_seeds_than_budget(data, framework):
 # Resume (item A) -- optuna + hyperopt via hiertunehub resume_from_results
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize("framework", ["optuna", "hyperopt"])
-def test_resume_no_longer_raises_and_grows(data, framework):
+def test_resume_no_longer_raises_and_retains(data, framework):
     if framework == "hyperopt":
         pytest.importorskip("hyperopt")
     ct = _make_ct(try_init_configs=False, num_samples=-1, components_time_budget=3)
@@ -183,9 +183,12 @@ def test_resume_no_longer_raises_and_grows(data, framework):
 
     ct.fit(data, framework=framework, resume=True, time_budget=8)
     after = len(ct.tuner.results)
-    # must actually add new trials on top of the rehydrated past ones (a no-op
-    # resume that only rehydrates would leave the count unchanged)
-    assert after > before, "resume must retain past trials AND add new ones"
+    # A time-bounded resume must not raise and must retain the rehydrated past
+    # trials. We only assert retention here (>=) rather than strict growth: how
+    # many *new* trials fit in the fixed wall-clock budget depends on the machine
+    # / CPU contention (flaky under xdist), so the "resume actually adds trials"
+    # guarantee is checked deterministically in test_resume_finite_budget_is_additional.
+    assert after >= before, "resume must retain the previous trials"
     # model/effect still resolve after a resume (guards the _best_estimators fix)
     assert ct.model is not None
     assert np.isfinite(ct.best_score)

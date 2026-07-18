@@ -29,7 +29,7 @@ def _fit(use_ray):
 
     ct = CausalTune(
         num_samples=len(ESTIMATORS),
-        components_time_budget=10,
+        components_time_budget=2,
         estimator_list=ESTIMATORS,
         use_ray=use_ray,
         verbose=1,

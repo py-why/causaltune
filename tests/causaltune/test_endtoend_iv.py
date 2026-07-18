@@ -18,8 +18,12 @@ class TestEndToEnd(object):
         # )
         # outcome = targets[0]
         causaltune = CausalTune(
-            time_budget=1000,
-            components_time_budget=10,
+            # There are 5 IV estimators; num_samples=6 covers them without the
+            # old num_samples=-1 + time_budget=1000 combo (which literally ran a
+            # 1000s optuna budget). time_budget is now just a safety ceiling.
+            num_samples=6,
+            time_budget=60,
+            components_time_budget=2,
             propensity_model="auto",
             resources_per_trial={"cpu": 0.5},
             use_ray=False,

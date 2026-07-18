@@ -29,7 +29,7 @@ class TestCustomOutputModel(object):
         causaltune = CausalTune(
             outcome_model=LinearRegression(),
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=2,
             estimator_list=estimator_list,  # "all",  #
             use_ray=False,
             verbose=3,
@@ -66,7 +66,7 @@ class TestCustomOutputModel(object):
             outcome_model=LinearRegression(),
             estimator_list="all",
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=2,
         )
         ct.fit(data)
         # TODO add an effect() call and an effect_tt call
