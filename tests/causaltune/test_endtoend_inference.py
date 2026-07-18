@@ -8,11 +8,13 @@ from causaltune.search.params import SimpleParamService
 warnings.filterwarnings("ignore")  # suppress sklearn deprecation warnings for now..
 
 # Component-model HPO is capped hard: this is an interface/smoke test on tiny
-# synthetic data, so a 1s component budget exercises every code path
+# synthetic data, so a small component budget exercises every code path
 # (fit -> effect_stderr -> score) without idling to fill a wall-clock budget.
-# components_njobs=1 keeps each fit single-worker so xdist can run the (now
-# parametrized) estimators concurrently instead of oversubscribing cores.
-COMPONENTS_TIME_BUDGET = 1
+# 2s (not 1s) leaves headroom for slower CI workers to complete a valid nuisance
+# model before effect_stderr/score need it. components_njobs=1 keeps each fit
+# single-worker so xdist can run the (now parametrized) estimators concurrently
+# instead of oversubscribing cores.
+COMPONENTS_TIME_BUDGET = 2
 NUM_SAMPLES = 4
 
 # Enumerate the estimator lists at *collection* time so each estimator becomes
@@ -47,6 +49,15 @@ def multivalue_data():
     return linear_multi_dataset(1000)
 
 
+@pytest.fixture(scope="module")
+def bootstrap_data():
+    # The bootstrap case preprocessed its dataset in the original test; keep that
+    # (a separate object so it doesn't perturb the raw `multivalue_data` fixture).
+    data = linear_multi_dataset(1000)
+    data.preprocess_dataset()
+    return data
+
+
 def _make_ct(estimator):
     return CausalTune(
         num_samples=NUM_SAMPLES,
@@ -72,10 +83,10 @@ class TestEndToEndInference(object):
         causaltune.effect_stderr(singlevalue_data.data)
         causaltune.score_dataset(singlevalue_data.data, "test")
 
-    def test_endtoend_inference_bootstrap(self, multivalue_data):
+    def test_endtoend_inference_bootstrap(self, bootstrap_data):
         causaltune = _make_ct("SLearner")
-        causaltune.fit(multivalue_data)
-        causaltune.effect_stderr(multivalue_data.data)
+        causaltune.fit(bootstrap_data)
+        causaltune.effect_stderr(bootstrap_data.data)
 
     @pytest.mark.parametrize("estimator", CHEAP_INFERENCE_MULTI)
     def test_endtoend_multivalue_nobootstrap(self, multivalue_data, estimator):
