@@ -378,11 +378,11 @@ def single_run(
             estimator_scores = {est: [] for est in ct.scores.keys() if "NewDummy" not in est}
 
             all_scores = []
-            for trial in ct.results.trials:
+            for trial in ct.tuner.trials:
                 try:
-                    estimator_name = trial.last_result["estimator_name"]
-                    if "estimator" in trial.last_result and trial.last_result["estimator"]:
-                        estimator = trial.last_result["estimator"]
+                    estimator_name = trial.result["estimator_name"]
+                    if "estimator" in trial.result and trial.result["estimator"]:
+                        estimator = trial.result["estimator"]
                         scores = {}
                         for ds_name, df in datasets.items():
                             scores[ds_name] = {}
@@ -405,7 +405,7 @@ def single_run(
                                 ** 2
                             )
                             scores[ds_name]["scores"] = est_scores
-                        scores["optimization_score"] = trial.last_result.get("optimization_score")
+                        scores["optimization_score"] = trial.result.get("optimization_score")
                         estimator_scores[estimator_name].append(copy.deepcopy(scores))
                     # Will use this in the nex
                     all_scores.append(scores)

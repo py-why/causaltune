@@ -1,6 +1,6 @@
 [project]
 name = "causaltune"
-version = "0.2.0"
+version = "0.3.0"
 description = "AutoML for Causal Inference."
 authors = [{ name = "Wise" }]
 license = "Apache-2.0"
@@ -20,10 +20,16 @@ dependencies = [
     "FLAML==2.6.0",
     "xgboost==2.1.4",
     "numpy==2.2.6",
+    # Unified HPO-backend interface. 0.2.2 is the first release carrying the
+    # cross-backend warm-start / resume hooks (optuna enqueue + hyperopt seeded
+    # docs) that CausalTune's optuna/hyperopt parity relies on.
+    "hiertunehub==0.2.2",
     # Loosely-coupled: floors (with caps where an upstream ceiling is real).
     "pandas>=2,<3",
     "scikit-learn>=1.4,<1.7",
     "category-encoders>=2.6.3",
+    # Default HPO backend (numpy-2 clean from 4.0): hard dep.
+    "optuna>=4.0",
     "pytest",
     "matplotlib",
     "dcor",
@@ -38,10 +44,14 @@ test = [
     "black==23.3.0",
     "flake8",
     "isort",
-    "pytest-cov",
+    "pytest-xdist",
     "nbmake",
+    "pre-commit",
 ]
 ray = ["ray[tune]>=2.9"]
+# Optional HPO backend. hyperopt 0.2.7 imports the deprecated pkg_resources,
+# removed in setuptools 81, so the setuptools ceiling ships with this extra.
+hyperopt = ["hyperopt>=0.2.7", "setuptools<81"]
 
 [project.urls]
 Homepage = "https://github.com/py-why/causaltune"

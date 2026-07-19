@@ -28,7 +28,7 @@ Its estimators are taken from EconML_ augmented by a couple of extra models
 DoWhy_ wrapper.
 
 Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the energy_score_.
-We use FLAML_ for hyperparameter optimisation.
+For hyperparameter optimisation we support pluggable backends — Optuna_ (default), Hyperopt_, and FLAML_ — selectable via the ``framework`` argument to ``fit()``.
 
 We perform automated hyperparameter tuning of first stage models (for the treatment and outcome models)
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
@@ -53,6 +53,8 @@ though energy score performed better in our synthetic data experiments.
 
 .. _EconML: https://github.com/microsoft/EconML/
 .. _FLAML: https://github.com/microsoft/FLAML
+.. _Optuna: https://optuna.org
+.. _Hyperopt: https://github.com/hyperopt/hyperopt
 .. _DoWhy: https://github.com/microsoft/DoWhy/
 .. _calculation: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3111957
 .. _ERUPT: https://medium.com/building-ibotta/erupt-expected-response-under-proposed-treatments-ff7dd45c84b4

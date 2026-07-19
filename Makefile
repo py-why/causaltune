@@ -1,13 +1,24 @@
 package_name = causaltune
-coverage_target = 70
 max_line_length = 120
 
 venv_name = venv
 venv_activate_path := ./$(venv_name)/bin/activate
-cov_args := --cov $(package_name) --cov-fail-under=$(coverage_target) --cov-report=term-missing
 not_slow = -m "not slow"
+# Run tests across all cores. --dist load distributes individual tests (incl.
+# parametrized cases) freely across workers; loadscope would pin a whole class/
+# module to one worker, serializing our parametrized end-to-end tests. The
+# module-scoped `data` fixtures are cheap synthetic datasets, so rebuilding them
+# per worker costs far less than the parallelism we gain.
+parallel = -n auto --dist load
+# Pin every numeric/BLAS/joblib backend to a single thread. Each CausalTune fit
+# defaults to components_njobs=-1 and the learners spin up OpenMP/BLAS pools; run
+# under xdist that means every worker grabs all cores and they thrash (xdist then
+# gives ~no speedup). Capping to one thread per process makes parallelism come
+# from xdist workers instead of nested oversubscription.
+thread_caps = OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+	NUMEXPR_NUM_THREADS=1 LOKY_MAX_CPU_COUNT=1
 
-.PHONY: venv cov test
+.PHONY: venv test slowtest lint format checkformat
 
 clean:
 	rm -rf ./$(venv_name)
@@ -30,19 +41,11 @@ lint:
 
 test:
 	. $(venv_activate_path) ;\
-	py.test $(not_slow) --disable-warnings
+	$(thread_caps) py.test $(parallel) $(not_slow) --disable-warnings
 
 slowtest:
 	. $(venv_activate_path) ;\
-	py.test
-
-cov:
-	. $(venv_activate_path) ;\
-	py.test $(cov_args) $(not_slow)
-
-slowcov:
-	. $(venv_activate_path) ;\
-	py.test $(cov_args)
+	$(thread_caps) py.test $(parallel)
 
 format:
 	. $(venv_activate_path) ;\

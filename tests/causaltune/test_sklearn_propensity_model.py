@@ -33,7 +33,7 @@ class TestCustomPropensityModel(object):
         ct = CausalTune(
             propensity_model=RandomForestClassifier(),
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=2,
             estimator_list=estimator_list,  # "all",  #
             use_ray=False,
             verbose=3,
@@ -61,7 +61,7 @@ class TestCustomPropensityModel(object):
             propensity_model=LogisticRegression(),
             estimator_list="all",
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=2,
             outcome_model="auto",
         )
         ct.fit(data)

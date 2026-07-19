@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from flaml import tune
 from copy import deepcopy
@@ -7,6 +8,7 @@ from dataclasses import dataclass, field
 import warnings
 from econml.inference import BootstrapInference  # noqa F401
 from sklearn import linear_model
+from hiertunehub import SearchSpace
 
 from causaltune.utils import clean_config
 from causaltune.search.component import model_from_cfg, joint_config
@@ -161,7 +163,98 @@ class SimpleParamService:
                 data_size, outcome_estimator_list
             )
 
-        return out
+        return SearchSpace.from_flaml(out, name="estimator_name")
+
+    @staticmethod
+    def _optuna_n_jobs(resources_per_trial) -> int:
+        """Map ``resources_per_trial`` to an optuna ``n_jobs``, clamped to 1.
+
+        FLAML's ``resources_per_trial={"cpu": c}`` loosely implies ``round(1/c)``
+        concurrent trials. optuna's ``n_jobs`` gives thread-based parallelism, but
+        CausalTune's objective mutates shared instance state (``estimator_name``,
+        ``_best_estimators``) and is therefore not thread-safe. So the mapped
+        value is deliberately clamped to 1; users who accept the risk can opt into
+        real parallelism via ``fit(framework_params={"n_jobs": ...})`` (which
+        emits a warning) or use Ray.
+
+        Returns:
+            int: always 1 (the clamped, thread-safe default).
+        """
+        mapped = 1
+        if isinstance(resources_per_trial, dict):
+            cpu = resources_per_trial.get("cpu")
+            if cpu and 0 < cpu <= 1:
+                mapped = min(int(round(1.0 / cpu)), os.cpu_count() or 1)
+        return min(mapped, 1)
+
+    @staticmethod
+    def parse_tuner_params(params: dict, framework: str) -> dict:
+        """Translate CausalTune's tuner settings into the per-framework kwargs
+        expected by hiertunehub's ``create_tuner``.
+
+        Args:
+            params (dict): the ``_settings["tuner"]`` dict, carrying
+                ``num_samples``, ``time_budget_s``, ``verbose``,
+                ``resources_per_trial`` and ``algo``.
+            framework (str): one of "flaml", "hyperopt", "optuna".
+
+        Returns:
+            dict: framework-specific parameters for ``create_tuner``.
+
+        Raises:
+            ValueError: for an unsupported framework, or for optuna/hyperopt when
+                the search is unbounded (no ``num_samples`` and no time budget).
+            ImportError: for hyperopt when the optional extra is not installed.
+        """
+        num_samples = params["num_samples"]
+        time_budget_s = params["time_budget_s"]
+        algo = params.get("algo")
+
+        if framework == "flaml":
+            return {
+                "num_samples": num_samples,
+                "time_budget_s": time_budget_s,
+                "verbose": params["verbose"],
+                "resources_per_trial": params["resources_per_trial"],
+                "search_alg": algo,
+            }
+        elif framework == "hyperopt":
+            try:
+                import hyperopt
+            except ImportError as e:
+                raise ImportError(
+                    "hyperopt is not installed. Install it with "
+                    "`pip install causaltune[hyperopt]`."
+                ) from e
+            max_evals = num_samples if num_samples != -1 else None
+            if max_evals is None and time_budget_s is None:
+                raise ValueError(
+                    "hyperopt requires a bounded search: set either "
+                    "num_samples (!= -1) or a time budget."
+                )
+            return {
+                "max_evals": max_evals,
+                "timeout": time_budget_s,
+                "verbose": params["verbose"],
+                "algo": algo if algo is not None else hyperopt.tpe.suggest,
+            }
+        elif framework == "optuna":
+            n_trials = num_samples if num_samples != -1 else None
+            if n_trials is None and time_budget_s is None:
+                raise ValueError(
+                    "optuna requires a bounded search: set either "
+                    "num_samples (!= -1) or a time budget."
+                )
+            return {
+                "n_trials": n_trials,
+                "timeout": time_budget_s,
+                "sampler": algo,
+                "n_jobs": SimpleParamService._optuna_n_jobs(
+                    params.get("resources_per_trial")
+                ),
+            }
+        else:
+            raise ValueError(f"Framework {framework} not supported")
 
     def default_configs(
         self,

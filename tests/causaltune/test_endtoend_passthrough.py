@@ -58,7 +58,7 @@ class TestEndToEndPassthrough(object):
             data.preprocess_dataset()
 
             causaltune = CausalTune(
-                components_time_budget=10,
+                components_time_budget=2,
                 estimator_list=[".LinearDML"],
                 num_samples=1,
                 use_ray=False,

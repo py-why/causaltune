@@ -89,11 +89,11 @@
 #             # assign trials to estimators
 #             #             estimator_scores = {est: [] for est in ct.scores.keys() if "NewDummy" not in est}
 #
-#             for trial in ct.results.trials:
+#             for trial in ct.tuner.trials:
 #                 # estimator name:
-#                 estimator_name = trial.last_result["estimator_name"]
-#                 if trial.last_result.get("estimator", False):
-#                     estimator = trial.last_result["estimator"]
+#                 estimator_name = trial.result["estimator_name"]
+#                 if trial.result.get("estimator", False):
+#                     estimator = trial.result["estimator"]
 #                     scores = {}
 #                     for ds_name, df in datasets.items():
 #                         scores[ds_name] = {}

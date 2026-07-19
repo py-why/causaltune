@@ -9,7 +9,7 @@ Its estimators are taken from [EconML](https://github.com/microsoft/EconML/) aug
 [DoWhy](https://github.com/microsoft/DoWhy/) wrapper.
 
 Our contribution is enabling automatic estimator tuning and selection by out-of-sample scoring of causal estimators, notably using the [energy score](https://arxiv.org/abs/2212.10076).
-We use [FLAML](https://github.com/microsoft/FLAML) for hyperparameter optimisation.
+For hyperparameter optimisation we support pluggable backends — [Optuna](https://optuna.org) (default), [Hyperopt](https://github.com/hyperopt/hyperopt), and [FLAML](https://github.com/microsoft/FLAML) — selectable via the `framework` argument to `fit()`.
 
 We perform automated hyperparameter tuning of first stage models (for the treatment and outcome models)
 as well as hyperparameter tuning and model selection for the second stage model (causal estimator).
@@ -122,7 +122,7 @@ To install from source, see [For Developers](#for-developers) section below.
 
 ### Requirements
 
-CausalTune works with Python 3.8 and 3.9.
+CausalTune works with Python 3.10, 3.11 and 3.12.
 
 It requires the following libraries to work:
 - NumPy
@@ -130,8 +130,12 @@ It requires the following libraries to work:
 - EconML
 - DoWhy
 - FLAML
+- Optuna
 - Scikit-Learn
 - Dcor
+
+Hyperopt is an optional backend, installed via the `hyperopt` extra
+(`pip install causaltune[hyperopt]`).
 
 The easiest way to install the dependencies is via
 ```
@@ -147,7 +151,7 @@ Mac/ OS users: For some machines, it can happen that the package LightGBM which 
 
 2. Set Up a Conda Environment using an appropriate Python Version
 	- Ensure Anaconda or Miniconda is installed.
-	- Create a new Conda environment: `conda create -n causaltune-env python=3.9.x`
+	- Create a new Conda environment: `conda create -n causaltune-env python=3.11.x`
 	- Activate the environment: `conda activate causaltune-env`.
 
 3. Install the dependency lightgbm seperatly before attempting to install other dependencies
@@ -189,6 +193,24 @@ ct.fit(data)
 print(f"Best estimator: {ct.best_estimator}")
 
 ```
+
+By default `fit()` optimises with the Optuna backend (default sampler: TPE).
+Pass `framework="hyperopt"` or `framework="flaml"` to switch, and `algo=` to pick
+a specific sampler / search algorithm for that backend (e.g. an Optuna sampler, a
+Hyperopt suggest function, or a FLAML search algorithm). `framework`, `algo` and
+`framework_params` can also be set on the `CausalTune` constructor, with the
+`fit()` argument taking precedence.
+
+The backends aim for the same option surface. Warm starting (`try_init_configs`)
+and resuming (`resume=True`) now work on **all three** backends — on Optuna and
+Hyperopt these route through the pluggable tuner's warm-start / `resume_from_results`
+hooks. Resume continues the same in-memory instance and adds a further
+`num_samples` trials (time-bounded resume with `num_samples=-1` + a `time_budget`
+is recommended). `verbose` is honoured everywhere. FLAML-only: cost-aware search
+(`cost_attr` / `low_cost_partial_config`). Optuna's `n_jobs` is exposed but
+clamped to 1 (the objective is not thread-safe); use `use_ray` for real
+parallelism. The advanced `framework_params` dict is merged into the backend call
+(you win on conflicts; managed keys warn, reserved keys raise).
 
 Now if ***outcome_model="auto"*** in the CausalTune constructor, we search over a simultaneous search space for the EconML estimators and for FLAML wrappers for common regressors. The old behavior is now achieved by ***outcome_model="nested"*** (Refitting AutoML for each estimator).
 

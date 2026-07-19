@@ -45,6 +45,44 @@ The CausalTune package can be used like a scikit-style estimator:
     print(f"Best estimator: {ct.best_estimator}")
 
 
+By default ``fit()`` optimises with the Optuna backend (default sampler: TPE).
+Pass ``framework="hyperopt"`` or ``framework="flaml"`` to switch, and ``algo=``
+to select a specific sampler / search algorithm. ``framework``, ``algo`` and
+``framework_params`` can also be set on the ``CausalTune`` constructor; a value
+passed to ``fit()`` overrides the constructor default. Hyperopt requires the
+optional extra (``pip install causaltune[hyperopt]``).
+
+Backend interface parity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The three backends aim for the same option surface (best-effort, with graceful
+degradation where a backend cannot support a feature):
+
+* **Estimator list, num_samples / time_budget, algo** — supported identically on
+  all three.
+* **Warm start** (``try_init_configs``) — supported on all three. flaml consumes
+  the init configs natively; optuna enqueues them (``enqueue_trial``) and
+  hyperopt seeds them as the first trials.
+* **Resume** (``resume=True``) — supported on all three. flaml uses cost-aware
+  warm rebuild; optuna/hyperopt route through hiertunehub's
+  ``resume_from_results``. Resume continues the *same* in-memory ``CausalTune``
+  instance (same ``estimator_list`` / data / backend) and runs an *additional*
+  ``num_samples`` trials; the recommended mode is time-bounded
+  (``num_samples=-1`` with a ``time_budget``).
+* **verbose** — honoured on all three (optuna via ``optuna.logging``).
+* **Parallelism** — flaml via ``use_ray``; optuna exposes ``n_jobs`` but it is
+  clamped to 1 by default because CausalTune's objective is not thread-safe.
+  Opting into ``n_jobs>1`` (via ``framework_params``) warns and is at your own
+  risk; prefer ``use_ray`` for real parallelism.
+* **Cost-aware search** (``cost_attr`` / ``low_cost_partial_config``) — a
+  FLAML-only concept with no optuna/hyperopt equivalent; remains flaml-only.
+
+The ``framework_params`` dict is an advanced escape hatch: its entries are merged
+into the backend call (you win on conflicts). Overriding a CausalTune-managed key
+(e.g. ``n_trials``) warns; a reserved key that the wrapper passes explicitly
+(``config``/``mode``/``metric``/``trials``/``objective``/``search_space``) raises.
+
+
 For Developers
 ----------------
 
@@ -70,6 +108,7 @@ CausalTune requires the following packages:
 * econml
 * dowhy
 * flaml
+* optuna
 * scikit-learn
 * matplotlib
 * dcor

@@ -27,7 +27,7 @@ class TestEndToEndAutoMLPropensity(object):
         estimator_list = "all"
 
         causaltune = CausalTune(
-            components_time_budget=10,
+            components_time_budget=2,
             estimator_list=estimator_list,
             num_samples=25,
             use_ray=False,
@@ -67,7 +67,7 @@ class TestEndToEndAutoMLPropensity(object):
             estimator_list="all",
             propensity_model="auto",
             num_samples=len(estimator_list),
-            components_time_budget=10,
+            components_time_budget=2,
             outcome_model="auto",
         )
         ct.fit(data)
